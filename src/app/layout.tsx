@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RevenuePro - Premium License Management",
-  description: "Advanced license management and fraud checking platform.",
+  title: "CodeBlend — WordPress Plugins & E-commerce Solutions",
+  description: "Premium WordPress plugins, fraud prevention tools, and custom e-commerce solutions. Build, protect, and scale your online business with CodeBlend.",
 };
 
 export default function RootLayout({

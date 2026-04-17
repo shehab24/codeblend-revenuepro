@@ -16,23 +16,40 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const isAdmin = user.publicMetadata?.role === "admin";
   const userEmail = user.emailAddresses[0]?.emailAddress || "unknown@domain.com";
 
-  await prisma.user.upsert({
-    where: { id: user.id },
-    create: {
-      id: user.id,
-      email: userEmail,
-      name: user.fullName || "User",
-      role: isAdmin ? "ADMIN" : "USER",
-    },
-    update: {
-      email: userEmail,
-      name: user.fullName || "User",
-      role: isAdmin ? "ADMIN" : "USER",
+  try {
+    await prisma.user.upsert({
+      where: { id: user.id },
+      create: {
+        id: user.id,
+        email: userEmail,
+        name: user.fullName || "User",
+        role: isAdmin ? "ADMIN" : "USER",
+      },
+      update: {
+        email: userEmail,
+        name: user.fullName || "User",
+        role: isAdmin ? "ADMIN" : "USER",
+      }
+    });
+  } catch (error: any) {
+    // If unique constraint fails on email, it means another Clerk instance (e.g. live vs dev keys) 
+    // already inserted this email. We gracefully handle it by updating that existing user's ID to the new one.
+    if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
+      await prisma.user.update({
+        where: { email: userEmail },
+        data: {
+          id: user.id,
+          name: user.fullName || "User",
+          role: isAdmin ? "ADMIN" : "USER",
+        }
+      });
+    } else {
+      throw error;
     }
-  });
+  }
 
   return (
-    <div className="light-mode" style={{ display: "flex", minHeight: "100vh", backgroundColor: "var(--background)", color: "var(--foreground)", fontFamily: "var(--font-sans)" }}>
+    <div className="dashboard-layout" style={{ display: "flex", minHeight: "100vh", backgroundColor: "var(--background)", color: "var(--foreground)", fontFamily: "var(--font-sans)" }}>
       <aside style={{ width: "250px", borderRight: "1px solid var(--card-border)", background: "var(--card-bg)" }}>
         <div style={{ padding: "1.5rem", borderBottom: "1px solid var(--card-border)" }}>
           <Link href="/">

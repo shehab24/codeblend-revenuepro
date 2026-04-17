@@ -1,3 +1,8 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════
+   CSS VARIABLES (available globally)
+   ═══════════════════════════════════════════════ */
 :root {
   --background: #0f1115;
   --foreground: #e2e8f0;
@@ -24,13 +29,11 @@
   --text-muted: #64748b;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
+/* ═══════════════════════════════════════════════
+   DASHBOARD-SPECIFIC STYLES (scoped to .dashboard)
+   These do NOT affect the public homepage.
+   ═══════════════════════════════════════════════ */
+.dashboard-layout {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
@@ -39,20 +42,19 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-a {
+.dashboard-layout a {
   color: inherit;
   text-decoration: none;
 }
 
-/* Base UI Tokens */
-.container {
+.dashboard-layout .container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1rem;
 }
 
-/* Glassmorphism Card */
-.card {
+/* Glassmorphism Card — Dashboard only */
+.dashboard-layout .card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: 12px;
@@ -62,26 +64,26 @@ a {
   transition: all 0.2s ease-in-out;
 }
 
-.card:hover {
+.dashboard-layout .card:hover {
   border-color: rgba(16, 185, 129, 0.3);
   box-shadow: 0 0 20px var(--glow-color);
   transform: translateY(-2px);
 }
 
-.card-header {
+.dashboard-layout .card-header {
   margin-bottom: 1rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--card-border);
 }
 
-.card-title {
+.dashboard-layout .card-title {
   font-size: 1.25rem;
   font-weight: 600;
   color: #fff;
 }
 
-/* Button variants */
-.btn {
+/* Button variants — Dashboard only */
+.dashboard-layout .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -94,47 +96,47 @@ a {
   font-size: 0.875rem;
 }
 
-.btn:disabled {
+.dashboard-layout .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.btn-primary {
+.dashboard-layout .btn-primary {
   background-color: var(--primary);
   color: #fff;
   box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
 }
 
-.btn-primary:not(:disabled):hover {
+.dashboard-layout .btn-primary:not(:disabled):hover {
   background-color: var(--primary-hover);
   box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
   transform: scale(1.02);
 }
 
-.btn-outline {
+.dashboard-layout .btn-outline {
   background-color: transparent;
   border: 1px solid var(--card-border);
   color: var(--foreground);
 }
 
-.btn-outline:not(:disabled):hover {
+.dashboard-layout .btn-outline:not(:disabled):hover {
   border-color: var(--primary);
   background-color: rgba(16, 185, 129, 0.05);
 }
 
-.btn-danger {
+.dashboard-layout .btn-danger {
   background-color: rgba(239, 68, 68, 0.1);
   color: var(--error);
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
-.btn-danger:not(:disabled):hover {
+.dashboard-layout .btn-danger:not(:disabled):hover {
   background-color: var(--error);
   color: #fff;
 }
 
-/* Inputs */
-.input-field {
+/* Inputs — Dashboard only */
+.dashboard-layout .input-field {
   width: 100%;
   background: rgba(15, 17, 21, 0.5);
   border: 1px solid var(--card-border);
@@ -146,13 +148,13 @@ a {
   transition: border-color 0.2s;
 }
 
-.input-field:focus {
+.dashboard-layout .input-field:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
 }
 
-.input-label {
+.dashboard-layout .input-label {
   display: block;
   font-size: 0.875rem;
   font-weight: 500;
@@ -160,18 +162,18 @@ a {
   color: var(--text-muted);
 }
 
-.form-group {
+.dashboard-layout .form-group {
   margin-bottom: 1rem;
 }
 
-/* Utilities */
-.flex-between {
+/* Dashboard Utilities */
+.dashboard-layout .flex-between {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.mt-4 { margin-top: 1rem; }
-.mb-4 { margin-bottom: 1rem; }
-.text-center { text-align: center; }
-.text-muted { color: var(--text-muted); }
+.dashboard-layout .mt-4 { margin-top: 1rem; }
+.dashboard-layout .mb-4 { margin-bottom: 1rem; }
+.dashboard-layout .text-center { text-align: center; }
+.dashboard-layout .text-muted { color: var(--text-muted); }
