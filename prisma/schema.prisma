@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id
+  email     String   @unique
+  name      String?
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  licenses  License[]
+}
+
+model License {
+  id             String    @id @default(cuid())
+  userId         String    // Maps to User.id (Clerk's user ID)
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customerEmail  String?   // Specifically bound external customer email for WP validation
+  key            String    @unique
+  domain         String
+  tier           String    @default("Standard")
+  expirationDate DateTime?
+  status         String    @default("active") // active, suspended, revoked
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  logs           VerificationLog[]
+  fraudStats     FraudStat[]
+}
+
+model VerificationLog {
+  id        String   @id @default(cuid())
+  licenseId String
+  license   License  @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  ipAddress String?
+  userAgent String?
+  status    String   // success, failed
+  timestamp DateTime @default(now())
+}
+
+model Setting {
+  key   String @id
+  value String
+  updatedAt DateTime @updatedAt
+}
+
+model FraudStat {
+  id                 String   @id @default(cuid())
+  licenseId          String?
+  license            License? @relation(fields: [licenseId], references: [id], onDelete: SetNull)
+  domain             String?
+  phone              String
+  total_parcel       Int      @default(0)
+  success_parcel     Int      @default(0)
+  cancelled_parcel   Int      @default(0)
+  success_ratio      Float    @default(0)
+  pathao_success     Int      @default(0)
+  pathao_cancel      Int      @default(0)
+  steadfast_success  Int      @default(0)
+  steadfast_cancel   Int      @default(0)
+  parceldex_success  Int      @default(0)
+  parceldex_cancel   Int      @default(0)
+  redx_success       Int      @default(0)
+  redx_cancel        Int      @default(0)
+  paperfly_success   Int      @default(0)
+  paperfly_cancel    Int      @default(0)
+  carrybee_success   Int      @default(0)
+  carrybee_cancel    Int      @default(0)
+  courier_data       String?
+  reports            String?
+  last_checked       DateTime @default(now())
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
