@@ -7,14 +7,78 @@ export default async function UserDashboard() {
   
   if (!userId) return null;
 
-  const licenses = await prisma.license.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-    include: { logs: { take: 5, orderBy: { timestamp: "desc" } } }
-  });
+  const [licenses, serviceRequests] = await Promise.all([
+    prisma.license.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      include: { logs: { take: 5, orderBy: { timestamp: "desc" } } }
+    }),
+    prisma.serviceRequest.findMany({
+      where: { applicantId: userId },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  const statusConfig: Record<string, { label: string; bg: string; color: string }> = {
+    pending: { label: "Pending", bg: "rgba(234, 179, 8, 0.1)", color: "#ca8a04" },
+    in_progress: { label: "In Progress", bg: "rgba(59, 130, 246, 0.1)", color: "#2563eb" },
+    completed: { label: "Completed", bg: "rgba(16, 185, 129, 0.1)", color: "#059669" },
+    cancelled: { label: "Cancelled", bg: "rgba(239, 68, 68, 0.1)", color: "#dc2626" },
+  };
 
   return (
     <div>
+      {/* ═══ MY REQUESTS ═══ */}
+      <div style={{ marginBottom: "2.5rem" }}>
+        <h2 style={{ fontSize: "1.25rem", margin: "0 0 1.25rem 0" }}>📋 My Requests</h2>
+
+        {serviceRequests.length === 0 ? (
+          <div className="card text-center" style={{ padding: "3rem" }}>
+            <div style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>📭</div>
+            <div style={{ color: "var(--text-muted)", fontSize: "1rem" }}>
+              You haven&apos;t submitted any requests yet.
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1rem" }}>
+            {serviceRequests.map((req) => {
+              const st = statusConfig[req.status] || statusConfig.pending;
+              return (
+                <div key={req.id} className="card" style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                      {new Date(req.createdAt).toLocaleDateString("bn-BD", {
+                        year: "numeric", month: "long", day: "numeric",
+                      })}
+                    </div>
+                    <span style={{
+                      padding: "0.2rem 0.6rem", borderRadius: "9999px",
+                      fontSize: "0.7rem", fontWeight: "bold",
+                      background: st.bg, color: st.color,
+                    }}>
+                      {st.label}
+                    </span>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.25rem" }}>Service</div>
+                    <div style={{ fontSize: "1rem", fontWeight: "bold", color: "var(--foreground)" }}>{req.serviceType}</div>
+                  </div>
+
+                  {req.message && (
+                    <div>
+                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.25rem" }}>Message</div>
+                      <div style={{ fontSize: "0.875rem", color: "var(--foreground)", lineHeight: 1.5 }}>{req.message}</div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ═══ LICENSES ═══ */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "2rem", alignItems: "start" }}>
         
         {/* Left Column: Create Form */}
@@ -29,7 +93,7 @@ export default async function UserDashboard() {
           {licenses.length === 0 ? (
             <div className="card text-center" style={{ padding: "3rem" }}>
               <div style={{ color: "var(--text-muted)", fontSize: "1.2rem" }}>
-                You haven't generated any licenses yet.
+                You haven&apos;t generated any licenses yet.
               </div>
             </div>
           ) : (

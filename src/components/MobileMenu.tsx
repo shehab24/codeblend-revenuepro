@@ -114,7 +114,7 @@ export function MobileMenu({ isLoggedIn }: { isLoggedIn: boolean }) {
         <div style={{ padding: 20, borderTop: "1px solid #f1f5f9" }}>
           {isLoggedIn ? (
             <Link
-              href="/dashboard/user"
+              href="/dashboard"
               onClick={() => setOpen(false)}
               style={{ display: "block", width: "100%", padding: "14px", background: "linear-gradient(135deg, #10b981, #0d9488)", color: "white", borderRadius: 16, fontWeight: 700, fontSize: 14, textAlign: "center", textDecoration: "none", boxShadow: "0 4px 12px rgba(16,185,129,0.4)" }}
             >

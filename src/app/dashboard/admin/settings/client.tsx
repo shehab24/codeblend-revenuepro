@@ -2,7 +2,7 @@
 import { useTransition, useRef } from "react";
 import { adminSaveSettings } from "./actions";
 
-export function AdminSettingsClient({ currentKey }: { currentKey: string }) {
+export function AdminSettingsClient({ currentKey, currentAlertEmail }: { currentKey: string, currentAlertEmail: string }) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -25,6 +25,21 @@ export function AdminSettingsClient({ currentKey }: { currentKey: string }) {
           className="input-field" 
           style={{ width: "100%", background: "var(--background)", color: "var(--foreground)" }} 
         />
+      </div>
+      <div className="form-group" style={{ marginTop: "1rem" }}>
+        <label className="input-label" htmlFor="adminAlertEmail">Admin Alert Email</label>
+        <input 
+          type="email" 
+          id="adminAlertEmail"
+          name="adminAlertEmail" 
+          defaultValue={currentAlertEmail} 
+          placeholder="admin@example.com" 
+          className="input-field" 
+          style={{ width: "100%", background: "var(--background)", color: "var(--foreground)" }} 
+        />
+        <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "0.5rem" }}>
+          This email will receive notifications when new leads or service requests are submitted.
+        </p>
       </div>
       <button 
         type="submit" 

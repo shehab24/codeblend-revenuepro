@@ -34,7 +34,7 @@ export async function MarketingNavbar() {
               Get Started →
             </Link>
           ) : (
-            <Link href="/dashboard/user" className="px-5 py-2.5 bg-emerald-500 text-white rounded-full text-sm font-semibold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-200 hover:shadow-emerald-300">
+            <Link href="/dashboard" className="px-5 py-2.5 bg-emerald-500 text-white rounded-full text-sm font-semibold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-200 hover:shadow-emerald-300">
               Dashboard →
             </Link>
           )}

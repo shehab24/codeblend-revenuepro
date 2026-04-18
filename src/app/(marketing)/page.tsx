@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
+import { LeadCTAButton } from "@/components/LeadPopup";
 
 export default async function Home() {
   const { userId } = await auth();
@@ -31,9 +32,9 @@ export default async function Home() {
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10">
             {!userId ? (
-              <Link href="/sign-in" className="w-full sm:w-auto px-6 py-3.5 bg-emerald-500 text-white rounded-2xl text-sm font-bold hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-200 text-center">🚀 Get Started Free →</Link>
+              <LeadCTAButton serviceType="Get Started" className="w-full sm:w-auto px-6 py-3.5 bg-emerald-500 text-white rounded-2xl text-sm font-bold hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-200 text-center">🚀 Get Started Free →</LeadCTAButton>
             ) : (
-              <Link href="/dashboard/user" className="w-full sm:w-auto px-6 py-3.5 bg-emerald-500 text-white rounded-2xl text-sm font-bold hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-200 text-center">
+              <Link href="/dashboard" className="w-full sm:w-auto px-6 py-3.5 bg-emerald-500 text-white rounded-2xl text-sm font-bold hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-200 text-center">
                 🚀 Launch Dashboard →
               </Link>
             )}
@@ -139,19 +140,22 @@ export default async function Home() {
               <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center text-2xl shadow-lg mb-5">
                 🛡️
               </div>
-              <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-3">BD Courier Fraud Checker</h3>
+              <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-3">RevenuePro</h3>
               <p className="text-slate-500 text-sm md:text-base leading-relaxed mb-5">
-                Real-time phone number verification against courier databases. Block fake orders before they happen with Pathao, Steadfast, Redx, and more.
+                Increase revenue, boost sales, and eliminate losses by completely automating your manual workflow and blocking fake orders before they happen.
               </p>
               <Link href="/revenuepro" className="text-emerald-600 font-bold hover:text-emerald-700 flex items-center gap-2 text-sm">
                 Learn more about RevenuePro →
               </Link>
             </div>
             <div className="bg-slate-900 rounded-2xl p-5 shadow-xl w-full md:w-72 font-mono text-sm">
-              <h4 className="text-white border-b border-slate-700 pb-3 mb-3 text-xs sm:text-sm">Live Telemetry</h4>
-              <div className="flex justify-between text-slate-400 mb-2 text-xs sm:text-sm"><span>Target:</span> <span className="text-emerald-400">017XXXXXXXX</span></div>
-              <div className="flex justify-between text-slate-400 mb-2 text-xs sm:text-sm"><span>Status:</span> <span className="text-emerald-400">Safe (89%)</span></div>
-              <div className="flex justify-between text-slate-400 text-xs sm:text-sm"><span>Returned:</span> <span className="text-red-400">2</span></div>
+              <h4 className="text-white border-b border-slate-700 pb-3 mb-3 text-xs sm:text-sm flex items-center gap-2">
+                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                 Live Performance
+              </h4>
+              <div className="flex justify-between text-slate-400 mb-2 text-xs sm:text-sm"><span>Orders Saved:</span> <span className="text-emerald-400">1,240</span></div>
+              <div className="flex justify-between text-slate-400 mb-2 text-xs sm:text-sm"><span>Loss Prevented:</span> <span className="text-emerald-400">৳ 24,800</span></div>
+              <div className="flex justify-between text-slate-400 text-xs sm:text-sm"><span>Time Saved:</span> <span className="text-blue-400">8.4 hrs/day</span></div>
             </div>
           </div>
         </div>
@@ -180,13 +184,15 @@ export default async function Home() {
               { icon: "📱", color: "bg-orange-500", title: "Landing Page Design", desc: "High-converting landing pages and marketing funnels designed to capture leads and maximize your ad spend ROI." },
               { icon: "🛠️", color: "bg-cyan-500", title: "Maintenance & Support", desc: "Ongoing technical support, security updates, performance optimization, and feature enhancements for your digital products." },
             ].map((service) => (
-              <div key={service.title} className="group bg-white rounded-2xl border border-slate-100 p-6 hover:shadow-lg hover:border-purple-100 hover:-translate-y-1 transition-all duration-300">
+              <div key={service.title} className="group bg-white rounded-2xl border border-slate-100 p-6 hover:shadow-lg hover:border-purple-100 hover:-translate-y-1 transition-all duration-300 flex flex-col">
                 <div className={`w-12 h-12 ${service.color} rounded-2xl flex items-center justify-center text-xl shadow-md mb-4`}>
                   {service.icon}
                 </div>
                 <h3 className="text-base font-bold text-slate-900 mb-2">{service.title}</h3>
-                <p className="text-slate-500 text-sm leading-relaxed mb-3">{service.desc}</p>
-                <Link href="/services" className="text-purple-600 text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">Read more →</Link>
+                <p className="text-slate-500 text-sm leading-relaxed mb-4 flex-1">{service.desc}</p>
+                <LeadCTAButton serviceType={service.title} className="w-full py-2.5 bg-purple-50 text-purple-600 rounded-xl font-bold text-sm hover:bg-purple-100 transition-colors text-center">
+                  Start Now →
+                </LeadCTAButton>
               </div>
             ))}
           </div>
@@ -260,9 +266,9 @@ export default async function Home() {
                 <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Standard dashboard</li>
               </ul>
               {!userId ? (
-                <Link href="/sign-in" className="w-full py-3 block text-center bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors text-sm">Get Started</Link>
+                <LeadCTAButton serviceType="Starter Plan" className="w-full py-3 block text-center bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors text-sm">Get Started</LeadCTAButton>
               ) : (
-                <Link href="/dashboard/user" className="w-full py-3 block text-center bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors text-sm">Current Plan</Link>
+                <Link href="/dashboard" className="w-full py-3 block text-center bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors text-sm">Current Plan</Link>
               )}
             </div>
 
@@ -284,9 +290,9 @@ export default async function Home() {
                 <li className="flex items-center gap-3 text-slate-300 text-sm"><span className="text-emerald-500">✓</span> Custom integrations</li>
               </ul>
               {!userId ? (
-                <Link href="/sign-in" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity text-sm">Start Pro Trial</Link>
+                <LeadCTAButton serviceType="Pro Plan" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity text-sm">Start Pro Trial</LeadCTAButton>
               ) : (
-                <Link href="/dashboard/user" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity text-sm">Upgrade to Pro</Link>
+                <Link href="/dashboard" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity text-sm">Upgrade to Pro</Link>
               )}
             </div>
 
@@ -324,15 +330,12 @@ export default async function Home() {
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 {!userId ? (
-                  <Link href="/sign-in" className="w-full sm:w-auto px-6 py-3.5 bg-white text-emerald-600 rounded-2xl text-sm font-bold hover:bg-emerald-50 transition-all shadow-xl text-center">🚀 Start Free Trial</Link>
+                  <LeadCTAButton serviceType="Free Trial" className="w-full sm:w-auto px-6 py-3.5 bg-white text-emerald-600 rounded-2xl text-sm font-bold hover:bg-emerald-50 transition-all shadow-xl text-center">🚀 Start Free Trial</LeadCTAButton>
                 ) : (
-                  <Link href="/dashboard/user" className="w-full sm:w-auto px-6 py-3.5 bg-white text-emerald-600 rounded-2xl text-sm font-bold hover:bg-emerald-50 transition-all shadow-xl text-center">
+                  <Link href="/dashboard" className="w-full sm:w-auto px-6 py-3.5 bg-white text-emerald-600 rounded-2xl text-sm font-bold hover:bg-emerald-50 transition-all shadow-xl text-center">
                     🚀 Open Dashboard
                   </Link>
                 )}
-                <a href="https://wa.me/+8801XXXXXXXXX" target="_blank" className="w-full sm:w-auto px-6 py-3.5 bg-transparent text-white rounded-2xl text-sm font-bold border-2 border-white/30 hover:bg-white/10 transition-all flex items-center justify-center gap-2">
-                  💬 Contact Us on WhatsApp
-                </a>
               </div>
             </div>
           </div>

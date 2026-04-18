@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
+import { LeadCTAButton } from "@/components/LeadPopup";
 
 export const metadata = {
   title: "RevenuePro — CodeBlend",
@@ -27,9 +28,9 @@ export default async function RevenueProPage() {
 
           <div className="flex justify-center gap-4">
             {!userId ? (
-              <Link href="/sign-in" className="px-8 py-4 bg-emerald-500 text-white rounded-2xl text-base font-bold hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-200">Get RevenuePro Now</Link>
+              <LeadCTAButton serviceType="RevenuePro" className="px-8 py-4 bg-emerald-500 text-white rounded-2xl text-base font-bold hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-200">Get RevenuePro Now</LeadCTAButton>
             ) : (
-              <Link href="/dashboard/user" className="px-8 py-4 bg-emerald-500 text-white rounded-2xl text-base font-bold hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-200">
+              <Link href="/dashboard" className="px-8 py-4 bg-emerald-500 text-white rounded-2xl text-base font-bold hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-200">
                 Go to Dashboard
               </Link>
             )}

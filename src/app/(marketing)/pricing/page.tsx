@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
+import { LeadCTAButton } from "@/components/LeadPopup";
 
 export const metadata = {
   title: "Pricing — CodeBlend",
@@ -29,9 +30,9 @@ export default async function PricingPage() {
               <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Standard dashboard</li>
             </ul>
             {!userId ? (
-              <Link href="/sign-in" className="w-full py-3 block text-center bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors">Get Started</Link>
+              <LeadCTAButton serviceType="Starter Plan" className="w-full py-3 block text-center bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors">Get Started</LeadCTAButton>
             ) : (
-              <Link href="/dashboard/user" className="w-full py-3 block text-center bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors">Current Plan</Link>
+              <Link href="/dashboard" className="w-full py-3 block text-center bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors">Current Plan</Link>
             )}
           </div>
 
@@ -53,9 +54,9 @@ export default async function PricingPage() {
               <li className="flex items-center gap-3 text-slate-300 text-sm"><span className="text-emerald-500">✓</span> Custom integrations</li>
             </ul>
             {!userId ? (
-              <Link href="/sign-in" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity">Start Pro Trial</Link>
+              <LeadCTAButton serviceType="Pro Plan" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity">Start Pro Trial</LeadCTAButton>
             ) : (
-              <Link href="/dashboard/user" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity">Upgrade to Pro</Link>
+              <Link href="/dashboard" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity">Upgrade to Pro</Link>
             )}
           </div>
 

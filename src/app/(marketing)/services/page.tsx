@@ -1,3 +1,5 @@
+import { LeadCTAButton } from "@/components/LeadPopup";
+
 export const metadata = {
   title: "Services — CodeBlend",
   description: "Custom WP Plugin Development, E-commerce Automation, API Integration, and more.",
@@ -60,12 +62,15 @@ export default function ServicesPage() {
               desc: "Ongoing technical support, security updates, performance optimization, and feature enhancements for your digital products.",
             },
           ].map((service) => (
-            <div key={service.title} className="group bg-white rounded-2xl border border-slate-100 p-8 hover:shadow-lg hover:border-purple-100 hover:-translate-y-1 transition-all duration-300">
+            <div key={service.title} className="group bg-white rounded-2xl border border-slate-100 p-8 hover:shadow-lg hover:border-purple-100 hover:-translate-y-1 transition-all duration-300 flex flex-col">
               <div className={`w-14 h-14 ${service.color} rounded-2xl flex items-center justify-center text-2xl shadow-lg mb-5`}>
                 {service.icon}
               </div>
               <h3 className="text-lg font-bold text-slate-900 mb-2">{service.title}</h3>
-              <p className="text-slate-500 text-sm leading-relaxed">{service.desc}</p>
+              <p className="text-slate-500 text-sm leading-relaxed mb-5 flex-1">{service.desc}</p>
+              <LeadCTAButton serviceType={service.title} className="w-full py-2.5 bg-purple-50 text-purple-600 rounded-xl font-bold text-sm hover:bg-purple-100 transition-colors text-center">
+                Start Now →
+              </LeadCTAButton>
             </div>
           ))}
         </div>
