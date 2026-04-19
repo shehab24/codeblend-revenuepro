@@ -10,6 +10,7 @@ export default async function AdminDashboard() {
   }
 
   const licensesCount = await prisma.license.count();
+  const usersCount = await prisma.user.count();
   const recentLogs = await prisma.verificationLog.findMany({
     take: 5,
     orderBy: { timestamp: "desc" },
@@ -18,58 +19,59 @@ export default async function AdminDashboard() {
 
   return (
     <div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem", marginBottom: "2rem" }}>
-        <div className="card">
-          <div className="card-header" style={{ paddingBottom: "0.5rem", borderBottom: "none" }}>
-            <div className="text-muted" style={{ fontSize: "0.875rem", textTransform: "uppercase" }}>Total Users</div>
-            <div style={{ fontSize: "1rem", fontWeight: "bold", color: "var(--text-muted)", marginTop: "0.5rem" }}>
-              Managed securely by Clerk
-            </div>
-          </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-md hover:border-emerald-200 transition-all">
+          <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Total Users</div>
+          <div className="text-3xl font-extrabold text-slate-900">{usersCount}</div>
+          <div className="text-xs text-slate-400 mt-1">Synced via Clerk</div>
         </div>
-        <div className="card">
-          <div className="card-header" style={{ paddingBottom: "0.5rem", borderBottom: "none" }}>
-            <div className="text-muted" style={{ fontSize: "0.875rem", textTransform: "uppercase" }}>Total Licenses</div>
-            <div style={{ fontSize: "2.5rem", fontWeight: "bold", color: "var(--primary)" }}>{licensesCount}</div>
-          </div>
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-md hover:border-emerald-200 transition-all">
+          <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Total Licenses</div>
+          <div className="text-3xl font-extrabold text-emerald-600">{licensesCount}</div>
+          <div className="text-xs text-slate-400 mt-1">Active API keys</div>
+        </div>
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-md hover:border-emerald-200 transition-all">
+          <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Recent Activity</div>
+          <div className="text-3xl font-extrabold text-slate-900">{recentLogs.length}</div>
+          <div className="text-xs text-slate-400 mt-1">Last 5 verifications</div>
         </div>
       </div>
 
-      <div className="card">
-        <div className="card-header">
-          <h3 className="card-title">Recent API Verifications</h3>
+      {/* Recent Verifications Table */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6">
+        <div className="mb-4 pb-4 border-b border-slate-100">
+          <h3 className="text-lg font-semibold text-slate-900">Recent API Verifications</h3>
         </div>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
             <thead>
-              <tr style={{ borderBottom: "1px solid var(--card-border)" }}>
-                <th style={{ padding: "1rem 0.5rem", color: "var(--text-muted)", fontSize: "0.875rem", fontWeight: "500" }}>Time</th>
-                <th style={{ padding: "1rem 0.5rem", color: "var(--text-muted)", fontSize: "0.875rem", fontWeight: "500" }}>Domain</th>
-                <th style={{ padding: "1rem 0.5rem", color: "var(--text-muted)", fontSize: "0.875rem", fontWeight: "500" }}>IP</th>
-                <th style={{ padding: "1rem 0.5rem", color: "var(--text-muted)", fontSize: "0.875rem", fontWeight: "500" }}>Status</th>
+              <tr className="border-b border-slate-100">
+                <th className="p-3 text-xs font-medium text-slate-400 uppercase">Time</th>
+                <th className="p-3 text-xs font-medium text-slate-400 uppercase">Domain</th>
+                <th className="p-3 text-xs font-medium text-slate-400 uppercase">IP</th>
+                <th className="p-3 text-xs font-medium text-slate-400 uppercase">Status</th>
               </tr>
             </thead>
             <tbody>
               {recentLogs.length > 0 ? recentLogs.map((log) => (
-                <tr key={log.id} style={{ borderBottom: "1px solid var(--card-border)" }}>
-                  <td style={{ padding: "1rem 0.5rem", fontSize: "0.875rem" }}>{new Date(log.timestamp).toLocaleString()}</td>
-                  <td style={{ padding: "1rem 0.5rem", fontSize: "0.875rem" }}>{log.license.domain}</td>
-                  <td style={{ padding: "1rem 0.5rem", fontSize: "0.875rem" }}>{log.ipAddress || "N/A"}</td>
-                  <td style={{ padding: "1rem 0.5rem", fontSize: "0.875rem" }}>
-                    <span style={{ 
-                      padding: "0.2rem 0.5rem", 
-                      borderRadius: "4px", 
-                      fontSize: "0.75rem",
-                      background: log.status === "success" ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)",
-                      color: log.status === "success" ? "var(--primary)" : "var(--error)"
-                    }}>
+                <tr key={log.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
+                  <td className="p-3 text-sm text-slate-600">{new Date(log.timestamp).toLocaleString()}</td>
+                  <td className="p-3 text-sm text-slate-600 font-medium">{log.license.domain}</td>
+                  <td className="p-3 text-sm text-slate-500">{log.ipAddress || "N/A"}</td>
+                  <td className="p-3 text-sm">
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                      log.status === "success"
+                        ? "bg-emerald-50 text-emerald-600"
+                        : "bg-red-50 text-red-500"
+                    }`}>
                       {log.status.toUpperCase()}
                     </span>
                   </td>
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan={4} style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>No verifications yet.</td>
+                  <td colSpan={4} className="p-8 text-center text-slate-400">No verifications yet.</td>
                 </tr>
               )}
             </tbody>

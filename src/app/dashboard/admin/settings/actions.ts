@@ -11,12 +11,21 @@ export async function adminSaveSettings(formData: FormData) {
 
   const bdCourierApiKey = formData.get("bdCourierApiKey") as string;
   const adminAlertEmail = formData.get("adminAlertEmail") as string;
+  const revenueProPluginLinks = formData.get("revenueProPluginLinks") as string;
   
   if (bdCourierApiKey) {
     await prisma.setting.upsert({
       where: { key: "BD_COURIER_API_KEY" },
       create: { key: "BD_COURIER_API_KEY", value: bdCourierApiKey },
       update: { value: bdCourierApiKey }
+    });
+  }
+
+  if (revenueProPluginLinks) {
+    await prisma.setting.upsert({
+      where: { key: "REVENUEPRO_PLUGIN_LINKS" },
+      create: { key: "REVENUEPRO_PLUGIN_LINKS", value: revenueProPluginLinks },
+      update: { value: revenueProPluginLinks }
     });
   }
 
@@ -29,5 +38,6 @@ export async function adminSaveSettings(formData: FormData) {
   }
 
   revalidatePath("/dashboard/admin/settings");
+  revalidatePath("/dashboard/user/revenuepro"); // also revalidate the user side where links show up
   return { success: true };
 }

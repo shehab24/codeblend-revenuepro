@@ -61,6 +61,110 @@ export async function adminCreateLicense(formData: FormData) {
   return { success: true };
 }
 
+import nodemailer from "nodemailer";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_EMAIL_API);
+
+export async function adminToggleLicenseStatus(licenseId: string, status: string) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+  
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (user?.role !== "admin" && user?.role !== "ADMIN") throw new Error("Unauthorized access");
+
+  const license = await prisma.license.findUnique({ 
+    where: { id: licenseId },
+    include: { user: true }
+  });
+  if (!license) throw new Error("License not found");
+
+  const updateData: any = { status };
+
+  // If changing from pending to active for the very first time
+  if (license.status === "pending" && status === "active") {
+    const duration = parseInt(license.tier);
+    
+    // Automatically set the start date to NOW (Approval Date)
+    updateData.createdAt = new Date();
+    
+    // Mint the actual API key now that it's approved
+    let realKey = license.key;
+    if (license.key.startsWith("PENDING-")) {
+       realKey = "REVPRO-WP-" + crypto.randomBytes(12).toString("hex").toUpperCase();
+       updateData.key = realKey;
+    }
+
+    let expirationDate: Date | null = new Date();
+    let newTier = "1 Month (Basic)";
+    
+    if (license.tier === "0") {
+      newTier = "Lifetime Access";
+      expirationDate = null;
+    } else if (!isNaN(duration)) {
+      if (duration === 1) newTier = "1 Month (Basic)";
+      else if (duration === 2) newTier = "2 Months (Extended)";
+      else if (duration === 3) newTier = "3 Months (Quarterly)";
+      else if (duration === 6) newTier = "6 Months (Biannual)";
+      else if (duration === 12) newTier = "1 Year (Elite)";
+      
+      expirationDate.setMonth(expirationDate.getMonth() + duration);
+    } else {
+      newTier = license.tier;
+      expirationDate = license.expirationDate; 
+    }
+
+    if (!isNaN(duration) || license.tier === "0") {
+       updateData.tier = newTier;
+       updateData.expirationDate = expirationDate;
+    }
+
+    // Send the User an Email with their Shiny New Key
+    const customerEmail = license.customerEmail || license.user?.email;
+    if (customerEmail) {
+      try {
+        await resend.emails.send({
+          from: "CodeBlend <info@codeblend.co>",
+          to: customerEmail,
+          subject: `🎉 Your RevenuePro License is Ready!`,
+          html: `
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0;">
+              <div style="text-align: center; margin-bottom: 24px;">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #10b981, #0d9488); display: inline-flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px;">R</div>
+                <h2 style="margin: 12px 0 4px; color: #0f172a; font-size: 20px;">Revenue Pro</h2>
+              </div>
+              <p style="color: #334155; font-size: 15px; line-height: 1.6;">
+                Congratulations! Your license request for <strong>${license.domain}</strong> has been fully approved and generated.
+              </p>
+              
+              <div style="background: #f0fdf4; border: 1px dashed #10b981; border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center;">
+                <div style="color: #166534; font-size: 13px; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Your API Key</div>
+                <code style="color: #0f172a; font-size: 18px; font-weight: 800; background: #ffffff; padding: 8px 16px; border-radius: 6px; display: inline-block;">${realKey}</code>
+              </div>
+
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin: 20px 0;">
+                <p style="margin: 0 0 8px; font-size: 14px; color: #475569;"><strong>Tier:</strong> ${newTier}</p>
+                <p style="margin: 0; font-size: 14px; color: #475569;"><strong>Expires:</strong> ${expirationDate ? expirationDate.toLocaleDateString() : 'Never (Lifetime)'}</p>
+              </div>
+
+              <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://codeblend.co"}/dashboard/user/revenuepro" 
+                 style="display: block; text-align: center; background: #10b981; color: white; padding: 14px 24px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 15px; margin-top: 24px;">
+                Download Plugin Now
+              </a>
+            </div>
+          `,
+        });
+      } catch (err) {
+        console.error("Failed to send activation email", err);
+      }
+    }
+  }
+
+  await prisma.license.update({ where: { id: licenseId }, data: updateData });
+  revalidatePath("/dashboard/admin/licenses");
+  return { success: true };
+}
+
 export async function adminDeleteLicense(licenseId: string) {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");

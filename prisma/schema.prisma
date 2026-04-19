@@ -88,9 +88,15 @@ model ServiceRequest {
   id          String   @id @default(cuid())
   applicantId String
   applicant   User     @relation(fields: [applicantId], references: [id], onDelete: Cascade)
-  serviceType String   // e.g. "RevenuePro", "Custom Plugin", "Pro Plan"
-  message     String?  @db.Text
-  status      String   @default("pending") // pending, in_progress, completed, cancelled
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  serviceType     String   // e.g. "RevenuePro", "Custom Plugin", "Pro Plan"
+  message         String?  @db.Text
+  status          String   @default("pending") // pending, in_progress, completed, cancelled
+  
+  // Billing & Delivery
+  totalAmount     Float    @default(0)
+  paidAmount      Float    @default(0)
+  deliveryDate    DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

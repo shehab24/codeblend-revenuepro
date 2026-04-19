@@ -14,35 +14,31 @@ export function AdminCreateLicenseForm() {
   };
 
   return (
-    <div className="card">
-      <div className="card-header">
-        <h3 className="card-title" style={{ color: "var(--foreground)" }}>Issue New WP License</h3>
-        <p className="text-muted" style={{ fontSize: "0.875rem", marginTop: "0.5rem" }}>
-          Generate a time-tiered license for a specific WordPress domain.
-        </p>
+    <div className="bg-white rounded-2xl border border-slate-200 p-6">
+      <div className="mb-4 pb-4 border-b border-slate-100">
+        <h3 className="text-base font-semibold text-slate-800">Issue New WP License</h3>
+        <p className="text-sm text-slate-400 mt-1">Generate a time-tiered license for a WordPress domain.</p>
       </div>
-      <form id="admin-license-form" action={handleSubmit}>
-        <div className="form-group">
-          <label className="input-label" htmlFor="domain">Target Installation Domain</label>
-          <input 
-            type="text" 
-            id="domain" 
-            name="domain" 
-            placeholder="e.g., clientwebsite.com" 
-            className="input-field" 
-            required 
-            style={{ color: "var(--foreground)", backgroundColor: "var(--background)" }}
+      <form id="admin-license-form" action={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-600 mb-1.5" htmlFor="domain">Target Installation Domain</label>
+          <input
+            type="text"
+            id="domain"
+            name="domain"
+            placeholder="e.g., clientwebsite.com"
+            required
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/10 transition"
           />
         </div>
 
-        <div className="form-group mt-4">
-          <label className="input-label" htmlFor="duration">Validation Tier Duration</label>
-          <select 
-            id="duration" 
-            name="duration" 
-            className="input-field" 
+        <div>
+          <label className="block text-sm font-medium text-slate-600 mb-1.5" htmlFor="duration">Validation Tier Duration</label>
+          <select
+            id="duration"
+            name="duration"
             required
-            style={{ color: "var(--foreground)", backgroundColor: "var(--background)", cursor: "pointer" }}
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm cursor-pointer focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/10 transition appearance-none"
           >
             <option value="2_min">2 Minutes (Fast Test Expiry)</option>
             <option value="5_min">5 Minutes (Test Expiry)</option>
@@ -56,22 +52,25 @@ export function AdminCreateLicenseForm() {
           </select>
         </div>
 
-        <div className="form-group mt-4">
-          <label className="input-label" htmlFor="customerEmail">Assigned Customer Email (Optional)</label>
-          <input 
-            type="email" 
-            id="customerEmail" 
-            name="customerEmail" 
-            placeholder="e.g., client@domain.com" 
-            className="input-field" 
-            style={{ color: "var(--foreground)", backgroundColor: "var(--background)" }}
+        <div>
+          <label className="block text-sm font-medium text-slate-600 mb-1.5" htmlFor="customerEmail">Assigned Customer Email (Optional)</label>
+          <input
+            type="email"
+            id="customerEmail"
+            name="customerEmail"
+            placeholder="e.g., client@domain.com"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/10 transition"
           />
-          <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-            If provided, the WP siteMUST verify using this exact email for unbreakable anti-piracy binding.
+          <p className="text-xs text-slate-400 mt-1.5">
+            If provided, the WP site MUST verify using this exact email for anti-piracy binding.
           </p>
         </div>
 
-        <button type="submit" disabled={isPending} className="btn btn-primary mt-4" style={{ width: "100%" }}>
+        <button
+          type="submit"
+          disabled={isPending}
+          className="w-full py-2.5 bg-emerald-500 text-white rounded-xl font-semibold text-sm hover:bg-emerald-600 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer border-none"
+        >
           {isPending ? "Generating Secure License..." : "Generate WP License Key"}
         </button>
       </form>

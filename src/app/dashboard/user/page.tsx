@@ -1,144 +1,58 @@
 import { auth } from "@clerk/nextjs/server";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { CreateLicenseForm } from "@/components/CreateLicenseForm";
 
 export default async function UserDashboard() {
   const { userId } = await auth();
   
   if (!userId) return null;
 
-  const [licenses, serviceRequests] = await Promise.all([
-    prisma.license.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-      include: { logs: { take: 5, orderBy: { timestamp: "desc" } } }
-    }),
-    prisma.serviceRequest.findMany({
-      where: { applicantId: userId },
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
-
-  const statusConfig: Record<string, { label: string; bg: string; color: string }> = {
-    pending: { label: "Pending", bg: "rgba(234, 179, 8, 0.1)", color: "#ca8a04" },
-    in_progress: { label: "In Progress", bg: "rgba(59, 130, 246, 0.1)", color: "#2563eb" },
-    completed: { label: "Completed", bg: "rgba(16, 185, 129, 0.1)", color: "#059669" },
-    cancelled: { label: "Cancelled", bg: "rgba(239, 68, 68, 0.1)", color: "#dc2626" },
-  };
+  const totalRequests = await prisma.serviceRequest.count({
+    where: { applicantId: userId }
+  });
 
   return (
     <div>
-      {/* ═══ MY REQUESTS ═══ */}
-      <div style={{ marginBottom: "2.5rem" }}>
-        <h2 style={{ fontSize: "1.25rem", margin: "0 0 1.25rem 0" }}>📋 My Requests</h2>
+      <p className="text-slate-500 mb-8 border-b border-slate-100 pb-4">
+        Welcome to your CodeBlend Client Portal. Select an action below to get started.
+      </p>
 
-        {serviceRequests.length === 0 ? (
-          <div className="card text-center" style={{ padding: "3rem" }}>
-            <div style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>📭</div>
-            <div style={{ color: "var(--text-muted)", fontSize: "1rem" }}>
-              You haven&apos;t submitted any requests yet.
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1rem" }}>
-            {serviceRequests.map((req) => {
-              const st = statusConfig[req.status] || statusConfig.pending;
-              return (
-                <div key={req.id} className="card" style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                      {new Date(req.createdAt).toLocaleDateString("bn-BD", {
-                        year: "numeric", month: "long", day: "numeric",
-                      })}
-                    </div>
-                    <span style={{
-                      padding: "0.2rem 0.6rem", borderRadius: "9999px",
-                      fontSize: "0.7rem", fontWeight: "bold",
-                      background: st.bg, color: st.color,
-                    }}>
-                      {st.label}
-                    </span>
-                  </div>
-
-                  <div>
-                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.25rem" }}>Service</div>
-                    <div style={{ fontSize: "1rem", fontWeight: "bold", color: "var(--foreground)" }}>{req.serviceType}</div>
-                  </div>
-
-                  {req.message && (
-                    <div>
-                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.25rem" }}>Message</div>
-                      <div style={{ fontSize: "0.875rem", color: "var(--foreground)", lineHeight: 1.5 }}>{req.message}</div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* ═══ LICENSES ═══ */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "2rem", alignItems: "start" }}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
         
-        {/* Left Column: Create Form */}
-        <div>
-          <CreateLicenseForm />
+        {/* Request Service Card */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:border-emerald-200 transition-all">
+          <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600 mb-4 shrink-0">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+          </div>
+          <h3 className="text-lg font-bold text-slate-800 mb-2">Need a Service?</h3>
+          <p className="text-sm text-slate-500 mb-6">Request custom development, support, or design from our team.</p>
+          <Link href="/dashboard/user/services" className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-6 py-2.5 rounded-xl transition w-full mt-auto">
+            Get Service
+          </Link>
         </div>
 
-        {/* Right Column: Licenses List */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-          <h2 style={{ fontSize: "1.25rem", margin: 0 }}>Your API Licenses</h2>
-          
-          {licenses.length === 0 ? (
-            <div className="card text-center" style={{ padding: "3rem" }}>
-              <div style={{ color: "var(--text-muted)", fontSize: "1.2rem" }}>
-                You haven&apos;t generated any licenses yet.
-              </div>
-            </div>
-          ) : (
-            licenses.map((license) => (
-              <div key={license.id} className="card" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <div className="flex-between" style={{ borderBottom: "1px solid var(--card-border)", paddingBottom: "1rem" }}>
-                  <div>
-                    <div style={{ color: "var(--text-muted)", fontSize: "0.875rem", textTransform: "uppercase", marginBottom: "0.25rem" }}>Target Domain</div>
-                    <div style={{ fontSize: "1.1rem", fontWeight: "bold" }}>{license.domain}</div>
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ color: "var(--text-muted)", fontSize: "0.875rem", textTransform: "uppercase", marginBottom: "0.25rem" }}>Status</div>
-                    <span style={{ 
-                      padding: "0.2rem 0.6rem", 
-                      borderRadius: "9999px", 
-                      fontSize: "0.75rem",
-                      fontWeight: "bold",
-                      background: license.status === "active" ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)",
-                      color: license.status === "active" ? "var(--primary)" : "var(--error)"
-                    }}>
-                      {license.status.toUpperCase()}
-                    </span>
-                  </div>
-                </div>
-                
-                <div style={{ background: "rgba(0,0,0,0.3)", padding: "1rem", borderRadius: "8px", border: "1px solid var(--card-border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <code style={{ fontSize: "0.9rem", color: "var(--primary)", wordBreak: "break-all" }}>{license.key}</code>
-                </div>
+        {/* My Requests Card */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:border-blue-200 transition-all">
+          <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 mb-4 shrink-0">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+          </div>
+          <h3 className="text-lg font-bold text-slate-800 mb-2">My Requests</h3>
+          <p className="text-sm text-slate-500 mb-6">You have <strong>{totalRequests}</strong> active or past service requests tracked.</p>
+          <Link href="/dashboard/user/requests" className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-6 py-2.5 rounded-xl transition w-full mt-auto">
+            View Requests
+          </Link>
+        </div>
 
-                {license.logs.length > 0 && (
-                  <div style={{ marginTop: "0.5rem" }}>
-                    <div style={{ fontSize: "0.875rem", color: "var(--text-muted)", marginBottom: "0.5rem" }}>Recent Authentications:</div>
-                    <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                      {license.logs.map(log => (
-                        <li key={log.id} style={{ fontSize: "0.8rem", color: "var(--foreground)", display: "flex", justifyContent: "space-between" }}>
-                          <span>{new Date(log.timestamp).toLocaleString()} • {log.ipAddress}</span>
-                          <span style={{ color: log.status === "success" ? "var(--primary)" : "var(--error)" }}>{log.status.toUpperCase()}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
+        {/* Revenue Pro Card */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:border-indigo-200 transition-all">
+          <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 mb-4 shrink-0">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" /></svg>
+          </div>
+          <h3 className="text-lg font-bold text-slate-800 mb-2">Downloads</h3>
+          <p className="text-sm text-slate-500 mb-6">Access and download your purchased Revenue Pro plugins.</p>
+          <Link href="/dashboard/user/revenuepro" className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold px-6 py-2.5 rounded-xl transition w-full mt-auto">
+            View Downloads
+          </Link>
         </div>
 
       </div>

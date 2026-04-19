@@ -13,22 +13,11 @@ export function AdminPingLicenseButton({ licenseId }: { licenseId: string }) {
   };
 
   return (
-    <button 
+    <button
       onClick={handlePing}
       disabled={isPending}
-      className="btn"
-      style={{ 
-        padding: "0.3rem 0.6rem", 
-        fontSize: "0.8rem", 
-        backgroundColor: "rgba(59, 130, 246, 0.1)", 
-        color: "var(--primary)",
-        border: "1px solid rgba(59, 130, 246, 0.2)",
-        cursor: isPending ? "not-allowed" : "pointer",
-        opacity: isPending ? 0.7 : 1,
-        borderRadius: "4px",
-        marginRight: "0.5rem"
-      }}
       title="Forcefully ping the WordPress domain to verify it is still actively using the plugin."
+      className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 text-blue-600 border-none cursor-pointer hover:bg-blue-500 hover:text-white transition mr-2 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {isPending ? "Pinging..." : "Refresh Status"}
     </button>

@@ -1,94 +1,95 @@
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════
-   CSS VARIABLES (available globally)
+   CSS VARIABLES — Used by marketing/public pages
    ═══════════════════════════════════════════════ */
 :root {
   --background: #0f1115;
   --foreground: #e2e8f0;
-  
   --card-bg: #1e2128;
   --card-border: #2d313a;
-  
   --primary: #10b981;
   --primary-hover: #059669;
-  
   --text-muted: #94a3b8;
-  
   --glow-color: rgba(16, 185, 129, 0.15);
   --error: #ef4444;
-  
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
-.light-mode {
+/* ═══════════════════════════════════════════════
+   Dashboard pages override — light theme
+   Any leftover var(--*) references will resolve 
+   to light colors inside the dashboard.
+   ═══════════════════════════════════════════════ */
+.dashboard-light-vars {
   --background: #f8fafc;
-  --foreground: #0f1115;
+  --foreground: #0f172a;
   --card-bg: #ffffff;
   --card-border: #e2e8f0;
   --text-muted: #64748b;
+  --glow-color: rgba(16, 185, 129, 0.06);
+  --border: #e2e8f0;
 }
 
-/* ═══════════════════════════════════════════════
-   DASHBOARD-SPECIFIC STYLES (scoped to .dashboard)
-   These do NOT affect the public homepage.
-   ═══════════════════════════════════════════════ */
-.dashboard-layout {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
-  min-height: 100vh;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-}
-
-.dashboard-layout a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.dashboard-layout .container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1rem;
-}
-
-/* Glassmorphism Card — Dashboard only */
-.dashboard-layout .card {
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 12px;
+/* Legacy card class for unconverted components */
+.dashboard-light-vars .card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(8px);
-  transition: all 0.2s ease-in-out;
 }
 
-.dashboard-layout .card:hover {
-  border-color: rgba(16, 185, 129, 0.3);
-  box-shadow: 0 0 20px var(--glow-color);
-  transform: translateY(-2px);
-}
-
-.dashboard-layout .card-header {
+.dashboard-light-vars .card-header {
   margin-bottom: 1rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid var(--card-border);
+  border-bottom: 1px solid #f1f5f9;
 }
 
-.dashboard-layout .card-title {
-  font-size: 1.25rem;
+.dashboard-light-vars .card-title {
+  font-size: 1rem;
   font-weight: 600;
-  color: #fff;
+  color: #1e293b;
 }
 
-/* Button variants — Dashboard only */
-.dashboard-layout .btn {
+.dashboard-light-vars .text-muted {
+  color: #64748b;
+}
+
+.dashboard-light-vars .input-field {
+  width: 100%;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.6rem 0.85rem;
+  color: #0f172a;
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
+}
+
+.dashboard-light-vars .input-field:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+}
+
+.dashboard-light-vars .input-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.4rem;
+  color: #475569;
+}
+
+.dashboard-light-vars .form-group {
+  margin-bottom: 1rem;
+}
+
+.dashboard-light-vars .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -96,84 +97,21 @@
   font-size: 0.875rem;
 }
 
-.dashboard-layout .btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.dashboard-layout .btn-primary {
-  background-color: var(--primary);
-  color: #fff;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
-}
-
-.dashboard-layout .btn-primary:not(:disabled):hover {
-  background-color: var(--primary-hover);
-  box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
-  transform: scale(1.02);
-}
-
-.dashboard-layout .btn-outline {
-  background-color: transparent;
-  border: 1px solid var(--card-border);
-  color: var(--foreground);
-}
-
-.dashboard-layout .btn-outline:not(:disabled):hover {
-  border-color: var(--primary);
-  background-color: rgba(16, 185, 129, 0.05);
-}
-
-.dashboard-layout .btn-danger {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: var(--error);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-}
-
-.dashboard-layout .btn-danger:not(:disabled):hover {
-  background-color: var(--error);
+.dashboard-light-vars .btn-primary {
+  background-color: #10b981;
   color: #fff;
 }
 
-/* Inputs — Dashboard only */
-.dashboard-layout .input-field {
-  width: 100%;
-  background: rgba(15, 17, 21, 0.5);
-  border: 1px solid var(--card-border);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  color: var(--foreground);
-  font-family: inherit;
-  font-size: 0.875rem;
-  transition: border-color 0.2s;
+.dashboard-light-vars .btn-primary:hover {
+  background-color: #059669;
 }
 
-.dashboard-layout .input-field:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
-}
-
-.dashboard-layout .input-label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-  color: var(--text-muted);
-}
-
-.dashboard-layout .form-group {
-  margin-bottom: 1rem;
-}
-
-/* Dashboard Utilities */
-.dashboard-layout .flex-between {
+.dashboard-light-vars .flex-between {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.dashboard-layout .mt-4 { margin-top: 1rem; }
-.dashboard-layout .mb-4 { margin-bottom: 1rem; }
-.dashboard-layout .text-center { text-align: center; }
-.dashboard-layout .text-muted { color: var(--text-muted); }
+.dashboard-light-vars .mt-4 { margin-top: 1rem; }
+.dashboard-light-vars .mb-4 { margin-bottom: 1rem; }
+.dashboard-light-vars .text-center { text-align: center; }
