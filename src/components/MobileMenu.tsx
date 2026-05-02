@@ -9,6 +9,7 @@ const navLinks = [
   { href: "/services", label: "Services", icon: "⚡" },
   { href: "/features", label: "Features", icon: "⚙️" },
   { href: "/pricing", label: "Pricing", icon: "💰" },
+  { href: "/fraud-check", label: "Fraud Check", icon: "🛡️" },
 ];
 
 export function MobileMenu({ isLoggedIn }: { isLoggedIn: boolean }) {

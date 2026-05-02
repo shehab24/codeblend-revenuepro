@@ -16,6 +16,7 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
     OR: [
       { applicant: { name: { contains: q, mode: "insensitive" as const } } },
       { applicant: { email: { contains: q, mode: "insensitive" as const } } },
+      { contactEmail: { contains: q, mode: "insensitive" as const } },
     ]
   } : {};
 
@@ -69,11 +70,31 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
               return (
                 <tr key={req.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
                   <td className="p-3 text-sm">
-                    <div className="font-semibold text-slate-800">{req.applicant.name || "N/A"}</div>
-                    <div className="text-xs text-slate-500 mt-0.5">{req.applicant.email}</div>
+                    {req.applicant ? (
+                      <>
+                        <div className="font-semibold text-slate-800">{req.applicant.name || "N/A"}</div>
+                        <div className="text-xs text-slate-500 mt-0.5">{req.applicant.email}</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="font-semibold text-slate-800">Plugin User</div>
+                        <div className="text-xs text-slate-500 mt-0.5">{req.contactEmail}</div>
+                        <span className="inline-block mt-1 px-2 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-full border border-purple-200">
+                          WordPress Plugin
+                        </span>
+                      </>
+                    )}
                   </td>
                   <td className="p-3 text-sm">
                     <div className="font-medium text-slate-800">{req.serviceType}</div>
+                    {req.websiteUrl && (
+                      <div className="text-xs text-blue-500 hover:text-blue-600 mt-1">
+                        <a href={req.websiteUrl.startsWith('http') ? req.websiteUrl : `https://${req.websiteUrl}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                          URL
+                        </a>
+                      </div>
+                    )}
                     {req.message && (
                       <details className="mt-1 group cursor-pointer">
                         <summary className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 outline-none select-none list-none inline-flex items-center gap-1 uppercase tracking-wider">

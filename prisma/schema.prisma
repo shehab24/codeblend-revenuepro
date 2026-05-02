@@ -31,6 +31,7 @@ model License {
   tier           String    @default("Standard")
   expirationDate DateTime?
   status         String    @default("active") // active, suspended, revoked
+  paymentStatus  String    @default("unpaid") // unpaid, paid
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -86,9 +87,11 @@ model FraudStat {
 
 model ServiceRequest {
   id          String   @id @default(cuid())
-  applicantId String
-  applicant   User     @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  applicantId     String?
+  applicant       User?    @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  contactEmail    String?
   serviceType     String   // e.g. "RevenuePro", "Custom Plugin", "Pro Plan"
+  websiteUrl      String?  @db.Text
   message         String?  @db.Text
   status          String   @default("pending") // pending, in_progress, completed, cancelled
   

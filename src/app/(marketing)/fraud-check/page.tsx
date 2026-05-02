@@ -4,15 +4,27 @@ import Link from "next/link";
 import { useState } from "react";
 import { checkFraudData } from "@/actions/fraudCheck";
 
+type CourierRow = {
+  name: string;
+  order: number;
+  delivered: number;
+  cancelled: number;
+  rate: number;
+};
+
+type FraudStats = {
+  total_parcel: number;
+  success_parcel: number;
+  cancelled_parcel: number;
+  success_ratio: number;
+  couriers: CourierRow[];
+};
+
 export default function FraudCheckPage() {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [stats, setStats] = useState<{
-    order: number;
-    delivered: number;
-    cancelled: number;
-  } | null>(null);
+  const [stats, setStats] = useState<FraudStats | null>(null);
 
   const handleSearch = async () => {
     if (!phone || phone.length < 11) {
@@ -28,12 +40,28 @@ export default function FraudCheckPage() {
     try {
       const res = await checkFraudData(cleanPhone);
       if (res.success && res.data) {
-        const delivered = res.data.total_delivered || 0;
-        const cancelled = res.data.total_cancelled || 0;
+        const d = res.data as any;
+
+        // Build per-courier rows from the rich API response
+        const couriers: CourierRow[] = [
+          { name: "Steadfast", delivered: d.steadfast_success || 0, cancelled: d.steadfast_cancel || 0 },
+          { name: "Pathao", delivered: d.pathao_success || 0, cancelled: d.pathao_cancel || 0 },
+          { name: "RedX", delivered: d.redx_success || 0, cancelled: d.redx_cancel || 0 },
+          { name: "ParcelDex", delivered: d.parceldex_success || 0, cancelled: d.parceldex_cancel || 0 },
+          { name: "PaperFly", delivered: d.paperfly_success || 0, cancelled: d.paperfly_cancel || 0 },
+          { name: "CarryBee", delivered: d.carrybee_success || 0, cancelled: d.carrybee_cancel || 0 },
+        ].map(c => ({
+          ...c,
+          order: c.delivered + c.cancelled,
+          rate: (c.delivered + c.cancelled) > 0 ? Math.round((c.delivered / (c.delivered + c.cancelled)) * 100) : 0
+        }));
+
         setStats({
-          order: delivered + cancelled,
-          delivered: delivered,
-          cancelled: cancelled
+          total_parcel: d.total_parcel || 0,
+          success_parcel: d.success_parcel || 0,
+          cancelled_parcel: d.cancelled_parcel || 0,
+          success_ratio: d.success_ratio || 0,
+          couriers
         });
       } else {
         setError(res.error || "Failed to fetch data.");
@@ -45,9 +73,7 @@ export default function FraudCheckPage() {
     }
   };
 
-  const successRate = stats && stats.order > 0 
-    ? Math.round((stats.delivered / stats.order) * 100) 
-    : 0;
+  const successRate = stats ? Math.round(stats.success_ratio) : 0;
 
   return (
     <div className="bg-slate-50 min-h-screen py-12 px-4 md:px-6">
@@ -117,15 +143,15 @@ export default function FraudCheckPage() {
             {/* 3 Summary Stats Cards */}
             <div className="grid grid-cols-3 gap-6">
               <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 text-center">
-                <div className="text-3xl font-bold text-sky-500 mb-1">{stats ? stats.order : 0}</div>
+                <div className="text-3xl font-bold text-sky-500 mb-1">{stats ? stats.total_parcel : 0}</div>
                 <div className="text-slate-500 font-medium">অর্ডার</div>
               </div>
               <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 text-center">
-                <div className="text-3xl font-bold text-emerald-500 mb-1">{stats ? stats.delivered : 0}</div>
+                <div className="text-3xl font-bold text-emerald-500 mb-1">{stats ? stats.success_parcel : 0}</div>
                 <div className="text-slate-500 font-medium">ডেলিভারি</div>
               </div>
               <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 text-center">
-                <div className="text-3xl font-bold text-red-500 mb-1">{stats ? stats.cancelled : 0}</div>
+                <div className="text-3xl font-bold text-red-500 mb-1">{stats ? stats.cancelled_parcel : 0}</div>
                 <div className="text-slate-500 font-medium">বাতিল</div>
               </div>
             </div>
@@ -133,7 +159,7 @@ export default function FraudCheckPage() {
             {/* Table Area */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
               <div className="grid grid-cols-5 bg-slate-50 p-4 border-b border-slate-100 font-bold text-slate-800 text-center text-sm md:text-base">
-                <div>কুরিয়ার</div>
+                <div>কুরিয়ার</div>
                 <div>অর্ডার</div>
                 <div>ডেলিভারি</div>
                 <div>বাতিল</div>
@@ -142,54 +168,25 @@ export default function FraudCheckPage() {
               
               {!stats ? (
                 <div className="p-16 text-center text-slate-400 text-sm">
-                  কোনো তথ্য পাওয়া যায়নি
+                  কোনো তথ্য পাওয়া যায়নি
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100">
-                  {/* Steadfast Row */}
-                  <div className="grid grid-cols-5 p-4 text-center text-sm items-center font-medium">
-                    <div className="flex items-center justify-center gap-2">
-                       <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                       Steadfast
-                    </div>
-                    <div className="text-slate-700">{stats.order}</div>
-                    <div className="text-emerald-600">{stats.delivered}</div>
-                    <div className="text-red-500">{stats.cancelled}</div>
-                    <div className="text-emerald-500">{successRate}%</div>
-                  </div>
-                  {/* Pathao Row */}
-                  <div className="grid grid-cols-5 p-4 text-center text-sm items-center font-medium opacity-60">
-                    <div className="flex items-center justify-center gap-2">
-                       <span className="w-2 h-2 rounded-full bg-slate-300"></span>
-                       Pathao
-                    </div>
-                    <div>0</div>
-                    <div>0</div>
-                    <div>0</div>
-                    <div>0%</div>
-                  </div>
-                  {/* RedX Row */}
-                  <div className="grid grid-cols-5 p-4 text-center text-sm items-center font-medium opacity-60">
-                    <div className="flex items-center justify-center gap-2">
-                       <span className="w-2 h-2 rounded-full bg-slate-300"></span>
-                       RedX
-                    </div>
-                    <div>0</div>
-                    <div>0</div>
-                    <div>0</div>
-                    <div>0%</div>
-                  </div>
-                  {/* CarryBee Row */}
-                  <div className="grid grid-cols-5 p-4 text-center text-sm items-center font-medium opacity-60">
-                    <div className="flex items-center justify-center gap-2">
-                       <span className="w-2 h-2 rounded-full bg-slate-300"></span>
-                       CarryBee
-                    </div>
-                    <div>0</div>
-                    <div>0</div>
-                    <div>0</div>
-                    <div>0%</div>
-                  </div>
+                  {stats.couriers.map((courier) => {
+                    const hasData = courier.order > 0;
+                    return (
+                      <div key={courier.name} className={`grid grid-cols-5 p-4 text-center text-sm items-center font-medium ${!hasData ? 'opacity-60' : ''}`}>
+                        <div className="flex items-center justify-center gap-2">
+                           <span className={`w-2 h-2 rounded-full ${hasData ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
+                           {courier.name}
+                        </div>
+                        <div className="text-slate-700">{courier.order}</div>
+                        <div className="text-emerald-600">{courier.delivered}</div>
+                        <div className="text-red-500">{courier.cancelled}</div>
+                        <div className="text-emerald-500">{courier.rate}%</div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -213,10 +210,10 @@ export default function FraudCheckPage() {
               </div>
               <h3 className="text-xl font-bold mb-3">উদ্যোক্তাদের কমিউনিটি</h3>
               <p className="text-fuchsia-100 text-sm mb-6 flex-1">
-                উদ্যোক্তাদের বিজনেস গ্রো করার জন্য অনেক ফ্রী টুল পাবেন এখানে। এছাড়া বিভিন্ন পেইড প্লাগিন ফ্রী পাবেন
+                উদ্যোক্তাদের বিজনেস গ্রো করার জন্য অনেক ফ্রী টুল পাবেন এখানে। এছাড়া বিভিন্ন পেইড প্লাগিন ফ্রী পাবেন
               </p>
               <button className="bg-white text-purple-600 px-6 py-2.5 rounded-lg font-bold text-sm w-full hover:bg-fuchsia-50 transition-colors">
-                কমিউনিটিতে জয়েন করুন &rarr;
+                কমিউনিটিতে জয়েন করুন &rarr;
               </button>
             </div>
 

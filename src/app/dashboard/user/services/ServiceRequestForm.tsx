@@ -41,6 +41,19 @@ function ServiceRequestFormInner() {
       </div>
 
       <div>
+        <label className="block text-sm font-semibold text-slate-700 mb-2" htmlFor="websiteUrl">
+          Website URL (Optional)
+        </label>
+        <input 
+          type="url"
+          id="websiteUrl"
+          name="websiteUrl"
+          placeholder="https://yourwebsite.com"
+          className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition"
+        />
+      </div>
+
+      <div>
         <label className="block text-sm font-semibold text-slate-700 mb-2" htmlFor="message">
           Project Requirements & Details
         </label>

@@ -15,7 +15,7 @@ export async function adminCreateLicense(formData: FormData) {
   const durationStr = formData.get("duration") as string;
   const customerEmail = formData.get("customerEmail") as string | null;
   
-  if (!domain || !durationStr) throw new Error("Missing required fields");
+  if (!domain || !durationStr || !customerEmail?.trim()) throw new Error("Missing required fields");
 
   let expirationDate: Date | null = new Date();
 
@@ -26,6 +26,12 @@ export async function adminCreateLicense(formData: FormData) {
   } else if (durationStr === "5_min") {
     tier = "Developer Test (5 Mins)";
     expirationDate.setMinutes(expirationDate.getMinutes() + 5);
+  } else if (durationStr === "1_day") {
+    tier = "1 Day (Short Trial)";
+    expirationDate.setDate(expirationDate.getDate() + 1);
+  } else if (durationStr === "5_day") {
+    tier = "5 Days (Trial)";
+    expirationDate.setDate(expirationDate.getDate() + 5);
   } else {
     const duration = parseInt(durationStr);
     if (duration === 15) {
@@ -161,6 +167,22 @@ export async function adminToggleLicenseStatus(licenseId: string, status: string
   }
 
   await prisma.license.update({ where: { id: licenseId }, data: updateData });
+  revalidatePath("/dashboard/admin/licenses");
+  return { success: true };
+}
+
+export async function adminTogglePaymentStatus(licenseId: string, paymentStatus: string) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+  
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (user?.role !== "admin" && user?.role !== "ADMIN") throw new Error("Unauthorized access");
+
+  await prisma.license.update({
+    where: { id: licenseId },
+    data: { paymentStatus }
+  });
+
   revalidatePath("/dashboard/admin/licenses");
   return { success: true };
 }

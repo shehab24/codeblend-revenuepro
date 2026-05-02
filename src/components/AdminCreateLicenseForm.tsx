@@ -42,6 +42,8 @@ export function AdminCreateLicenseForm() {
           >
             <option value="2_min">2 Minutes (Fast Test Expiry)</option>
             <option value="5_min">5 Minutes (Test Expiry)</option>
+            <option value="1_day">1 Day (Short Trial)</option>
+            <option value="5_day">5 Days (Trial)</option>
             <option value="15">15 Days (Trial)</option>
             <option value="1">1 Month (Basic)</option>
             <option value="2">2 Months (Extended)</option>
@@ -53,11 +55,12 @@ export function AdminCreateLicenseForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-600 mb-1.5" htmlFor="customerEmail">Assigned Customer Email (Optional)</label>
+          <label className="block text-sm font-medium text-slate-600 mb-1.5" htmlFor="customerEmail">Assigned Customer Email</label>
           <input
             type="email"
             id="customerEmail"
             name="customerEmail"
+            required
             placeholder="e.g., client@domain.com"
             className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/10 transition"
           />

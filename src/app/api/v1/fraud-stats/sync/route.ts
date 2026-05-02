@@ -32,9 +32,9 @@ export async function POST(request: Request) {
     for (const stat of stats) {
       if (!stat.phone) continue;
 
-      // Check if this phone+domain combo already exists
+      // Check if this phone already exists globally (regardless of domain)
       const existing = await prisma.fraudStat.findFirst({
-        where: { phone: stat.phone, domain: domain }
+        where: { phone: stat.phone }
       });
 
       if (existing) {

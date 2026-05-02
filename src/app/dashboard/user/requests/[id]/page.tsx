@@ -82,6 +82,19 @@ export default async function RequestDetailsPage({ params }: { params: Promise<{
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="md:col-span-2">
             <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Project Requirements</h3>
+            
+            {request.websiteUrl && (
+              <div className="mb-4">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Website URL</span>
+                <div className="mt-1 text-sm">
+                  <a href={request.websiteUrl.startsWith('http') ? request.websiteUrl : `https://${request.websiteUrl}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 flex items-center gap-1.5 font-medium">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                    {request.websiteUrl}
+                  </a>
+                </div>
+              </div>
+            )}
+            
             <div className="bg-slate-50 border border-slate-100 rounded-xl p-5 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap shadow-inner">
               {request.message || "No requirements provided."}
             </div>

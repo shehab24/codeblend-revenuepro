@@ -24,6 +24,7 @@ export async function submitAuthenticatedServiceRequest(formData: FormData) {
   const name = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName || "Unknown User";
   
   const serviceType = formData.get("serviceType") as string;
+  const websiteUrl = formData.get("websiteUrl") as string | null;
   const message = formData.get("message") as string;
   
   if (!serviceType) {
@@ -40,6 +41,7 @@ export async function submitAuthenticatedServiceRequest(formData: FormData) {
     data: {
       applicantId: dbUser.id,
       serviceType,
+      websiteUrl: websiteUrl || null,
       message,
     }
   });
@@ -60,6 +62,7 @@ export async function submitAuthenticatedServiceRequest(formData: FormData) {
             <p style="margin: 4px 0;"><strong>Name:</strong> ${name}</p>
             <p style="margin: 4px 0;"><strong>Email:</strong> ${email}</p>
             <p style="margin: 4px 0;"><strong>Service:</strong> ${serviceType}</p>
+            ${websiteUrl ? `<p style="margin: 4px 0;"><strong>Website URL:</strong> <a href="${websiteUrl}">${websiteUrl}</a></p>` : ''}
             <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
               <strong>Requirements:</strong>
               <p style="white-space: pre-wrap; margin-top: 4px; color: #334155;">${message || "No additional requirements provided."}</p>

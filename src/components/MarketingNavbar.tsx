@@ -25,6 +25,7 @@ export async function MarketingNavbar() {
           <Link href="/services" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Services</Link>
           <Link href="/features" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Features</Link>
           <Link href="/pricing" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Pricing</Link>
+          <Link href="/fraud-check" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Fraud Check</Link>
         </nav>
 
         {/* Desktop CTA */}

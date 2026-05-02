@@ -16,13 +16,8 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
   if (!request) return notFound();
   
   // Allow admins or the applicant to view
-  if (request.applicantId !== userId && request.applicant.role !== "admin" && request.applicant.role !== "ADMIN") {
-    // We should technically check if current user is admin, but for simplicity, 
-    // we just check if it's the applicant. If not applicant, let's verify if current user is admin via Metadata.
-    // That requires Clerk currentUser, but auth() is fine for now, we'll just guard by applicantId.
-    if (request.applicantId !== userId) {
-      redirect("/dashboard/user/requests");
-    }
+  if (request.applicantId !== userId) {
+    redirect("/dashboard/user/requests");
   }
 
   const totalAmount = request.totalAmount || 0;
@@ -96,8 +91,8 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
         {/* Bill To */}
         <div className="mb-10">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Billed To:</h3>
-          <p className="font-semibold text-slate-800">{request.applicant.name || "Customer"}</p>
-          <p className="text-sm text-slate-500">{request.applicant.email}</p>
+          <p className="font-semibold text-slate-800">{request.applicant?.name || "Customer"}</p>
+          <p className="text-sm text-slate-500">{request.applicant?.email || request.contactEmail || "N/A"}</p>
         </div>
 
         {/* Items Table */}
