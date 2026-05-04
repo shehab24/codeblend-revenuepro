@@ -13,9 +13,20 @@ export default async function RevenueProPage() {
   const { userId } = await auth();
   if (!userId) redirect("/");
 
-  const [revenueProLinksSetting, legacyLinkSetting] = await Promise.all([
+  const [
+    revenueProLinksSetting, 
+    legacyLinkSetting,
+    bkashManualEnabled,
+    bkashManualNumber,
+    bkashManualType,
+    bkashApiEnabled,
+  ] = await Promise.all([
     prisma.setting.findUnique({ where: { key: "REVENUEPRO_PLUGIN_LINKS" } }),
     prisma.setting.findUnique({ where: { key: "REVENUEPRO_PLUGIN_LINK" } }), // Fallback
+    prisma.setting.findUnique({ where: { key: "BKASH_MANUAL_ENABLED" } }),
+    prisma.setting.findUnique({ where: { key: "BKASH_MANUAL_NUMBER" } }),
+    prisma.setting.findUnique({ where: { key: "BKASH_MANUAL_TYPE" } }),
+    prisma.setting.findUnique({ where: { key: "BKASH_API_ENABLED" } }),
   ]);
 
   let downloadLinks: PluginVersion[] = [];
@@ -145,6 +156,12 @@ export default async function RevenueProPage() {
           <RevenueProClient
             licenses={serializedLicenses}
             downloadLinks={downloadLinks}
+            paymentSettings={{
+              bkashManualEnabled: bkashManualEnabled?.value || "false",
+              bkashManualNumber: bkashManualNumber?.value || "",
+              bkashManualType: bkashManualType?.value || "personal",
+              bkashApiEnabled: bkashApiEnabled?.value || "false",
+            }}
           />
         </div>
 

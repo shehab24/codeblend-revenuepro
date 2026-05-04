@@ -90,17 +90,24 @@ function formatDate(dateStr: string) {
 }
 
 /* ─── License Card Component ─── */
-function LicenseCard({ license, downloadLinks, index }: { license: License; downloadLinks: PluginVersion[]; index: number }) {
+function LicenseCard({ license, downloadLinks, paymentSettings, index }: { license: License; downloadLinks: PluginVersion[]; paymentSettings: any; index: number }) {
   const [expanded, setExpanded] = useState(false);
   const [deleting, startDelete] = useTransition();
+  const [showPayModal, setShowPayModal] = useState(false);
+  const [submittingPayment, startSubmitPayment] = useTransition();
+  const [payError, setPayError] = useState("");
+  
   const isActive = license.status === "active";
   const isPending = license.status === "pending";
-  const isPaid = license.paymentStatus === "paid";
+  const isPaid = license.paymentStatus === "paid" || license.paymentStatus === "pending_verification";
   const cfg = getStatusConfig(license.status);
 
-  const paymentCfg = isPaid 
-    ? { text: "পেমেন্ট সম্পন্ন", icon: "💳", bg: "bg-emerald-50", color: "text-emerald-600" }
-    : { text: "পেমেন্ট অপেক্ষায়", icon: "⏱", bg: "bg-amber-50", color: "text-amber-600" };
+  let paymentCfg = { text: "পেমেন্ট অপেক্ষায়", icon: "⏱", bg: "bg-amber-50", color: "text-amber-600" };
+  if (license.paymentStatus === "paid") {
+    paymentCfg = { text: "পেমেন্ট সম্পন্ন", icon: "💳", bg: "bg-emerald-50", color: "text-emerald-600" };
+  } else if (license.paymentStatus === "pending_verification") {
+    paymentCfg = { text: "যাচাই করা হচ্ছে", icon: "🔍", bg: "bg-blue-50", color: "text-blue-600" };
+  }
 
   const handleDelete = () => {
     if (!confirm("আপনি কি নিশ্চিত এই লাইসেন্স আবেদনটি মুছে ফেলতে চান?")) return;
@@ -180,9 +187,19 @@ function LicenseCard({ license, downloadLinks, index }: { license: License; down
               <div className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest mb-1">ডোমেইন</div>
               <div className="text-sm font-semibold text-slate-700 truncate">{license.domain}</div>
             </div>
-            <div className={`${paymentCfg.bg} rounded-xl p-3.5`}>
-              <div className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest mb-1">পেমেন্ট</div>
-              <div className={`text-sm font-bold ${paymentCfg.color}`}>{paymentCfg.text}</div>
+            <div className={`${paymentCfg.bg} rounded-xl p-3.5 flex flex-col justify-between items-start`}>
+              <div>
+                <div className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest mb-1">পেমেন্ট</div>
+                <div className={`text-sm font-bold ${paymentCfg.color}`}>{paymentCfg.text}</div>
+              </div>
+              {!isPaid && (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setShowPayModal(true); }}
+                  className="mt-2 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-bold transition-colors w-full"
+                >
+                  Pay Now
+                </button>
+              )}
             </div>
           </div>
 
@@ -276,6 +293,110 @@ function LicenseCard({ license, downloadLinks, index }: { license: License; down
           </div>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      {showPayModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden relative">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+                <span className="text-xl">💳</span> পেমেন্ট করুন
+              </h3>
+              <button onClick={() => setShowPayModal(false)} className="text-slate-400 hover:text-red-500 p-1">
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {paymentSettings.bkashApiEnabled === "true" && (
+                <div className="mb-6">
+                  <p className="text-sm text-slate-600 mb-3 font-medium">অটোমেটেড পেমেন্ট করুন:</p>
+                  <button 
+                    type="button"
+                    disabled={submittingPayment}
+                    onClick={() => {
+                      startSubmitPayment(async () => {
+                        try {
+                          const { initiateBkashPayment } = await import('@/app/dashboard/user/bkashActions');
+                          const res = await initiateBkashPayment(license.id);
+                          if (res.error) {
+                            setPayError(res.error);
+                          } else if (res.bkashURL) {
+                            window.location.href = res.bkashURL;
+                          }
+                        } catch (err) {
+                          setPayError("Failed to initiate payment");
+                        }
+                      });
+                    }}
+                    className="w-full bg-pink-600 hover:bg-pink-700 text-white py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  >
+                    {submittingPayment ? "পেমেন্ট প্রস্তুত করা হচ্ছে... (Processing...)" : "বিকাশ (bKash) দিয়ে পেমেন্ট করুন"}
+                  </button>
+                  {paymentSettings.bkashManualEnabled === "true" && (
+                    <div className="my-4 flex items-center gap-3">
+                      <div className="h-px bg-slate-200 flex-1"></div>
+                      <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">OR</span>
+                      <div className="h-px bg-slate-200 flex-1"></div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {paymentSettings.bkashManualEnabled === "true" && (
+                <form action={(formData) => {
+                  formData.append('licenseId', license.id);
+                  startSubmitPayment(async () => {
+                    const { submitManualPayment } = await import('@/app/dashboard/user/paymentActions');
+                    const res = await submitManualPayment(formData);
+                    if (res?.error) {
+                      setPayError(res.error);
+                    } else {
+                      setShowPayModal(false);
+                    }
+                  });
+                }}>
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-5">
+                    <p className="text-sm text-slate-700 mb-2">
+                      অনুগ্রহ করে নিচের <strong>{paymentSettings.bkashManualType === 'merchant' ? 'Merchant' : 'Personal'}</strong> নম্বরে সেন্ড মানি করুন:
+                    </p>
+                    <div className="text-xl font-bold text-pink-600 tracking-wider mb-1 flex items-center justify-between">
+                      {paymentSettings.bkashManualNumber}
+                      <button type="button" onClick={() => navigator.clipboard.writeText(paymentSettings.bkashManualNumber)} className="text-xs bg-pink-100 text-pink-700 px-2 py-1 rounded">Copy</button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Sender Number</label>
+                      <input type="text" name="senderNumber" required placeholder="01XXXXXXXXX" className="w-full px-3 py-2 rounded-lg border border-slate-300" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Transaction ID (TrxID)</label>
+                      <input type="text" name="trxId" required placeholder="8NXXXXXXXXX" className="w-full px-3 py-2 rounded-lg border border-slate-300 uppercase" />
+                    </div>
+                  </div>
+
+                  {payError && <div className="mt-3 text-red-500 text-sm font-semibold">{payError}</div>}
+
+                  <button 
+                    disabled={submittingPayment}
+                    className="w-full mt-6 bg-slate-900 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submittingPayment ? "সাবমিট হচ্ছে..." : "পেমেন্ট ভেরিফাই করুন"}
+                  </button>
+                </form>
+              )}
+
+              {paymentSettings.bkashApiEnabled !== "true" && paymentSettings.bkashManualEnabled !== "true" && (
+                <div className="text-center text-slate-500 py-4">
+                  পেমেন্ট গেটওয়ে সেটআপ করা হয়নি। অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন।
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -363,10 +484,12 @@ function NewLicenseForm() {
 /* ─── Main Client Component ─── */
 export function RevenueProClient({
   licenses,
-  downloadLinks
+  downloadLinks,
+  paymentSettings
 }: {
   licenses: License[];
   downloadLinks: PluginVersion[];
+  paymentSettings?: any;
 }) {
   const activeCount = licenses.filter(l => l.status === "active").length;
   const pendingCount = licenses.filter(l => l.status === "pending").length;
@@ -399,6 +522,7 @@ export function RevenueProClient({
               key={license.id}
               license={license}
               downloadLinks={downloadLinks}
+              paymentSettings={paymentSettings}
               index={i}
             />
           ))}

@@ -15,7 +15,12 @@ export default async function AdminLicensesPage() {
     orderBy: { createdAt: "desc" },
     include: { 
       user: true,
-      logs: { take: 1, orderBy: { timestamp: "desc" } }
+      logs: { take: 1, orderBy: { timestamp: "desc" } },
+      transactions: {
+        where: { status: "pending" },
+        take: 1,
+        orderBy: { createdAt: "desc" }
+      }
     }
   });
 
@@ -34,6 +39,11 @@ export default async function AdminLicensesPage() {
     lastPing: l.logs?.[0] ? {
       status: l.logs[0].status,
       timestamp: l.logs[0].timestamp.toISOString()
+    } : null,
+    pendingTransaction: l.transactions?.[0] ? {
+      id: l.transactions[0].id,
+      transactionId: l.transactions[0].transactionId,
+      senderNumber: l.transactions[0].senderNumber,
     } : null,
   }));
 

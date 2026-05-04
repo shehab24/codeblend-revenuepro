@@ -14,6 +14,7 @@ const Icon = {
   Key: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" /></svg>,
   Shield: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>,
   Search: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>,
+  CreditCard: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>,
   Settings: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93s.844.083 1.17-.188l.672-.558a1.123 1.123 0 011.563.06l.774.774a1.123 1.123 0 01.06 1.563l-.558.672c-.271.326-.305.776-.188 1.17s.506.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.384-.93.78s-.083.844.188 1.17l.558.672a1.123 1.123 0 01-.06 1.563l-.774.774a1.123 1.123 0 01-1.563.06l-.672-.558c-.326-.271-.776-.305-1.17-.188s-.71.506-.78.93l-.15.894c-.09.542-.56.94-1.109.94h-1.094c-.55 0-1.02-.398-1.11-.94l-.148-.894c-.071-.424-.385-.764-.781-.93s-.844-.083-1.17.188l-.672.558a1.123 1.123 0 01-1.563-.06l-.774-.774a1.123 1.123 0 01-.06-1.563l.558-.672c.271-.326.305-.776.188-1.17s-.506-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.764-.383.93-.78s.083-.843-.188-1.17l-.558-.671a1.123 1.123 0 01.06-1.563l.774-.774a1.123 1.123 0 011.563-.06l.672.558c.325.271.776.305 1.17.188s.71-.506.78-.93l.148-.894z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
   Collapse: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" /></svg>,
   Expand: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" /></svg>,
@@ -35,6 +36,7 @@ const adminLinks: { section: string; links: NavLink[] }[] = [
       { href: "/dashboard/admin/users", label: "System Users", icon: Icon.Users },
       { href: "/dashboard/admin/licenses", label: "Licenses", icon: Icon.Key },
       { href: "/dashboard/admin/requests", label: "Service Requests", icon: Icon.ClipboardList },
+      { href: "/dashboard/admin/transactions", label: "Transactions", icon: Icon.CreditCard },
     ],
   },
   {
@@ -59,6 +61,7 @@ const userSections: { section: string; links: NavLink[] }[] = [
       { href: "/dashboard/user", label: "Dashboard", icon: Icon.Dashboard },
       { href: "/dashboard/user/requests", label: "My Requests", icon: Icon.ClipboardList },
       { href: "/dashboard/user/services", label: "Get Service", icon: Icon.PlusCircle },
+      { href: "/dashboard/user/transactions", label: "Billing & Payments", icon: Icon.CreditCard },
     ],
   },
   {

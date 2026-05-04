@@ -68,7 +68,7 @@ export default function ServicesPage() {
               </div>
               <h3 className="text-lg font-bold text-slate-900 mb-2">{service.title}</h3>
               <p className="text-slate-500 text-sm leading-relaxed mb-5 flex-1">{service.desc}</p>
-              <LeadCTAButton serviceType={service.title} className="w-full py-2.5 bg-purple-50 text-purple-600 rounded-xl font-bold text-sm hover:bg-purple-100 transition-colors text-center">
+              <LeadCTAButton serviceType={service.title} className="w-full py-2.5 bg-purple-50 text-purple-600 rounded-xl font-bold text-sm hover:bg-purple-100 transition-colors text-center cursor-pointer">
                 Start Now →
               </LeadCTAButton>
             </div>

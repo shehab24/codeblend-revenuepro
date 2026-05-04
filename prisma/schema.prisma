@@ -19,6 +19,7 @@ model User {
 
   licenses        License[]
   serviceRequests ServiceRequest[]
+  transactions    PaymentTransaction[]
 }
 
 model License {
@@ -37,6 +38,7 @@ model License {
 
   logs           VerificationLog[]
   fraudStats     FraudStat[]
+  transactions   PaymentTransaction[]
 }
 
 model VerificationLog {
@@ -100,6 +102,30 @@ model ServiceRequest {
   paidAmount      Float    @default(0)
   deliveryDate    DateTime?
 
+  transactions    PaymentTransaction[]
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model PaymentTransaction {
+  id               String   @id @default(cuid())
+  userId           String?
+  user             User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  serviceRequestId String?
+  serviceRequest   ServiceRequest? @relation(fields: [serviceRequestId], references: [id], onDelete: SetNull)
+  
+  licenseId        String?
+  license          License? @relation(fields: [licenseId], references: [id], onDelete: SetNull)
+  
+  amount           Float
+  paymentMethod    String   // "bkash_manual", "bkash_api"
+  transactionId    String?  @unique // bKash TrxID
+  status           String   @default("pending") // "pending", "completed", "failed", "verified", "rejected"
+  senderNumber     String?
+  notes            String?  @db.Text
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }

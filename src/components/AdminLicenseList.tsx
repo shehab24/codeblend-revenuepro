@@ -19,6 +19,11 @@ type LicenseData = {
   expirationDate: string | null;
   createdAt: string;
   lastPing: { status: string; timestamp: string } | null;
+  pendingTransaction?: {
+    id: string;
+    transactionId: string | null;
+    senderNumber: string | null;
+  } | null;
 };
 
 function getStatusBadge(status: string) {
@@ -130,6 +135,47 @@ function LicenseRow({ license }: { license: LicenseData }) {
               </button>
             </div>
           </div>
+
+          {/* Pending Payment Verification */}
+          {license.paymentStatus === "pending_verification" && license.pendingTransaction && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div>
+                <div className="text-[0.65rem] font-bold text-blue-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                  Payment Verification Needed
+                </div>
+                <div className="text-sm font-bold text-blue-800">
+                  TrxID: <span className="font-mono bg-white px-2 py-0.5 rounded text-blue-600 border border-blue-100">{license.pendingTransaction.transactionId}</span>
+                </div>
+                <div className="text-xs text-blue-600 mt-1">Sender: {license.pendingTransaction.senderNumber}</div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (!confirm("Are you sure you want to verify this payment?")) return;
+                    const { verifyPayment } = await import('@/app/dashboard/admin/paymentActions');
+                    await verifyPayment(license.id, license.pendingTransaction!.id, true);
+                  }}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-sm"
+                >
+                  Verify Payment
+                </button>
+                <button 
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (!confirm("Are you sure you want to REJECT this payment?")) return;
+                    const { verifyPayment } = await import('@/app/dashboard/admin/paymentActions');
+                    await verifyPayment(license.id, license.pendingTransaction!.id, false);
+                  }}
+                  className="px-3 py-2 bg-white text-red-600 hover:bg-red-50 border border-red-200 hover:border-red-300 rounded-lg text-xs font-bold transition shadow-sm"
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-2 border-t border-slate-100 gap-3">

@@ -11,6 +11,7 @@ const adminLinks: { section: string; links: NavLink[] }[] = [
       { href: "/dashboard/admin", label: "Dashboard", icon: "📊" },
       { href: "/dashboard/admin/users", label: "System Users", icon: "👥" },
       { href: "/dashboard/admin/licenses", label: "Licenses", icon: "🔑" },
+      { href: "/dashboard/admin/transactions", label: "Transactions", icon: "💳" },
     ],
   },
   {
@@ -33,6 +34,7 @@ const userSections: { section: string; links: NavLink[] }[] = [
     section: "YOUR WORKSPACE",
     links: [
       { href: "/dashboard/user", label: "Dashboard", icon: "📊" },
+      { href: "/dashboard/user/transactions", label: "Billing & Payments", icon: "💳" },
     ],
   },
 ];

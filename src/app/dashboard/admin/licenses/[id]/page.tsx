@@ -17,7 +17,8 @@ export default async function AdminLicenseDetailsPage({ params }: { params: Prom
     include: {
       user: true,
       logs: { orderBy: { timestamp: "desc" }, take: 20 },
-      fraudStats: { orderBy: { createdAt: "desc" }, take: 10 }
+      fraudStats: { orderBy: { createdAt: "desc" }, take: 10 },
+      transactions: { orderBy: { createdAt: "desc" } }
     }
   });
 
@@ -157,6 +158,35 @@ export default async function AdminLicenseDetailsPage({ params }: { params: Prom
             <p className="text-xs text-emerald-600 mt-3 leading-relaxed">
               This license has queried {license.fraudStats.length} unique phone numbers through the CodeBlend API.
             </p>
+          </div>
+
+          {/* Payment History */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-6">
+            <h3 className="text-sm font-bold text-slate-800 mb-4 uppercase tracking-wider">Payment History</h3>
+            {license.transactions.length === 0 ? (
+              <p className="text-sm text-slate-500 bg-slate-50 p-4 rounded-xl">No payment history found.</p>
+            ) : (
+              <div className="space-y-3">
+                {license.transactions.map((trx) => (
+                  <div key={trx.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs font-bold text-slate-600">{trx.transactionId || "N/A"}</span>
+                      <span className={`inline-flex px-2 py-0.5 rounded text-[0.6rem] font-bold uppercase tracking-wider
+                        ${trx.status === "verified" || trx.status === "completed" ? "bg-emerald-100 text-emerald-700" :
+                          trx.status === "pending" ? "bg-amber-100 text-amber-700" :
+                            "bg-red-100 text-red-700"}`}
+                      >
+                        {trx.status}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-slate-500">
+                      <span>{new Date(trx.createdAt).toLocaleString()}</span>
+                      <span className="uppercase font-semibold text-slate-400">{trx.paymentMethod.replace("_", " ")}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

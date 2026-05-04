@@ -30,15 +30,15 @@ export default async function Home() {
             Premium WordPress plugins, fraud prevention tools, and custom e-commerce solutions — everything you need to grow your online business.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-10">
             {!userId ? (
-              <LeadCTAButton serviceType="Get Started" className="w-full sm:w-auto px-6 py-3.5 bg-emerald-500 text-white rounded-2xl text-sm font-bold hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-200 text-center">🚀 Get Started Free →</LeadCTAButton>
+              <LeadCTAButton serviceType="Get Started" className="w-full sm:w-auto px-6 py-3.5 bg-emerald-500 text-white rounded-2xl text-sm font-bold hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-200 text-center cursor-pointer">🚀 Get Started Free →</LeadCTAButton>
             ) : (
-              <Link href="/dashboard" className="w-full sm:w-auto px-6 py-3.5 bg-emerald-500 text-white rounded-2xl text-sm font-bold hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-200 text-center">
+              <Link href="/dashboard" className="w-full sm:w-auto px-6 py-3.5 bg-emerald-500 text-white rounded-2xl text-sm font-bold hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-200 text-center inline-flex items-center justify-center">
                 🚀 Launch Dashboard →
               </Link>
             )}
-            <Link href="/revenuepro" className="w-full sm:w-auto px-6 py-3.5 bg-white text-slate-700 rounded-2xl text-sm font-bold border border-slate-200 hover:border-emerald-200 hover:bg-emerald-50 transition-all flex items-center justify-center gap-2">
+            <Link href="/revenuepro" className="w-full sm:w-auto px-6 py-3.5 bg-white text-slate-700 rounded-2xl text-sm font-bold border border-slate-200 hover:border-emerald-200 hover:bg-emerald-50 transition-all inline-flex items-center justify-center gap-2">
               <span className="w-7 h-7 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-xs">▶</span>
               Explore RevenuePro
             </Link>
@@ -190,7 +190,7 @@ export default async function Home() {
                 </div>
                 <h3 className="text-base font-bold text-slate-900 mb-2">{service.title}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed mb-4 flex-1">{service.desc}</p>
-                <LeadCTAButton serviceType={service.title} className="w-full py-2.5 bg-purple-50 text-purple-600 rounded-xl font-bold text-sm hover:bg-purple-100 transition-colors text-center">
+                <LeadCTAButton serviceType={service.title} className="w-full py-2.5 bg-purple-50 text-purple-600 rounded-xl font-bold text-sm hover:bg-purple-100 transition-colors text-center cursor-pointer">
                   Start Now →
                 </LeadCTAButton>
               </div>
@@ -255,44 +255,49 @@ export default async function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {/* Plan 1 */}
+            {/* Plan 1 — Monthly */}
             <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-sm flex flex-col">
-              <h3 className="text-slate-500 font-bold mb-3">Starter</h3>
-              <div className="mb-5"><span className="text-3xl sm:text-4xl font-extrabold text-slate-900">Free</span></div>
+              <h3 className="text-slate-500 font-bold mb-3">Monthly</h3>
+              <div className="mb-5">
+                <span className="text-3xl sm:text-4xl font-extrabold text-slate-900">৳ 999</span>
+                <span className="text-slate-400 text-sm"> / mo</span>
+              </div>
               <p className="text-slate-500 text-sm mb-6">Perfect for new businesses just getting started.</p>
               <ul className="space-y-3 mb-7 flex-1">
-                <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Up to 100 API queries/mo</li>
+                <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Unlimited API queries</li>
                 <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Basic fraud prevention</li>
                 <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Standard dashboard</li>
+                <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Email support</li>
               </ul>
               {!userId ? (
-                <LeadCTAButton serviceType="Starter Plan" className="w-full py-3 block text-center bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors text-sm">Get Started</LeadCTAButton>
+                <LeadCTAButton serviceType="Monthly Plan" className="w-full py-3 block text-center bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors text-sm cursor-pointer">Get Started</LeadCTAButton>
               ) : (
-                <Link href="/dashboard" className="w-full py-3 block text-center bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors text-sm">Current Plan</Link>
+                <Link href="/dashboard" className="w-full py-3 block text-center bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors text-sm">Subscribe Now</Link>
               )}
             </div>
 
-            {/* Plan 2 */}
+            {/* Plan 2 — Quarterly */}
             <div className="bg-slate-900 rounded-3xl border border-slate-800 p-6 sm:p-8 shadow-2xl flex flex-col relative md:-translate-y-4">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                <span className="bg-gradient-to-r from-emerald-400 to-teal-500 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">MOST POPULAR</span>
+                <span className="bg-gradient-to-r from-emerald-400 to-teal-500 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">BEST VALUE</span>
               </div>
-              <h3 className="text-emerald-400 font-bold mb-3">Pro</h3>
+              <h3 className="text-emerald-400 font-bold mb-3">Quarterly</h3>
               <div className="mb-5">
-                <span className="text-3xl sm:text-4xl font-extrabold text-white">৳ 2,000</span>
-                <span className="text-slate-400 text-sm"> / mo</span>
+                <span className="text-3xl sm:text-4xl font-extrabold text-white">৳ 2,500</span>
+                <span className="text-slate-400 text-sm"> / 3 mo</span>
               </div>
-              <p className="text-slate-400 text-sm mb-6">Everything you need to automate your store.</p>
+              <p className="text-slate-400 text-sm mb-6">Save ৳500 — everything you need to automate your store.</p>
               <ul className="space-y-3 mb-7 flex-1">
                 <li className="flex items-center gap-3 text-slate-300 text-sm"><span className="text-emerald-500">✓</span> Unlimited API queries</li>
                 <li className="flex items-center gap-3 text-slate-300 text-sm"><span className="text-emerald-500">✓</span> Advanced fraud analytics</li>
                 <li className="flex items-center gap-3 text-slate-300 text-sm"><span className="text-emerald-500">✓</span> Priority email support</li>
                 <li className="flex items-center gap-3 text-slate-300 text-sm"><span className="text-emerald-500">✓</span> Custom integrations</li>
+                <li className="flex items-center gap-3 text-slate-300 text-sm"><span className="text-emerald-500">✓</span> Dedicated onboarding</li>
               </ul>
               {!userId ? (
-                <LeadCTAButton serviceType="Pro Plan" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity text-sm">Start Pro Trial</LeadCTAButton>
+                <LeadCTAButton serviceType="Quarterly Plan" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity text-sm cursor-pointer">Get Quarterly Plan</LeadCTAButton>
               ) : (
-                <Link href="/dashboard" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity text-sm">Upgrade to Pro</Link>
+                <Link href="/dashboard" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity text-sm">Subscribe Now</Link>
               )}
             </div>
 

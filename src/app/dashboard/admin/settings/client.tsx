@@ -13,15 +13,22 @@ export type PluginVersion = {
 export function AdminSettingsClient({ 
   currentKey, 
   currentAlertEmail, 
-  currentRevenueProLinks 
+  currentRevenueProLinks,
+  paymentSettings 
 }: { 
   currentKey: string, 
   currentAlertEmail: string, 
-  currentRevenueProLinks: PluginVersion[] 
+  currentRevenueProLinks: PluginVersion[],
+  paymentSettings: any 
 }) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   
+  const initialMode = paymentSettings.bkashApiEnabled === "true" ? "api" 
+                    : paymentSettings.bkashManualEnabled === "true" ? "manual" 
+                    : "none";
+  const [activePaymentMode, setActivePaymentMode] = useState<"api" | "manual" | "none">(initialMode);
+
   const [links, setLinks] = useState<PluginVersion[]>(
     currentRevenueProLinks.length > 0 ? currentRevenueProLinks : [{
       id: "default",
@@ -121,7 +128,101 @@ export function AdminSettingsClient({
         </div>
       </div>
 
-      {/* Group 3: Plugin Download Links */}
+      {/* Group 3: Payment Configuration */}
+      <div className="bg-white rounded-2xl border border-emerald-200 p-6 shadow-sm">
+        <div className="mb-5 pb-4 border-b border-emerald-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-bold text-emerald-900">Payment Gateway Settings</h3>
+            <p className="text-sm text-emerald-600 mt-1">Select and configure your active payment method.</p>
+          </div>
+          
+          <div className="flex bg-slate-100 p-1 rounded-lg">
+            <button 
+              type="button" 
+              onClick={() => setActivePaymentMode("none")}
+              className={`px-3 py-1.5 text-xs font-bold rounded transition-colors ${activePaymentMode === "none" ? "bg-white shadow-sm text-slate-800" : "text-slate-500 hover:text-slate-700"}`}
+            >
+              None
+            </button>
+            <button 
+              type="button" 
+              onClick={() => setActivePaymentMode("manual")}
+              className={`px-3 py-1.5 text-xs font-bold rounded transition-colors ${activePaymentMode === "manual" ? "bg-white shadow-sm text-emerald-600" : "text-slate-500 hover:text-slate-700"}`}
+            >
+              Manual bKash
+            </button>
+            <button 
+              type="button" 
+              onClick={() => setActivePaymentMode("api")}
+              className={`px-3 py-1.5 text-xs font-bold rounded transition-colors ${activePaymentMode === "api" ? "bg-white shadow-sm text-emerald-600" : "text-slate-500 hover:text-slate-700"}`}
+            >
+              bKash API
+            </button>
+          </div>
+        </div>
+
+        <input type="hidden" name="BKASH_MANUAL_ENABLED" value={activePaymentMode === "manual" ? "true" : "false"} />
+        <input type="hidden" name="BKASH_API_ENABLED" value={activePaymentMode === "api" ? "true" : "false"} />
+
+        <div className="space-y-6">
+          {/* bKash Manual */}
+          {activePaymentMode === "manual" && (
+            <div className="p-4 bg-slate-50 border border-emerald-200 rounded-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-semibold text-slate-800 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  bKash Manual Configuration
+                </h4>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">bKash Number</label>
+                  <input type="text" name="BKASH_MANUAL_NUMBER" defaultValue={paymentSettings.bkashManualNumber} className="w-full px-3 py-2 rounded-lg border border-slate-200" placeholder="e.g. 01700000000" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">Account Type</label>
+                  <select name="BKASH_MANUAL_TYPE" defaultValue={paymentSettings.bkashManualType} className="w-full px-3 py-2 rounded-lg border border-slate-200">
+                    <option value="personal">Personal (Send Money)</option>
+                    <option value="merchant">Merchant (Payment)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* bKash API */}
+          {activePaymentMode === "api" && (
+            <div className="p-4 bg-slate-50 border border-emerald-200 rounded-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-semibold text-slate-800 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  bKash API Configuration
+                </h4>
+              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">App Key</label>
+                <input type="text" name="BKASH_API_APP_KEY" defaultValue={paymentSettings.bkashApiAppKey} className="w-full px-3 py-2 rounded-lg border border-slate-200" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">App Secret</label>
+                <input type="password" name="BKASH_API_APP_SECRET" defaultValue={paymentSettings.bkashApiAppSecret} className="w-full px-3 py-2 rounded-lg border border-slate-200" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Username</label>
+                <input type="text" name="BKASH_API_USERNAME" defaultValue={paymentSettings.bkashApiUsername} className="w-full px-3 py-2 rounded-lg border border-slate-200" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Password</label>
+                <input type="password" name="BKASH_API_PASSWORD" defaultValue={paymentSettings.bkashApiPassword} className="w-full px-3 py-2 rounded-lg border border-slate-200" />
+              </div>
+            </div>
+          </div>
+          )}
+        </div>
+      </div>
+
+      {/* Group 4: Plugin Download Links */}
       <div className="bg-white rounded-2xl border border-emerald-200 p-6 shadow-sm">
         <div className="mb-5 pb-4 border-b border-emerald-100 flex items-center justify-between">
           <div>
