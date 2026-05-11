@@ -115,3 +115,19 @@
 .dashboard-light-vars .mt-4 { margin-top: 1rem; }
 .dashboard-light-vars .mb-4 { margin-bottom: 1rem; }
 .dashboard-light-vars .text-center { text-align: center; }
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

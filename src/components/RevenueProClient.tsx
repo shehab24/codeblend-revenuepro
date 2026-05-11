@@ -14,6 +14,7 @@ type License = {
   paymentStatus: string;
   expirationDate: string | null;
   createdAt: string;
+  stats?: any;
 };
 
 type PluginVersion = {
@@ -86,7 +87,7 @@ function getStatusConfig(status: string) {
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("bn-BD", { day: "numeric", month: "long", year: "numeric" });
+  return new Date(dateStr).toLocaleDateString("bn-BD", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Dhaka" });
 }
 
 /* ─── License Card Component ─── */
@@ -134,8 +135,15 @@ function LicenseCard({ license, downloadLinks, paymentSettings, index }: { licen
                 {cfg.icon}
               </div>
               <div className="min-w-0">
-                <h3 className="text-base font-bold text-slate-800 truncate">{license.domain}</h3>
-                <p className="text-xs text-slate-400 font-medium">{license.tier}</p>
+                <Link 
+                  href={`/dashboard/user/revenuepro/${license.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="group/link flex items-center gap-1.5"
+                >
+                  <h3 className="text-lg font-bold text-slate-800 truncate group-hover/link:text-indigo-600 transition-colors">{license.domain}</h3>
+                  <svg className="w-4 h-4 text-slate-300 group-hover/link:text-indigo-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                </Link>
+                <p className="text-xs text-slate-400 font-medium mt-0.5">{license.tier}</p>
               </div>
             </div>
           </div>
@@ -273,19 +281,20 @@ function LicenseCard({ license, downloadLinks, paymentSettings, index }: { licen
           )}
 
           {/* Actions & Delete */}
-          <div className="mt-4 flex items-center justify-between">
+          <div className="mt-6 flex flex-col sm:flex-row items-center gap-3">
             <Link 
               href={`/dashboard/user/revenuepro/${license.id}`}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-emerald-600 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 rounded-xl transition-all"
+              className="w-full sm:flex-1 px-6 py-3.5 flex justify-center items-center gap-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-sm hover:shadow active:scale-[0.98]"
             >
-              📊 বিস্তারিত দেখুন (View Details)
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+              View Analytics Dashboard
             </Link>
 
             {isPending && (
               <button
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(); }}
                 disabled={deleting}
-                className="px-4 py-2 text-xs font-semibold text-red-500 hover:text-white bg-red-50 hover:bg-red-500 border border-red-200 hover:border-red-500 rounded-xl transition-all disabled:opacity-50"
+                className="w-full sm:w-auto px-6 py-3.5 text-sm font-bold text-red-500 hover:text-white bg-red-50 hover:bg-red-500 border border-red-100 hover:border-red-500 rounded-xl transition-all disabled:opacity-50"
               >
                 {deleting ? "মুছে ফেলা হচ্ছে..." : "🗑 আবেদন মুছে ফেলুন"}
               </button>

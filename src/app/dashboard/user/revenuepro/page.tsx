@@ -75,7 +75,7 @@ export default async function RevenueProPage() {
   const activeCount = licenses.filter(l => l.status === "active").length;
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-7xl mx-auto w-full pb-12">
       <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm mt-4">
         {/* Header */}
         <div className="p-8 md:p-10 border-b border-slate-100 bg-gradient-to-br from-slate-50 to-white">

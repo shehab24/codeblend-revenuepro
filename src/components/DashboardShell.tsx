@@ -176,7 +176,7 @@ export function DashboardShell({ children, isAdmin, userName, userEmail, userIma
             {!collapsed && "Collapse"}
           </button>
           <Link
-            href="https://wa.me/+8801XXXXXXXXX"
+            href="https://wa.me/8801570296656"
             target="_blank"
             className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[0.82rem] text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all no-underline ${collapsed ? "justify-center !px-2" : ""}`}
             title="Help Center"
@@ -224,10 +224,10 @@ export function DashboardShell({ children, isAdmin, userName, userEmail, userIma
 
             {profileOpen && (
               <div className="absolute right-0 top-11 w-52 bg-white rounded-xl border border-slate-100 shadow-xl shadow-slate-200/50 z-50 py-1.5">
-                <Link href="/dashboard/user" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 no-underline transition">
+                <Link href="/dashboard/user/profile" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 no-underline transition">
                   <span className="text-slate-400">{Icon.Profile}</span> Profile
                 </Link>
-                <Link href="https://wa.me/+8801XXXXXXXXX" target="_blank" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 no-underline transition">
+                <Link href="https://wa.me/8801570296656" target="_blank" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 no-underline transition">
                   <span className="text-slate-400">{Icon.Help}</span> Help Center
                 </Link>
 

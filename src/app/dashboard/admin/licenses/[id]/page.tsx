@@ -3,6 +3,12 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { LiveSiteDataPanel } from "@/components/LiveSiteDataPanel";
+import { 
+  SignalIcon, 
+  CheckCircleIcon, 
+  XCircleIcon 
+} from "@heroicons/react/24/outline";
 
 export default async function AdminLicenseDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await currentUser();
@@ -24,10 +30,21 @@ export default async function AdminLicenseDetailsPage({ params }: { params: Prom
 
   if (!license) return notFound();
 
+  // Check if we have cached site data
+  const cachedSiteDataRecord = await prisma.setting.findUnique({
+    where: { key: `SITE_DATA_${id}` }
+  });
+  let cachedSiteData = null;
+  if (cachedSiteDataRecord) {
+    try {
+      cachedSiteData = JSON.parse(cachedSiteDataRecord.value);
+    } catch(e) {}
+  }
+
   const isExpired = license.expirationDate && new Date(license.expirationDate) < new Date();
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto w-full pb-12">
       {/* Header Navigation */}
       <div className="flex items-center gap-4 border-b border-slate-100 pb-4">
         <Link 
@@ -41,8 +58,14 @@ export default async function AdminLicenseDetailsPage({ params }: { params: Prom
           <p className="text-sm text-slate-500">{license.domain}</p>
         </div>
       </div>
+      {/* Live Site Data - Full Width at Top */}
+      {license.status === "active" && (
+        <div className="w-full">
+          <LiveSiteDataPanel licenseId={license.id} domain={license.domain} initialData={cachedSiteData} />
+        </div>
+      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Main Info Card */}
         <div className="md:col-span-2 space-y-6">
@@ -87,35 +110,47 @@ export default async function AdminLicenseDetailsPage({ params }: { params: Prom
             <div className="mt-6 grid grid-cols-2 gap-4 pt-6 border-t border-slate-100">
                <div>
                   <div className="text-xs text-slate-500 font-medium">Created On</div>
-                  <div className="text-sm font-semibold text-slate-800">{new Date(license.createdAt).toLocaleString()}</div>
+                  <div className="text-sm font-semibold text-slate-800">{new Date(license.createdAt).toLocaleDateString("bn-BD", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Dhaka" })}</div>
                </div>
                <div>
                   <div className="text-xs text-slate-500 font-medium">Expires On</div>
                   <div className={`text-sm font-semibold ${isExpired ? 'text-red-600' : 'text-emerald-600'}`}>
-                    {license.expirationDate ? new Date(license.expirationDate).toLocaleString() : 'Lifetime (Never)'}
+                    {license.expirationDate ? new Date(license.expirationDate).toLocaleDateString("bn-BD", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Dhaka" }) : 'Lifetime (Never)'}
                   </div>
                </div>
             </div>
           </div>
 
           {/* Verification Logs */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6">
-            <h3 className="text-base font-bold text-slate-800 mb-4">Recent Verification Pings</h3>
+          <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
+            <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+              <SignalIcon className="w-6 h-6 text-slate-400" />
+              Recent Verification Pings
+            </h3>
             {license.logs.length === 0 ? (
-              <p className="text-sm text-slate-500 bg-slate-50 p-4 rounded-xl">No verification logs available yet.</p>
+              <div className="text-center py-8 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
+                <SignalIcon className="w-8 h-8 text-slate-300 mx-auto mb-3" />
+                <p className="text-sm font-medium text-slate-500">No verification logs available yet.</p>
+              </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2 max-h-[360px] overflow-y-auto pr-2 custom-scrollbar">
                 {license.logs.map(log => (
-                  <div key={log.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-                    <div>
-                       <div className="flex items-center gap-2">
-                         <span className={`w-2 h-2 rounded-full ${log.status === 'success' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
-                         <span className="text-sm font-bold text-slate-700 uppercase">{log.status}</span>
+                  <div key={log.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 transition-colors rounded-xl border border-slate-100 gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                       {log.status === 'success' ? (
+                         <CheckCircleIcon className="w-5 h-5 text-emerald-500 shrink-0" />
+                       ) : (
+                         <XCircleIcon className="w-5 h-5 text-red-500 shrink-0" />
+                       )}
+                       <div className="min-w-0">
+                         <div className="text-xs font-bold text-slate-700 uppercase tracking-wide">{log.status}</div>
+                         <div className="text-[9px] text-slate-400 font-mono mt-0.5 truncate max-w-full sm:max-w-[400px]">
+                           {log.ipAddress || "Unknown IP"} • <span title={log.userAgent || ""}>{log.userAgent || "Unknown Client"}</span>
+                         </div>
                        </div>
-                       <div className="text-xs text-slate-500 mt-1">{log.ipAddress || "Unknown IP"} • {log.userAgent || "Unknown Client"}</div>
                     </div>
-                    <div className="text-xs font-medium text-slate-400 text-right">
-                       {new Date(log.timestamp).toLocaleString()}
+                    <div className="text-[10px] font-semibold text-slate-500 bg-white px-2.5 py-1 rounded-md border border-slate-200 shadow-sm whitespace-nowrap self-start sm:self-auto shrink-0">
+                       {new Date(log.timestamp).toLocaleString("en-US", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                     </div>
                   </div>
                 ))}

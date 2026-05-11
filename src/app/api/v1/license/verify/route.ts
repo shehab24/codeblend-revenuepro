@@ -79,6 +79,13 @@ export async function POST(request: Request) {
     let token = null;
     if (privateKey) {
       token = jwt.sign(payload, privateKey, { algorithm: 'RS256' });
+
+      // Store the token so we can reuse it for live site-data pulls
+      await prisma.setting.upsert({
+        where: { key: `SITE_TOKEN_${license.id}` },
+        create: { key: `SITE_TOKEN_${license.id}`, value: token },
+        update: { value: token }
+      });
     }
 
     revalidatePath("/dashboard/admin/licenses");
