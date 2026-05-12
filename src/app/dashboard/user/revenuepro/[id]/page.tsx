@@ -61,8 +61,8 @@ export default async function UserLicenseDetailsPage({ params }: { params: Promi
   const totalSuccessPings = license.logs.filter(l => l.status === "success").length;
   const totalFailedPings = license.logs.filter(l => l.status === "failed").length;
 
-  const statusLabel = isActive ? "Active" : isPending ? "Pending" : "Suspended";
-  const statusColor = isActive ? "text-emerald-700 bg-emerald-50 border-emerald-200" : isPending ? "text-amber-700 bg-amber-50 border-amber-200" : "text-red-700 bg-red-50 border-red-200";
+  const statusLabel = isExpired ? "Expired" : isActive ? "Active" : isPending ? "Pending" : "Suspended";
+  const statusColor = isExpired ? "text-red-700 bg-red-50 border-red-200" : isActive ? "text-emerald-700 bg-emerald-50 border-emerald-200" : isPending ? "text-amber-700 bg-amber-50 border-amber-200" : "text-red-700 bg-red-50 border-red-200";
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto w-full pb-12">
@@ -210,13 +210,22 @@ export default async function UserLicenseDetailsPage({ params }: { params: Promi
             {lastSuccessPing ? (
               <div className="space-y-4">
                 {/* Connection Status */}
-                <div className="flex items-center gap-3 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
-                  <span className="relative flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                  </span>
-                  <span className="text-sm font-bold text-emerald-800">Connected & Active</span>
-                </div>
+                {isExpired ? (
+                  <div className="flex items-center gap-3 p-4 bg-red-50 rounded-2xl border border-red-100">
+                    <span className="relative flex h-3 w-3">
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                    </span>
+                    <span className="text-sm font-bold text-red-800">License Expired</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                    </span>
+                    <span className="text-sm font-bold text-emerald-800">Connected & Active</span>
+                  </div>
+                )}
 
                 {/* Server IP */}
                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">

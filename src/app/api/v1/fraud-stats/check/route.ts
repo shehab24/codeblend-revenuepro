@@ -29,16 +29,27 @@ export async function POST(request: Request) {
       if (license) licenseId = license.id;
     }
 
-    // 1. Check local database first!
-    const existing = await prisma.fraudStat.findFirst({
+    // 1. Check local database first — find ALL records for this phone and deduplicate
+    const existingRecords = await prisma.fraudStat.findMany({
       where: { phone },
       orderBy: { last_checked: "desc" }
     });
+
+    // Deduplicate: keep the newest record, delete the rest
+    const existing = existingRecords.length > 0 ? existingRecords[0] : null;
+    if (existingRecords.length > 1) {
+      const idsToDelete = existingRecords.slice(1).map(r => r.id);
+      await prisma.fraudStat.deleteMany({ where: { id: { in: idsToDelete } } });
+    }
 
     const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
     
     // If it exists and firmly checked within the last 30 days, organically return it!
     if (existing && new Date().getTime() - new Date(existing.last_checked).getTime() < THIRTY_DAYS) {
+      // Update the licenseId if this is a new license querying the same phone
+      if (licenseId && existing.licenseId !== licenseId) {
+        await prisma.fraudStat.update({ where: { id: existing.id }, data: { licenseId } });
+      }
       return NextResponse.json({
         success: true,
         source: "cache",

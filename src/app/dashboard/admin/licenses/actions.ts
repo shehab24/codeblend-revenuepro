@@ -244,3 +244,69 @@ export async function adminPingLicense(licenseId: string) {
   revalidatePath("/dashboard/admin/licenses");
   return { success: true };
 }
+
+export async function adminExtendLicense(licenseId: string, durationStr: string) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+  
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (user?.role !== "admin" && user?.role !== "ADMIN") throw new Error("Unauthorized access");
+
+  const license = await prisma.license.findUnique({ where: { id: licenseId } });
+  if (!license) throw new Error("License not found");
+
+  let newExpiration: Date | null;
+  let newTier = license.tier;
+
+  // Start from NOW (not from old expiry) so even expired licenses get a fresh window
+  const baseDate = new Date();
+
+  if (durationStr === "0") {
+    newExpiration = null;
+    newTier = "Lifetime Access";
+  } else if (durationStr === "1_day") {
+    newExpiration = new Date(baseDate);
+    newExpiration.setDate(newExpiration.getDate() + 1);
+    newTier = "1 Day (Short Trial)";
+  } else if (durationStr === "5_day") {
+    newExpiration = new Date(baseDate);
+    newExpiration.setDate(newExpiration.getDate() + 5);
+    newTier = "5 Days (Trial)";
+  } else if (durationStr === "15") {
+    newExpiration = new Date(baseDate);
+    newExpiration.setDate(newExpiration.getDate() + 15);
+    newTier = "15 Days (Trial)";
+  } else {
+    const months = parseInt(durationStr);
+    if (isNaN(months) || months <= 0) throw new Error("Invalid duration");
+    
+    newExpiration = new Date(baseDate);
+    newExpiration.setMonth(newExpiration.getMonth() + months);
+
+    if (months === 1) newTier = "1 Month (Basic)";
+    else if (months === 2) newTier = "2 Months (Extended)";
+    else if (months === 3) newTier = "3 Months (Quarterly)";
+    else if (months === 6) newTier = "6 Months (Biannual)";
+    else if (months === 12) newTier = "1 Year (Elite)";
+  }
+
+  await prisma.license.update({
+    where: { id: licenseId },
+    data: {
+      expirationDate: newExpiration,
+      tier: newTier,
+      status: "active",
+      paymentStatus: "paid",
+    }
+  });
+
+  // Clean up renewal request if one existed
+  try {
+    await prisma.setting.delete({ where: { key: `RENEWAL_REQUEST_${licenseId}` } });
+  } catch {}
+
+  revalidatePath("/dashboard/admin/licenses");
+  revalidatePath(`/dashboard/admin/licenses/${licenseId}`);
+  revalidatePath("/dashboard/user/revenuepro");
+  return { success: true };
+}

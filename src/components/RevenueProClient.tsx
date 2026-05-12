@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition, useState } from "react";
-import { createLicense, deleteLicense } from "@/app/dashboard/user/actions";
+import { createLicense, deleteLicense, renewLicense } from "@/app/dashboard/user/actions";
 import Link from "next/link";
 
 /* ─── Types ─── */
@@ -100,8 +100,18 @@ function LicenseCard({ license, downloadLinks, paymentSettings, index }: { licen
   
   const isActive = license.status === "active";
   const isPending = license.status === "pending";
+  const isExpired = isActive && license.expirationDate && new Date(license.expirationDate) < new Date();
   const isPaid = license.paymentStatus === "paid" || license.paymentStatus === "pending_verification";
-  const cfg = getStatusConfig(license.status);
+  const cfg = isExpired ? {
+    label: "মেয়াদ শেষ",
+    labelEn: "Expired",
+    color: "red",
+    bg: "bg-red-50",
+    border: "border-red-200",
+    text: "text-red-700",
+    dot: "bg-red-500",
+    icon: "⏰",
+  } : getStatusConfig(license.status);
 
   let paymentCfg = { text: "পেমেন্ট অপেক্ষায়", icon: "⏱", bg: "bg-amber-50", color: "text-amber-600" };
   if (license.paymentStatus === "paid") {
@@ -109,6 +119,11 @@ function LicenseCard({ license, downloadLinks, paymentSettings, index }: { licen
   } else if (license.paymentStatus === "pending_verification") {
     paymentCfg = { text: "যাচাই করা হচ্ছে", icon: "🔍", bg: "bg-blue-50", color: "text-blue-600" };
   }
+
+  // Renew state
+  const [showRenewModal, setShowRenewModal] = useState(false);
+  const [renewing, startRenew] = useTransition();
+  const [renewSuccess, setRenewSuccess] = useState(false);
 
   const handleDelete = () => {
     if (!confirm("আপনি কি নিশ্চিত এই লাইসেন্স আবেদনটি মুছে ফেলতে চান?")) return;
@@ -243,9 +258,34 @@ function LicenseCard({ license, downloadLinks, paymentSettings, index }: { licen
               আপনার লাইসেন্সটি অ্যাডমিন প্যানেল থেকে অনুমোদনের অপেক্ষায় আছে। অনুমোদন হওয়ার সাথে সাথেই আপনার API-Key দৃশ্যমান হবে এবং প্লাগইন ডাউনলোড করতে পারবেন।
             </div>
           )}
-          {isActive && (
+          {isActive && !isExpired && (
             <div className="mt-4 p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-[0.8rem] leading-relaxed text-emerald-700">
               ✅ আপনার লাইসেন্স অ্যাক্টিভ! এই কি (Key) আপনার ওয়ার্ডপ্রেস ড্যাশবোর্ডে গিয়ে Revenue Pro সেটিংসে ব্যবহার করুন।
+            </div>
+          )}
+          {isExpired && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+              <div className="flex items-start gap-3">
+                <span className="text-xl mt-0.5">⏰</span>
+                <div className="flex-1">
+                  <div className="text-sm font-bold text-red-800 mb-1">আপনার লাইসেন্সের মেয়াদ শেষ হয়েছে!</div>
+                  <p className="text-[0.8rem] text-red-700 leading-relaxed mb-3">
+                    আপনার প্লাগইনের প্রিমিয়াম ফিচারগুলো বন্ধ হয়ে গেছে। একই লাইসেন্স কি দিয়ে পুনরায় সক্রিয় করতে নীচের বাটনে ক্লিক করুন।
+                  </p>
+                  {renewSuccess ? (
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm font-semibold text-emerald-700">
+                      ✅ রিনিউ রিকোয়েস্ট সফলভাবে পাঠানো হয়েছে! অ্যাডমিন অনুমোদনের পর আপনার লাইসেন্স পুনরায় সক্রিয় হবে।
+                    </div>
+                  ) : (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setShowRenewModal(true); }}
+                      className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all shadow-sm hover:shadow active:scale-[0.98]"
+                    >
+                      🔄 লাইসেন্স রিনিউ করুন (Renew License)
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
@@ -406,6 +446,62 @@ function LicenseCard({ license, downloadLinks, paymentSettings, index }: { licen
           </div>
         </div>
       )}
+
+      {/* Renew Modal */}
+      {showRenewModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden relative">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+                <span className="text-xl">🔄</span> লাইসেন্স রিনিউ করুন
+              </h3>
+              <button onClick={() => setShowRenewModal(false)} className="text-slate-400 hover:text-red-500 p-1">
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-5">
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">ডোমেইন</div>
+                <div className="text-sm font-semibold text-slate-800">{license.domain}</div>
+                <div className="text-xs text-slate-500 mt-1">একই লাইসেন্স কি বজায় থাকবে — প্লাগইনে কোনো পরিবর্তন করতে হবে না।</div>
+              </div>
+
+              <form action={(formData) => {
+                const duration = formData.get('duration') as string;
+                startRenew(async () => {
+                  await renewLicense(license.id, duration);
+                  setRenewSuccess(true);
+                  setShowRenewModal(false);
+                });
+              }}>
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">নতুন মেয়াদ নির্বাচন করুন</label>
+                  <select
+                    name="duration"
+                    required
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm cursor-pointer focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/10 transition appearance-none"
+                  >
+                    <option value="1">১ মাস (1 Month) — ৳১০০০</option>
+                    <option value="2">২ মাস (2 Months) — ৳১৮০০</option>
+                    <option value="3">৩ মাস (3 Months) — ৳২৫০০</option>
+                    <option value="6">৬ মাস (6 Months) — ৳৪৫০০</option>
+                    <option value="12">১ বছর (1 Year) — ৳৮০০০</option>
+                    <option value="0">আজীবন (Lifetime) — ৳১৫০০০</option>
+                  </select>
+                </div>
+
+                <button 
+                  disabled={renewing}
+                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                >
+                  {renewing ? "রিকোয়েস্ট পাঠানো হচ্ছে..." : "রিনিউ রিকোয়েস্ট পাঠান"}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -500,8 +596,9 @@ export function RevenueProClient({
   downloadLinks: PluginVersion[];
   paymentSettings?: any;
 }) {
-  const activeCount = licenses.filter(l => l.status === "active").length;
+  const activeCount = licenses.filter(l => l.status === "active" && !(l.expirationDate && new Date(l.expirationDate) < new Date())).length;
   const pendingCount = licenses.filter(l => l.status === "pending").length;
+  const expiredCount = licenses.filter(l => l.status === "active" && l.expirationDate && new Date(l.expirationDate) < new Date()).length;
 
   return (
     <div className="space-y-6">
@@ -520,6 +617,12 @@ export function RevenueProClient({
             <div className="text-2xl font-bold text-amber-600">{pendingCount}</div>
             <div className="text-xs text-amber-500 font-semibold mt-1">অপেক্ষমাণ</div>
           </div>
+          {expiredCount > 0 && (
+            <div className="bg-red-50 rounded-2xl border border-red-200 p-5 text-center">
+              <div className="text-2xl font-bold text-red-600">{expiredCount}</div>
+              <div className="text-xs text-red-500 font-semibold mt-1">মেয়াদ শেষ</div>
+            </div>
+          )}
         </div>
       )}
 

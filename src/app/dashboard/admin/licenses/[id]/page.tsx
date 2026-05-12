@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LiveSiteDataPanel } from "@/components/LiveSiteDataPanel";
+import { AdminExtendLicenseButton } from "@/components/AdminExtendLicenseButton";
 import { 
   SignalIcon, 
   CheckCircleIcon, 
@@ -58,6 +59,17 @@ export default async function AdminLicenseDetailsPage({ params }: { params: Prom
           <p className="text-sm text-slate-500">{license.domain}</p>
         </div>
       </div>
+      {/* Expired Warning */}
+      {isExpired && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3">
+          <span className="text-xl mt-0.5">⏰</span>
+          <div>
+            <div className="text-sm font-bold text-red-800">This license has expired!</div>
+            <p className="text-xs text-red-700 mt-1">The plugin’s premium features are now disabled on the customer’s site. Use the “Extend / Renew Expiry” button in the sidebar to reactivate.</p>
+          </div>
+        </div>
+      )}
+
       {/* Live Site Data - Full Width at Top */}
       {license.status === "active" && (
         <div className="w-full">
@@ -194,6 +206,9 @@ export default async function AdminLicenseDetailsPage({ params }: { params: Prom
               This license has queried {license.fraudStats.length} unique phone numbers through the CodeBlend API.
             </p>
           </div>
+
+          {/* Extend License */}
+          <AdminExtendLicenseButton licenseId={license.id} currentTier={license.tier} />
 
           {/* Payment History */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6">
