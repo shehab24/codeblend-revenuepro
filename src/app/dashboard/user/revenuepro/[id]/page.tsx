@@ -38,20 +38,10 @@ export default async function UserLicenseDetailsPage({ params }: { params: Promi
     }
   });
 
+
   if (!license) return notFound();
 
   const isExpired = license.expirationDate && new Date(license.expirationDate) < new Date();
-  
-  // Check if we have cached site data
-  const cachedSiteDataRecord = await prisma.setting.findUnique({
-    where: { key: `SITE_DATA_${id}` }
-  });
-  let cachedSiteData = null;
-  if (cachedSiteDataRecord) {
-    try {
-      cachedSiteData = JSON.parse(cachedSiteDataRecord.value);
-    } catch(e) {}
-  }
 
   const isActive = license.status === "active";
   const isPending = license.status === "pending";
@@ -93,7 +83,7 @@ export default async function UserLicenseDetailsPage({ params }: { params: Promi
       */}
       {license.status === "active" && (
         <div className="w-full">
-          <LiveSiteDataPanel licenseId={license.id} domain={license.domain} initialData={cachedSiteData} />
+          <LiveSiteDataPanel licenseId={license.id} domain={license.domain} />
         </div>
       )}
 

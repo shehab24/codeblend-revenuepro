@@ -8,7 +8,8 @@ import { AdminExtendLicenseButton } from "@/components/AdminExtendLicenseButton"
 import { 
   SignalIcon, 
   CheckCircleIcon, 
-  XCircleIcon 
+  XCircleIcon,
+  ArrowLeftIcon
 } from "@heroicons/react/24/outline";
 
 export default async function AdminLicenseDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -31,34 +32,31 @@ export default async function AdminLicenseDetailsPage({ params }: { params: Prom
 
   if (!license) return notFound();
 
-  // Check if we have cached site data
-  const cachedSiteDataRecord = await prisma.setting.findUnique({
-    where: { key: `SITE_DATA_${id}` }
-  });
-  let cachedSiteData = null;
-  if (cachedSiteDataRecord) {
-    try {
-      cachedSiteData = JSON.parse(cachedSiteDataRecord.value);
-    } catch(e) {}
-  }
-
   const isExpired = license.expirationDate && new Date(license.expirationDate) < new Date();
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto w-full pb-12">
+      
       {/* Header Navigation */}
-      <div className="flex items-center gap-4 border-b border-slate-100 pb-4">
-        <Link 
-          href="/dashboard/admin/licenses" 
-          className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 hover:text-emerald-600 hover:border-emerald-200 transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-        </Link>
-        <div>
-          <h1 className="text-xl font-bold text-slate-800">License Details</h1>
-          <p className="text-sm text-slate-500">{license.domain}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-6 mb-6">
+        <div className="flex items-center gap-4">
+          <Link 
+            href="/dashboard/admin/licenses" 
+            className="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition-colors shadow-sm"
+          >
+            <ArrowLeftIcon className="w-5 h-5" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">License Details</h1>
+            <p className="text-sm font-medium text-slate-500 mt-0.5">{license.domain}</p>
+          </div>
         </div>
+        <AdminExtendLicenseButton 
+          licenseId={license.id} 
+          currentTier={license.tier} 
+        />
       </div>
+
       {/* Expired Warning */}
       {isExpired && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3">
@@ -73,7 +71,7 @@ export default async function AdminLicenseDetailsPage({ params }: { params: Prom
       {/* Live Site Data - Full Width at Top */}
       {license.status === "active" && (
         <div className="w-full">
-          <LiveSiteDataPanel licenseId={license.id} domain={license.domain} initialData={cachedSiteData} />
+          <LiveSiteDataPanel licenseId={license.id} domain={license.domain} />
         </div>
       )}
 

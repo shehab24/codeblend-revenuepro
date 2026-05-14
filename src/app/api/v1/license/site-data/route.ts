@@ -28,21 +28,59 @@ export async function GET(req: Request) {
     }
 
     // Retrieve the stored token (saved during license verification)
+    let authToken = "";
+    
     const storedToken = await prisma.setting.findUnique({
       where: { key: `SITE_TOKEN_${license.id}` }
     });
 
-    if (!storedToken) {
-      return NextResponse.json({ 
-        success: false, 
-        error: "No site token found. The customer's plugin needs to verify the license first (Settings → Check License in the WordPress plugin)." 
-      }, { status: 404 });
+    if (storedToken) {
+      authToken = storedToken.value;
+    } else {
+      // No stored token — try to sign a fresh JWT on-the-fly
+      try {
+        const fs = await import("fs");
+        const path = await import("path");
+        const jwt = await import("jsonwebtoken");
+        const keyPath = path.default.join(process.cwd(), 'keys', 'private_key.pem');
+        const privateKey = fs.default.readFileSync(keyPath, 'utf8');
+        
+        const payload = {
+          license: license.key,
+          domain: license.domain,
+          plan: license.tier,
+          expiresAt: license.expirationDate ? license.expirationDate.getTime() : null,
+        };
+        authToken = jwt.default.sign(payload, privateKey, { algorithm: 'RS256' });
+        
+        // Save it for next time
+        await prisma.setting.upsert({
+          where: { key: `SITE_TOKEN_${license.id}` },
+          create: { key: `SITE_TOKEN_${license.id}`, value: authToken },
+          update: { value: authToken }
+        });
+      } catch {
+        // No private key available — use the raw license key as fallback
+        authToken = license.key;
+      }
     }
 
-    // Build the customer site URL
+    // Build the customer site URL with optional filter params
     const domain = license.domain.replace(/\/$/, '');
     const siteUrl = domain.startsWith('http') ? domain : `https://${domain}`;
-    const endpoint = `${siteUrl}/wp-json/revenuepro-bkash-wc/v1/site-data?token=${encodeURIComponent(storedToken.value)}`;
+    const params = new URLSearchParams({ token: authToken });
+    
+    // Pass through optional filter params
+    const limit = searchParams.get("limit");
+    const status = searchParams.get("status");
+    const payment = searchParams.get("payment");
+    const campaign = searchParams.get("campaign");
+    if (limit) params.set("limit", limit);
+    if (status) params.set("status", status);
+    if (payment) params.set("payment", payment);
+    if (campaign) params.set("campaign", campaign);
+    
+    const endpoint = `${siteUrl}/wp-json/revenuepro-bkash-wc/v1/site-data?${params.toString()}`;
 
     console.log(`\n[SITE-DATA PULL] Fetching from: ${siteUrl}\n`);
 
@@ -72,21 +110,12 @@ export async function GET(req: Request) {
 
     const siteData = await response.json();
     
-    const responsePayload = {
+    return NextResponse.json({
       success: true, 
       data: siteData,
       pulled_at: new Date().toISOString(),
       from: siteUrl,
-    };
-
-    // Cache the data so it persists across page reloads
-    await prisma.setting.upsert({
-      where: { key: `SITE_DATA_${license.id}` },
-      create: { key: `SITE_DATA_${license.id}`, value: JSON.stringify(responsePayload) },
-      update: { value: JSON.stringify(responsePayload) }
     });
-
-    return NextResponse.json(responsePayload);
 
   } catch (error: any) {
     console.error("[SITE-DATA PULL] Error:", error.message);

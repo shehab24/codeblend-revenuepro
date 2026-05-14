@@ -100,7 +100,7 @@ export function DashboardShell({ children, isAdmin, userName, userEmail, userIma
   }, []);
 
   return (
-    <div className="dashboard-light-vars flex min-h-[100dvh] bg-slate-50 print:bg-white print:block overflow-x-hidden relative">
+    <div className="dashboard-light-vars flex min-h-[100dvh] bg-slate-50 print:bg-white print:block overflow-x-hidden print:min-h-auto print:overflow-visible relative">
       {/* ── MOBILE BACKDROP ── */}
       {mobileMenuOpen && (
         <div 
@@ -188,7 +188,7 @@ export function DashboardShell({ children, isAdmin, userName, userEmail, userIma
       </aside>
 
       {/* ── MAIN ── */}
-      <main className="flex-1 flex flex-col min-w-0 md:pb-0 relative pt-14 md:pt-0 h-[100dvh] md:h-screen overflow-y-auto w-full">
+      <main className="flex-1 flex flex-col min-w-0 md:pb-0 relative pt-14 md:pt-0 h-[100dvh] md:h-screen overflow-y-auto print:h-auto print:overflow-visible w-full">
         {/* Header — exact same h-14 as sidebar logo */}
         <header className="fixed md:relative top-0 left-0 right-0 md:left-auto md:right-auto md:w-full h-14 flex items-center justify-between px-4 sm:px-6 bg-white/95 backdrop-blur-sm border-b md:bg-white border-slate-100 shrink-0 z-30 print:hidden">
           <div className="flex items-center gap-2.5">
