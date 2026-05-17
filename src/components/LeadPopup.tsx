@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { submitLead } from "@/actions/leadActions";
+import { trackFBEvent } from "@/components/FacebookPixel";
 
 export function LeadCTAButton({
   children,
@@ -43,6 +44,11 @@ export function LeadCTAButton({
 
     if (result.success) {
       setStatus("success");
+      // Fire client-side Facebook Pixel Lead event
+      trackFBEvent("Lead", {
+        content_name: serviceType,
+        content_category: "Service Request",
+      });
     } else {
       setStatus("error");
       setErrorMessage(result.error || "An error occurred.");

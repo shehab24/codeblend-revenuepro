@@ -5,6 +5,7 @@ import { clerkClient } from "@clerk/nextjs/server";
 import crypto from "crypto";
 import { Resend } from "resend";
 import nodemailer from "nodemailer";
+import { sendFacebookCAPIEvent } from "@/lib/facebook-capi";
 
 const resend = new Resend(process.env.RESEND_EMAIL_API);
 
@@ -159,6 +160,29 @@ export async function submitLead(formData: FormData) {
         message,
       },
     });
+
+    // ── FACEBOOK CAPI LEAD EVENT ──
+    try {
+      const eventId = `lead_${crypto.randomBytes(8).toString("hex")}_${Date.now()}`;
+      await sendFacebookCAPIEvent({
+        eventName: "Lead",
+        eventId,
+        sourceUrl: process.env.NEXT_PUBLIC_APP_URL || "https://codeblend.co",
+        userData: {
+          email,
+          phone,
+          firstName: name.split(" ")[0],
+          lastName: name.split(" ").slice(1).join(" ") || undefined,
+        },
+        customData: {
+          content_name: serviceType,
+          content_category: "Service Request",
+        },
+      });
+    } catch (fbError) {
+      console.error("[FB CAPI] Lead event failed:", fbError);
+      // Non-critical
+    }
 
     // ── ADMIN ALERT VIA NODEMAILER ──
     try {

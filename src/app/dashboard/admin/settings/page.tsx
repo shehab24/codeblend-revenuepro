@@ -21,7 +21,10 @@ export default async function AdminSettingsPage() {
     bkashApiAppKey,
     bkashApiAppSecret,
     bkashApiUsername,
-    bkashApiPassword
+    bkashApiPassword,
+    fbPixelId,
+    fbCapiToken,
+    fbTestEventCode
   ] = await Promise.all([
     prisma.setting.findUnique({ where: { key: "BD_COURIER_API_KEY" } }),
     prisma.setting.findUnique({ where: { key: "ADMIN_ALERT_EMAIL" } }),
@@ -35,6 +38,9 @@ export default async function AdminSettingsPage() {
     prisma.setting.findUnique({ where: { key: "BKASH_API_APP_SECRET" } }),
     prisma.setting.findUnique({ where: { key: "BKASH_API_USERNAME" } }),
     prisma.setting.findUnique({ where: { key: "BKASH_API_PASSWORD" } }),
+    prisma.setting.findUnique({ where: { key: "FB_PIXEL_ID" } }),
+    prisma.setting.findUnique({ where: { key: "FB_CAPI_TOKEN" } }),
+    prisma.setting.findUnique({ where: { key: "FB_TEST_EVENT_CODE" } }),
   ]);
 
   let parsedLinks: PluginVersion[] = [];
@@ -65,6 +71,12 @@ export default async function AdminSettingsPage() {
     bkashApiUsername: bkashApiUsername?.value || "",
     bkashApiPassword: bkashApiPassword?.value || "",
   };
+
+  const pixelSettings = {
+    pixelId: fbPixelId?.value || "",
+    capiToken: fbCapiToken?.value || "",
+    testEventCode: fbTestEventCode?.value || "",
+  };
   
   return (
     <div className="max-w-5xl">
@@ -73,6 +85,7 @@ export default async function AdminSettingsPage() {
         currentAlertEmail={adminAlertEmailSetting?.value || ""} 
         currentRevenueProLinks={parsedLinks}
         paymentSettings={paymentSettings}
+        pixelSettings={pixelSettings}
       />
     </div>
   );

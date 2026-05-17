@@ -14,12 +14,14 @@ export function AdminSettingsClient({
   currentKey, 
   currentAlertEmail, 
   currentRevenueProLinks,
-  paymentSettings 
+  paymentSettings,
+  pixelSettings 
 }: { 
   currentKey: string, 
   currentAlertEmail: string, 
   currentRevenueProLinks: PluginVersion[],
-  paymentSettings: any 
+  paymentSettings: any,
+  pixelSettings: { pixelId: string; capiToken: string; testEventCode: string } 
 }) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -302,6 +304,58 @@ export function AdminSettingsClient({
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Group 5: Facebook Pixel & CAPI */}
+      <div className="bg-white rounded-2xl border border-blue-200 p-6 shadow-sm">
+        <div className="mb-5 pb-4 border-b border-blue-100 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-blue-900 flex items-center gap-2">
+              <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              Facebook Pixel & CAPI
+            </h3>
+            <p className="text-sm text-blue-600 mt-1">Configure pixel tracking and server-side Conversions API for lead tracking.</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-600 mb-1" htmlFor="fbPixelId">Pixel ID</label>
+            <input 
+              type="text" 
+              id="fbPixelId"
+              name="FB_PIXEL_ID" 
+              defaultValue={pixelSettings.pixelId} 
+              placeholder="e.g. 123456789012345" 
+              className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 text-sm font-mono focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-600 mb-1" htmlFor="fbCapiToken">Conversions API Token</label>
+            <input 
+              type="password" 
+              id="fbCapiToken"
+              name="FB_CAPI_TOKEN" 
+              defaultValue={pixelSettings.capiToken} 
+              placeholder="EAAxxxxxxx..." 
+              className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 text-sm font-mono focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-slate-600 mb-1" htmlFor="fbTestCode">Test Event Code (Optional)</label>
+            <input 
+              type="text" 
+              id="fbTestCode"
+              name="FB_TEST_EVENT_CODE" 
+              defaultValue={pixelSettings.testEventCode} 
+              placeholder="e.g. TEST12345" 
+              className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 text-sm font-mono focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition"
+            />
+            <p className="text-xs text-slate-400 mt-2">
+              Use your Facebook Events Manager test code to verify events. Remove this in production.
+            </p>
+          </div>
         </div>
       </div>
 

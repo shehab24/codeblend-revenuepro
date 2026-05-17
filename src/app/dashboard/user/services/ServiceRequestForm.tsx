@@ -3,6 +3,7 @@ import { useTransition } from "react";
 import { submitAuthenticatedServiceRequest } from "./actions";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { trackFBEvent } from "@/components/FacebookPixel";
 
 function ServiceRequestFormInner() {
   const [isPending, startTransition] = useTransition();
@@ -11,8 +12,14 @@ function ServiceRequestFormInner() {
   const defaultType = searchParams.get("type") === "feature" ? "RevenuePro Feature Request" : "";
 
   const handleSubmit = (formData: FormData) => {
+    const serviceType = formData.get("serviceType") as string;
     startTransition(async () => {
       await submitAuthenticatedServiceRequest(formData);
+      // Fire client-side Facebook Pixel Lead event
+      trackFBEvent("Lead", {
+        content_name: serviceType || "Service Request",
+        content_category: "Authenticated Service Request",
+      });
     });
   };
 

@@ -37,14 +37,15 @@ export async function adminSaveSettings(formData: FormData) {
     });
   }
 
-  // Payment Settings
-  const paymentKeys = [
+  // Payment & Pixel Settings
+  const settingsKeys = [
     "BKASH_MANUAL_ENABLED", "BKASH_MANUAL_NUMBER", "BKASH_MANUAL_TYPE",
     "BKASH_API_ENABLED", "BKASH_API_APP_KEY", "BKASH_API_APP_SECRET",
-    "BKASH_API_USERNAME", "BKASH_API_PASSWORD"
+    "BKASH_API_USERNAME", "BKASH_API_PASSWORD",
+    "FB_PIXEL_ID", "FB_CAPI_TOKEN", "FB_TEST_EVENT_CODE"
   ];
 
-  for (const k of paymentKeys) {
+  for (const k of settingsKeys) {
     const val = formData.get(k) as string;
     if (val !== null) {
       await prisma.setting.upsert({
