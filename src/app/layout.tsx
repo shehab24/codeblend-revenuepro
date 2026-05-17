@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "CodeBlend — WordPress Plugins & E-commerce Solutions",
   description: "Premium WordPress plugins, fraud prevention tools, and custom e-commerce solutions. Build, protect, and scale your online business with CodeBlend.",
+  other: {
+    "facebook-domain-verification": "zvxdkdltjgrfkj5c6w7heb2i31ph9l",
+  },
 };
 
 export default function RootLayout({
