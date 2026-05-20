@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
 
 type NavLink = { href: string; label: string; icon: React.ReactNode };
@@ -88,9 +88,17 @@ export function DashboardShell({ children, isAdmin, userName, userEmail, userIma
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const sections = isAdmin ? adminLinks : userSections;
   const profileRef = useRef<HTMLDivElement>(null);
   const { signOut } = useClerk();
+
+  // Redirect users who don't have phone set to their profile page, except admins
+  useEffect(() => {
+    if (!isAdmin && !hasPhone && pathname !== "/dashboard/user/profile") {
+      router.replace("/dashboard/user/profile");
+    }
+  }, [isAdmin, hasPhone, pathname, router]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -101,6 +109,32 @@ export function DashboardShell({ children, isAdmin, userName, userEmail, userIma
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  const isBlocked = !isAdmin && !hasPhone && pathname !== "/dashboard/user/profile";
+
+  if (isBlocked) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl border border-slate-200 p-8 max-w-md w-full text-center space-y-6 shadow-xl">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-600 mx-auto animate-bounce">
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-xl font-black text-slate-800">মোবাইল নম্বর যোগ করা আবশ্যক</h3>
+            <p className="text-sm text-slate-500">
+              আপনার অ্যাকাউন্টের নিরাপত্তা এবং আমাদের সার্ভিস প্রদানের সুবিধার্থে একটি সচল মোবাইল নম্বর যোগ করা আবশ্যক। আপনাকে প্রোফাইল পেজে রিডাইরেক্ট করা হচ্ছে...
+            </p>
+          </div>
+          <div className="flex items-center justify-center gap-2 text-xs font-semibold text-emerald-600 bg-emerald-50 py-2.5 rounded-xl">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            প্রোফাইলে রিডাইরেক্ট হচ্ছে
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-light-vars flex min-h-[100dvh] bg-slate-50 print:bg-white print:block overflow-x-hidden print:min-h-auto print:overflow-visible relative">

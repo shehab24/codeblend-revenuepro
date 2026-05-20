@@ -33,6 +33,7 @@ export default async function AdminUsersPage() {
             <tr className="border-b border-slate-100">
               <th className="p-3 text-xs font-medium text-slate-400 uppercase">Name</th>
               <th className="p-3 text-xs font-medium text-slate-400 uppercase">Email</th>
+              <th className="p-3 text-xs font-medium text-slate-400 uppercase">Phone</th>
               <th className="p-3 text-xs font-medium text-slate-400 uppercase">Role</th>
               <th className="p-3 text-xs font-medium text-slate-400 uppercase">Licenses</th>
               <th className="p-3 text-xs font-medium text-slate-400 uppercase">Joined</th>
@@ -48,6 +49,15 @@ export default async function AdminUsersPage() {
                 <tr key={u.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
                   <td className="p-3 text-sm font-medium text-slate-900">{u.name || "N/A"}</td>
                   <td className="p-3 text-sm text-slate-600">{u.email}</td>
+                  <td className="p-3 text-sm font-mono text-slate-700">
+                    {u.phone ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-sky-50 text-sky-700 rounded-lg text-xs font-bold border border-sky-100">
+                        📱 {u.phone}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-slate-400 italic">Not Set</span>
+                    )}
+                  </td>
                   <td className="p-3 text-sm">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                       isUserAdmin
@@ -83,7 +93,7 @@ export default async function AdminUsersPage() {
               );
             }) : (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-slate-400">No users synced yet.</td>
+                <td colSpan={7} className="p-8 text-center text-slate-400">No users synced yet.</td>
               </tr>
             )}
           </tbody>
