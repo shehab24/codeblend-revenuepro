@@ -14,8 +14,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const isAdmin = user.publicMetadata?.role === "admin";
   const userEmail = user.emailAddresses[0]?.emailAddress || "unknown@domain.com";
 
+  let dbUser = null;
   try {
-    await prisma.user.upsert({
+    dbUser = await prisma.user.upsert({
       where: { id: user.id },
       create: {
         id: user.id,
@@ -31,7 +32,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     });
   } catch (error: any) {
     if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
-      await prisma.user.update({
+      dbUser = await prisma.user.update({
         where: { email: userEmail },
         data: {
           id: user.id,
@@ -44,12 +45,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
     }
   }
 
+  const hasPhone = !!dbUser?.phone;
+
   return (
     <DashboardShell
       isAdmin={!!isAdmin}
       userName={user.fullName || "User"}
       userEmail={userEmail}
       userImageUrl={user.imageUrl}
+      hasPhone={hasPhone}
     >
       {children}
     </DashboardShell>

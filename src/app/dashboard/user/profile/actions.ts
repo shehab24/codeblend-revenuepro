@@ -9,13 +9,16 @@ export async function updateUserPhone(phone: string) {
   if (!userId) return { error: "Unauthorized" };
 
   const cleaned = phone.replace(/\s+/g, "").trim();
-  if (cleaned && !/^01\d{9}$/.test(cleaned)) {
+  if (!cleaned) {
+    return { error: "ফোন নম্বর দেওয়া আবশ্যিক" };
+  }
+  if (!/^01\d{9}$/.test(cleaned)) {
     return { error: "সঠিক ফোন নম্বর দিন (01XXXXXXXXX)" };
   }
 
   await prisma.user.update({
     where: { id: userId },
-    data: { phone: cleaned || null }
+    data: { phone: cleaned }
   });
 
   revalidatePath("/dashboard/user/profile");

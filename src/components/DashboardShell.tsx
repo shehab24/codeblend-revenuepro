@@ -80,9 +80,10 @@ interface DashboardShellProps {
   userName: string;
   userEmail: string;
   userImageUrl?: string;
+  hasPhone?: boolean;
 }
 
-export function DashboardShell({ children, isAdmin, userName, userEmail, userImageUrl }: DashboardShellProps) {
+export function DashboardShell({ children, isAdmin, userName, userEmail, userImageUrl, hasPhone = true }: DashboardShellProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -247,7 +248,28 @@ export function DashboardShell({ children, isAdmin, userName, userEmail, userIma
         </header>
 
         {/* Content */}
-        <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full">
+        <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+          {!hasPhone && pathname !== "/dashboard/user/profile" && (
+            <div className="bg-gradient-to-r from-amber-500/10 via-amber-600/5 to-transparent border border-amber-200/80 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-fade-in">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 shrink-0">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-800 text-sm sm:text-base">আপনার প্রোফাইলে ফোন নম্বর সেট করা নেই!</h4>
+                  <p className="text-xs sm:text-sm text-slate-600 mt-0.5">নিরাপত্তা ও ভেরিফিকেশনের জন্য প্রোফাইল সেকশনে একটি সচল ফোন নম্বর যোগ করা আবশ্যিক।</p>
+                </div>
+              </div>
+              <Link 
+                href="/dashboard/user/profile"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-md shadow-amber-600/10 transition-all cursor-pointer no-underline shrink-0"
+              >
+                📱 ফোন নম্বর সেট করুন
+              </Link>
+            </div>
+          )}
           {children}
         </div>
       </main>

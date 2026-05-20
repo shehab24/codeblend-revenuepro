@@ -49,7 +49,7 @@ export function ProfileClient({ profile }: { profile: ProfileData }) {
   const [activeTab, setActiveTab] = useState<"overview" | "licenses" | "transactions">("overview");
   const [isUpdating, startUpdate] = useTransition();
   const [phoneInput, setPhoneInput] = useState(profile.phone || "");
-  const [showPhoneEdit, setShowPhoneEdit] = useState(false);
+  const [showPhoneEdit, setShowPhoneEdit] = useState(!profile.phone);
   const [updateMsg, setUpdateMsg] = useState("");
 
   const handlePhoneUpdate = () => {
@@ -164,30 +164,42 @@ export function ProfileClient({ profile }: { profile: ProfileData }) {
                 </div>
 
                 {/* Phone */}
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <div className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest mb-1">ফোন নম্বর</div>
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 relative">
+                  <div className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1">
+                    ফোন নম্বর <span className="text-red-500 font-bold">*</span>
+                  </div>
                   {showPhoneEdit ? (
-                    <div className="flex items-center gap-2 mt-1">
-                      <input
-                        type="text"
-                        value={phoneInput}
-                        onChange={(e) => setPhoneInput(e.target.value)}
-                        placeholder="01XXXXXXXXX"
-                        className="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 text-sm"
-                      />
-                      <button
-                        onClick={handlePhoneUpdate}
-                        disabled={isUpdating}
-                        className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition disabled:opacity-50 border-none cursor-pointer"
-                      >
-                        {isUpdating ? "..." : "Save"}
-                      </button>
-                      <button
-                        onClick={() => setShowPhoneEdit(false)}
-                        className="px-2 py-1.5 text-slate-400 hover:text-red-500 text-xs border-none bg-transparent cursor-pointer"
-                      >
-                        ✕
-                      </button>
+                    <div className="flex flex-col gap-2 mt-1">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={phoneInput}
+                          onChange={(e) => setPhoneInput(e.target.value)}
+                          placeholder="01XXXXXXXXX"
+                          required
+                          className="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                        />
+                        <button
+                          onClick={handlePhoneUpdate}
+                          disabled={isUpdating || !phoneInput.trim()}
+                          className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition disabled:opacity-50 border-none cursor-pointer shrink-0"
+                        >
+                          {isUpdating ? "..." : "Save"}
+                        </button>
+                        {profile.phone && (
+                          <button
+                            onClick={() => setShowPhoneEdit(false)}
+                            className="px-2 py-1.5 text-slate-400 hover:text-red-500 text-xs border-none bg-transparent cursor-pointer shrink-0"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                      {!profile.phone && (
+                        <span className="text-[0.7rem] text-amber-600 font-medium">
+                          ⚠️ সেবা সচল রাখতে একটি সচল মোবাইল নম্বর দিতে হবে।
+                        </span>
+                      )}
                     </div>
                   ) : (
                     <div className="flex items-center justify-between">
