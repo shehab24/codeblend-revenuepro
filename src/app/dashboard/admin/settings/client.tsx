@@ -15,13 +15,15 @@ export function AdminSettingsClient({
   currentAlertEmail, 
   currentRevenueProLinks,
   paymentSettings,
-  pixelSettings 
+  pixelSettings,
+  tutorialSettings 
 }: { 
   currentKey: string, 
   currentAlertEmail: string, 
   currentRevenueProLinks: PluginVersion[],
   paymentSettings: any,
-  pixelSettings: { pixelId: string; capiToken: string; testEventCode: string } 
+  pixelSettings: { pixelId: string; capiToken: string; testEventCode: string },
+  tutorialSettings: { videoUrl: string; playlistUrl: string } 
 }) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -355,6 +357,46 @@ export function AdminSettingsClient({
             <p className="text-xs text-slate-400 mt-2">
               Use your Facebook Events Manager test code to verify events. Remove this in production.
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Group 6: Tutorial Video */}
+      <div className="bg-white rounded-2xl border border-purple-200 p-6 shadow-sm">
+        <div className="mb-5 pb-4 border-b border-purple-100 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-purple-900 flex items-center gap-2">
+              <svg className="w-5 h-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" /></svg>
+              Tutorial Video
+            </h3>
+            <p className="text-sm text-purple-600 mt-1">Set a featured YouTube video and playlist link for the user Tutorials page.</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-600 mb-1" htmlFor="tutorialVideoUrl">YouTube Video URL</label>
+            <input 
+              type="url" 
+              id="tutorialVideoUrl"
+              name="TUTORIAL_VIDEO_URL" 
+              defaultValue={tutorialSettings.videoUrl} 
+              placeholder="https://www.youtube.com/watch?v=..." 
+              className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 text-sm font-mono focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/10 transition"
+            />
+            <p className="text-xs text-slate-400 mt-1.5">This video will be embedded on the user Tutorials page.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-600 mb-1" htmlFor="tutorialPlaylistUrl">Playlist URL</label>
+            <input 
+              type="url" 
+              id="tutorialPlaylistUrl"
+              name="TUTORIAL_PLAYLIST_URL" 
+              defaultValue={tutorialSettings.playlistUrl} 
+              placeholder="https://www.youtube.com/playlist?list=..." 
+              className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 text-sm font-mono focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/10 transition"
+            />
+            <p className="text-xs text-slate-400 mt-1.5">"See Full Playlist" button will link here.</p>
           </div>
         </div>
       </div>

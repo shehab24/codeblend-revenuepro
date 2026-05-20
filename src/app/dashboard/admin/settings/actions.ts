@@ -37,12 +37,13 @@ export async function adminSaveSettings(formData: FormData) {
     });
   }
 
-  // Payment & Pixel Settings
+  // Payment, Pixel & Tutorial Settings
   const settingsKeys = [
     "BKASH_MANUAL_ENABLED", "BKASH_MANUAL_NUMBER", "BKASH_MANUAL_TYPE",
     "BKASH_API_ENABLED", "BKASH_API_APP_KEY", "BKASH_API_APP_SECRET",
     "BKASH_API_USERNAME", "BKASH_API_PASSWORD",
-    "FB_PIXEL_ID", "FB_CAPI_TOKEN", "FB_TEST_EVENT_CODE"
+    "FB_PIXEL_ID", "FB_CAPI_TOKEN", "FB_TEST_EVENT_CODE",
+    "TUTORIAL_VIDEO_URL", "TUTORIAL_PLAYLIST_URL"
   ];
 
   for (const k of settingsKeys) {

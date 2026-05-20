@@ -24,7 +24,9 @@ export default async function AdminSettingsPage() {
     bkashApiPassword,
     fbPixelId,
     fbCapiToken,
-    fbTestEventCode
+    fbTestEventCode,
+    tutorialVideoUrl,
+    tutorialPlaylistUrl
   ] = await Promise.all([
     prisma.setting.findUnique({ where: { key: "BD_COURIER_API_KEY" } }),
     prisma.setting.findUnique({ where: { key: "ADMIN_ALERT_EMAIL" } }),
@@ -41,6 +43,8 @@ export default async function AdminSettingsPage() {
     prisma.setting.findUnique({ where: { key: "FB_PIXEL_ID" } }),
     prisma.setting.findUnique({ where: { key: "FB_CAPI_TOKEN" } }),
     prisma.setting.findUnique({ where: { key: "FB_TEST_EVENT_CODE" } }),
+    prisma.setting.findUnique({ where: { key: "TUTORIAL_VIDEO_URL" } }),
+    prisma.setting.findUnique({ where: { key: "TUTORIAL_PLAYLIST_URL" } }),
   ]);
 
   let parsedLinks: PluginVersion[] = [];
@@ -77,6 +81,11 @@ export default async function AdminSettingsPage() {
     capiToken: fbCapiToken?.value || "",
     testEventCode: fbTestEventCode?.value || "",
   };
+
+  const tutorialSettings = {
+    videoUrl: tutorialVideoUrl?.value || "",
+    playlistUrl: tutorialPlaylistUrl?.value || "",
+  };
   
   return (
     <div className="max-w-5xl">
@@ -86,6 +95,7 @@ export default async function AdminSettingsPage() {
         currentRevenueProLinks={parsedLinks}
         paymentSettings={paymentSettings}
         pixelSettings={pixelSettings}
+        tutorialSettings={tutorialSettings}
       />
     </div>
   );

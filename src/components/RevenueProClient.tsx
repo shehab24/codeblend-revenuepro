@@ -3,6 +3,7 @@
 import { useTransition, useState } from "react";
 import { createLicense, deleteLicense, renewLicense } from "@/app/dashboard/user/actions";
 import Link from "next/link";
+import { MaskedLicenseKey } from "@/components/MaskedLicenseKey";
 
 /* ─── Types ─── */
 type License = {
@@ -230,16 +231,7 @@ function LicenseCard({ license, downloadLinks, paymentSettings, index }: { licen
           <div className="mt-4 bg-white rounded-xl p-4 border border-slate-200">
             <div className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest mb-2">লাইসেন্স কি (API KEY)</div>
             {isActive ? (
-              <div className="flex items-center gap-2">
-                <code className="text-emerald-600 break-all text-sm font-mono flex-1 bg-emerald-50 px-3 py-2 rounded-lg">{license.key}</code>
-                <button
-                  onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(license.key); }}
-                  className="shrink-0 px-3 py-2 bg-slate-100 hover:bg-emerald-100 text-slate-500 hover:text-emerald-600 rounded-lg transition-colors text-xs font-bold"
-                  title="Copy Key"
-                >
-                  📋 Copy
-                </button>
-              </div>
+              <MaskedLicenseKey licenseKey={license.key} />
             ) : (
               <div className="relative">
                 <div className="bg-slate-100 text-slate-400 text-xs px-3 py-2.5 rounded-lg blur-[2px] select-none font-mono text-center">

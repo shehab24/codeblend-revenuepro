@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AdminDeleteLicenseButton } from "./AdminDeleteLicenseButton";
 import { AdminPingLicenseButton } from "./AdminPingLicenseButton";
+import { MaskedLicenseKey } from "@/components/MaskedLicenseKey";
 import { AdminToggleLicenseStatusButton } from "./AdminToggleLicenseStatusButton";
 import { AdminTogglePaymentButton } from "./AdminTogglePaymentButton";
 import Link from "next/link";
@@ -125,15 +126,7 @@ function LicenseRow({ license }: { license: LicenseData }) {
           {/* License Key */}
           <div className="bg-slate-50 rounded-lg p-3">
             <div className="text-[0.6rem] font-bold text-slate-400 uppercase tracking-widest mb-1.5">License Key</div>
-            <div className="flex items-center gap-2">
-              <code className="text-xs font-mono text-emerald-600 bg-white px-3 py-1.5 rounded border border-slate-200 flex-1 break-all">{license.key}</code>
-              <button
-                onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(license.key); }}
-                className="shrink-0 px-3 py-1.5 bg-white hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 rounded border border-slate-200 transition text-xs font-bold"
-              >
-                📋 Copy
-              </button>
-            </div>
+            <MaskedLicenseKey licenseKey={license.key} />
           </div>
 
           {/* Pending Payment Verification */}

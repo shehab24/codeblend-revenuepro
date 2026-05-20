@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { MaskedLicenseKey } from "@/components/MaskedLicenseKey";
 import { LiveSiteDataPanel } from "@/components/LiveSiteDataPanel";
 import { AdminExtendLicenseButton } from "@/components/AdminExtendLicenseButton";
 import { 
@@ -96,7 +97,7 @@ export default async function AdminLicenseDetailsPage({ params }: { params: Prom
               </div>
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 sm:col-span-2">
                 <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">License Key</div>
-                <code className="text-sm font-mono text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded inline-block break-all">{license.key}</code>
+                <MaskedLicenseKey licenseKey={license.key} />
               </div>
             </div>
 
