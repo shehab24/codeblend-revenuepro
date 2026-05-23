@@ -107,6 +107,10 @@ export async function adminToggleLicenseStatus(licenseId: string, status: string
     if (license.tier === "0") {
       newTier = "Lifetime Access";
       expirationDate = null;
+    } else if (license.tier === "trial") {
+      newTier = "7 Days Free Trial";
+      expirationDate = new Date();
+      expirationDate.setDate(expirationDate.getDate() + 7);
     } else if (!isNaN(duration)) {
       if (duration === 1) newTier = "1 Month (Basic)";
       else if (duration === 2) newTier = "2 Months (Extended)";
@@ -120,7 +124,7 @@ export async function adminToggleLicenseStatus(licenseId: string, status: string
       expirationDate = license.expirationDate; 
     }
 
-    if (!isNaN(duration) || license.tier === "0") {
+    if (!isNaN(duration) || license.tier === "0" || license.tier === "trial") {
        updateData.tier = newTier;
        updateData.expirationDate = expirationDate;
     }

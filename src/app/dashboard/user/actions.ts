@@ -51,7 +51,7 @@ export async function createLicense(formData: FormData) {
         <h3>RevenuePro License Application</h3>
         <p><strong>Customer Email:</strong> ${user.email}</p>
         <p><strong>Target Domain:</strong> ${domain}</p>
-        <p><strong>Requested Tier:</strong> ${duration === "0" ? "Lifetime" : duration + " Month(s)"}</p>
+        <p><strong>Requested Tier:</strong> ${duration === "0" ? "Lifetime" : duration === "trial" ? "7 Days Free Trial" : duration + " Month(s)"}</p>
         <hr/>
         <p>Login to your admin dashboard to generate and issue the API Key.</p>
       `,

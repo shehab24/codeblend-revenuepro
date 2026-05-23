@@ -558,6 +558,7 @@ function NewLicenseForm() {
             required
             className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm cursor-pointer focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/10 transition appearance-none"
           >
+            <option value="trial">১ সপ্তাহ (7 Days) — Free Trial — ৳০</option>
             <option value="1">১ মাস (1 Month) — ৳১০০০</option>
             <option value="2">২ মাস (2 Months) — ৳১৮০০</option>
             <option value="3">৩ মাস (3 Months) — ৳২৫০০</option>
