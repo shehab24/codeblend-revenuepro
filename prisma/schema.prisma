@@ -8,14 +8,15 @@ datasource db {
 }
 
 model User {
-  id        String   @id
-  email     String   @unique
-  name      String?
-  phone     String?
-  role      String   @default("user")
-  verified  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id
+  email           String   @unique
+  name            String?
+  phone           String?
+  role            String   @default("user")
+  verified        Boolean  @default(false)
+  downloadAllowed Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   licenses        License[]
   serviceRequests ServiceRequest[]

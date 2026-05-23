@@ -1,7 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { toggleUserRole } from "./actions";
+import { toggleUserRole, toggleUserDownloadAccess } from "./actions";
 
 export default async function AdminUsersPage() {
   const user = await currentUser();
@@ -36,6 +36,7 @@ export default async function AdminUsersPage() {
               <th className="p-3 text-xs font-medium text-slate-400 uppercase">Phone</th>
               <th className="p-3 text-xs font-medium text-slate-400 uppercase">Role</th>
               <th className="p-3 text-xs font-medium text-slate-400 uppercase">Licenses</th>
+              <th className="p-3 text-xs font-medium text-slate-400 uppercase">Downloads</th>
               <th className="p-3 text-xs font-medium text-slate-400 uppercase">Joined</th>
               <th className="p-3 text-xs font-medium text-slate-400 uppercase">Actions</th>
             </tr>
@@ -68,6 +69,22 @@ export default async function AdminUsersPage() {
                     </span>
                   </td>
                   <td className="p-3 text-sm text-slate-600">{u._count.licenses}</td>
+                  <td className="p-3 text-sm">
+                    <form action={toggleUserDownloadAccess}>
+                      <input type="hidden" name="userId" value={u.id} />
+                      <input type="hidden" name="allow" value={u.downloadAllowed ? "false" : "true"} />
+                      <button
+                        type="submit"
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all border border-solid cursor-pointer ${
+                          u.downloadAllowed
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                            : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
+                        }`}
+                      >
+                        {u.downloadAllowed ? "✅ Allowed" : "🚫 Restricted"}
+                      </button>
+                    </form>
+                  </td>
                   <td className="p-3 text-sm text-slate-500">{new Date(u.createdAt).toLocaleDateString()}</td>
                   <td className="p-3 text-sm">
                     {isCurrentUser ? (
@@ -93,7 +110,7 @@ export default async function AdminUsersPage() {
               );
             }) : (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-slate-400">No users synced yet.</td>
+                <td colSpan={8} className="p-8 text-center text-slate-400">No users synced yet.</td>
               </tr>
             )}
           </tbody>
