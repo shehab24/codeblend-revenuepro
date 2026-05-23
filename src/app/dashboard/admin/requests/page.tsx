@@ -2,6 +2,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { AdminRequestUpdateModal } from "./AdminRequestUpdateModal";
+import { AdminSendEmailModal } from "./AdminSendEmailModal";
 import { RequestSearch } from "./RequestSearch";
 
 export default async function AdminRequestsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
@@ -59,7 +60,7 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
               <th className="p-3 text-xs font-medium text-slate-400 uppercase tracking-wide">Status</th>
               <th className="p-3 text-xs font-medium text-slate-400 uppercase tracking-wide">Billing (Total / Due)</th>
               <th className="p-3 text-xs font-medium text-slate-400 uppercase tracking-wide">Delivery</th>
-              <th className="p-3 text-xs font-medium text-slate-400 uppercase tracking-wide text-center">Manage</th>
+              <th className="p-3 text-xs font-medium text-slate-400 uppercase tracking-wide text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -67,6 +68,9 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
               const totalAmount = req.totalAmount || 0;
               const paidAmount = req.paidAmount || 0;
               const dueAmount = totalAmount - paidAmount;
+              // Determine best email to use for this request
+              const recipientEmail = req.applicant?.email || req.contactEmail || "";
+              const recipientName = req.applicant?.name || "User";
               return (
                 <tr key={req.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
                   <td className="p-3 text-sm">
@@ -122,7 +126,17 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
                     {req.deliveryDate ? new Date(req.deliveryDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : <span className="italic text-slate-300">Not set</span>}
                   </td>
                   <td className="p-3 text-sm text-center">
-                    <AdminRequestUpdateModal request={JSON.stringify(req)} />
+                    <div className="flex items-center justify-center gap-2">
+                      <AdminRequestUpdateModal request={JSON.stringify(req)} />
+                      {recipientEmail && (
+                        <AdminSendEmailModal
+                          recipientEmail={recipientEmail}
+                          recipientName={recipientName}
+                          requestId={req.id}
+                          serviceType={req.serviceType}
+                        />
+                      )}
+                    </div>
                   </td>
                 </tr>
               );
