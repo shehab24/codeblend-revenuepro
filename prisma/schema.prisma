@@ -103,9 +103,20 @@ model ServiceRequest {
   deliveryDate    DateTime?
 
   transactions    PaymentTransaction[]
+  notes           RequestNote[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model RequestNote {
+  id               String         @id @default(cuid())
+  serviceRequestId String
+  serviceRequest   ServiceRequest @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
+  authorRole       String         // "user" | "admin"
+  authorName       String?
+  message          String         @db.Text
+  createdAt        DateTime       @default(now())
 }
 
 model PaymentTransaction {

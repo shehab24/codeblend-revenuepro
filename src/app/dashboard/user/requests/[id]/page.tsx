@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { RequestNoteThread } from "./RequestNoteThread";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   return { title: "Request Details | CodeBlend" };
@@ -14,6 +15,7 @@ export default async function RequestDetailsPage({ params }: { params: Promise<{
 
   const request = await prisma.serviceRequest.findUnique({
     where: { id },
+    include: { notes: { orderBy: { createdAt: "asc" } } },
   });
 
   const client = await (await import("@clerk/nextjs/server")).clerkClient();
@@ -37,6 +39,11 @@ export default async function RequestDetailsPage({ params }: { params: Promise<{
   };
 
   const statusInfo = statusStyles[request.status] || statusStyles.pending;
+
+  const notes = request.notes.map((n) => ({
+    ...n,
+    createdAt: n.createdAt.toISOString(),
+  }));
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -121,6 +128,9 @@ export default async function RequestDetailsPage({ params }: { params: Promise<{
           </div>
         </div>
       </div>
+
+      {/* Notes / Chat Thread */}
+      <RequestNoteThread requestId={request.id} notes={notes} />
     </div>
   );
 }
