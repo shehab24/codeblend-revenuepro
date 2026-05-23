@@ -24,6 +24,7 @@ export async function submitLead(formData: FormData) {
     const email = formData.get("email") as string;
     const phone = formData.get("phone") as string;
     const message = formData.get("message") as string;
+    const websiteUrl = (formData.get("websiteUrl") as string) || "";
     const serviceType = (formData.get("serviceType") as string) || "General Inquiry";
     
     // ── ANTI-SPAM HONEYPOT CHECK ──
@@ -125,6 +126,12 @@ export async function submitLead(formData: FormData) {
                 <div style="color: #0f172a; font-size: 16px; font-weight: 700;">${serviceType}</div>
               </div>
 
+              ${websiteUrl ? `
+              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 16px; margin: 20px 0;">
+                <div style="color: #166534; font-size: 13px; font-weight: 600; margin-bottom: 4px;">🌐 ওয়েবসাইট ইউআরএল</div>
+                <div style="color: #0f172a; font-size: 14px; font-weight: 600;">${websiteUrl}</div>
+              </div>` : ""}
+
               ${message ? `
               <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin: 20px 0;">
                 <div style="color: #64748b; font-size: 13px; font-weight: 600; margin-bottom: 4px;">💬 মেসেজ</div>
@@ -158,6 +165,7 @@ export async function submitLead(formData: FormData) {
         applicantId: dbUser.id,
         serviceType,
         message,
+        websiteUrl,
       },
     });
 
@@ -198,6 +206,7 @@ export async function submitLead(formData: FormData) {
           <p><strong>Name:</strong> ${name}</p>
           <p><strong>Email:</strong> ${email}</p>
           <p><strong>Phone:</strong> ${phone}</p>
+          <p><strong>Website URL:</strong> ${websiteUrl || "N/A"}</p>
           <p><strong>Service Requested:</strong> ${serviceType}</p>
           <p><strong>Message:</strong> ${message || "N/A"}</p>
           <hr/>

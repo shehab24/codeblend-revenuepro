@@ -208,7 +208,7 @@ export function LeadCTAButton({
                       style={{ width: "100%", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "12px 16px", color: "#1e293b", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
                     />
                   </div>
-                  <div style={{ marginBottom: "16px" }}>
+                   <div style={{ marginBottom: "16px" }}>
                     <label style={{ display: "block", color: "#334155", fontWeight: 500, marginBottom: "6px", fontSize: "14px" }}>
                       ফোন নম্বর <span style={{ color: "#f43f5e" }}>*</span>
                     </label>
@@ -218,6 +218,18 @@ export function LeadCTAButton({
                       style={{ width: "100%", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "12px 16px", color: "#1e293b", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
                     />
                   </div>
+                  {["Free Trial", "Monthly Plan", "Quarterly Plan"].includes(serviceType) && (
+                    <div style={{ marginBottom: "16px" }}>
+                      <label style={{ display: "block", color: "#334155", fontWeight: 500, marginBottom: "6px", fontSize: "14px" }}>
+                        ওয়েবসাইট ইউআরএল (Website URL) <span style={{ color: "#f43f5e" }}>*</span>
+                      </label>
+                      <input
+                        type="url" name="websiteUrl" required
+                        placeholder="https://yourwebsite.com"
+                        style={{ width: "100%", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "12px 16px", color: "#1e293b", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
+                      />
+                    </div>
+                  )}
                   <div style={{ marginBottom: "16px" }}>
                     <label style={{ display: "block", color: "#334155", fontWeight: 500, marginBottom: "6px", fontSize: "14px" }}>
                       মেসেজ
