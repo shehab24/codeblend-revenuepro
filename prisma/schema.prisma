@@ -14,7 +14,7 @@ model User {
   phone           String?
   role            String   @default("user")
   verified        Boolean  @default(false)
-  downloadAllowed Boolean  @default(true)
+  downloadAllowed Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
