@@ -67,7 +67,7 @@ export async function adminSendEmailToUser({
   const html = `
     <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;">
       <div style="text-align:center;margin-bottom:28px;">
-        <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#10b981,#0d9488);display:inline-flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:20px;">R</div>
+        <div style="width:48px;height:48px;line-height:48px;border-radius:12px;background:linear-gradient(135deg,#10b981,#0d9488);display:inline-block;text-align:center;color:white;font-weight:bold;font-size:20px;margin:0 auto;">C</div>
         <h2 style="margin:12px 0 4px;color:#0f172a;font-size:20px;">CodeBlend — RevenuePro</h2>
       </div>
       <p style="color:#334155;font-size:15px;line-height:1.7;white-space:pre-wrap;">${htmlBody}</p>
