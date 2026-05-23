@@ -218,10 +218,10 @@ export function LeadCTAButton({
                       style={{ width: "100%", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "12px 16px", color: "#1e293b", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
                     />
                   </div>
-                  {["Free Trial", "Monthly Plan", "Quarterly Plan"].includes(serviceType) && (
+                  {["Free Trial", "Monthly Plan", "Quarterly Plan", "Get Started"].includes(serviceType) && (
                     <div style={{ marginBottom: "16px" }}>
                       <label style={{ display: "block", color: "#334155", fontWeight: 500, marginBottom: "6px", fontSize: "14px" }}>
-                        ওয়েবসাইট ইউআরএল (Website URL) <span style={{ color: "#f43f5e" }}>*</span>
+                        Website URL <span style={{ color: "#f43f5e" }}>*</span>
                       </label>
                       <input
                         type="url" name="websiteUrl" required
