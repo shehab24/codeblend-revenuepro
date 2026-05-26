@@ -120,7 +120,7 @@ export default async function RevenueProPage() {
             <div className="md:w-1/3">
               <h3 className="text-sm font-bold text-emerald-600 uppercase tracking-wider mb-2">সাবস্ক্রিপশন</h3>
               <div className="flex items-baseline gap-2 mb-4">
-                <span className="text-3xl font-bold text-slate-800">৳১০০০</span>
+                <span className="text-3xl font-bold text-slate-800">৳৪৯৯</span>
                 <span className="text-slate-500 font-medium">/ মাস থেকে</span>
               </div>
               <p className="text-slate-500 text-sm leading-relaxed">

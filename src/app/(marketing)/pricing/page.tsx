@@ -23,7 +23,7 @@ export default async function PricingPage() {
           <div className="bg-white rounded-3xl border border-slate-100 p-8 shadow-sm flex flex-col">
             <h3 className="text-slate-500 font-bold mb-4">Monthly</h3>
             <div className="mb-6">
-              <span className="text-4xl font-extrabold text-slate-900">৳ 999</span>
+              <span className="text-4xl font-extrabold text-slate-900">৳ 499</span>
               <span className="text-slate-400 text-sm"> / mo</span>
             </div>
             <p className="text-slate-500 text-sm mb-8">Perfect for new businesses just getting started.</p>
@@ -40,42 +40,50 @@ export default async function PricingPage() {
             )}
           </div>
 
-          {/* Plan 2 — Quarterly */}
+          {/* Plan 2 — Bi-Monthly */}
           <div className="bg-slate-900 rounded-3xl border border-slate-800 p-8 shadow-2xl flex flex-col relative transform md:-translate-y-4">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
               <span className="bg-gradient-to-r from-emerald-400 to-teal-500 text-white text-xs font-bold px-3 py-1 rounded-full">BEST VALUE</span>
             </div>
-            <h3 className="text-emerald-400 font-bold mb-4">Quarterly</h3>
+            <h3 className="text-emerald-400 font-bold mb-4">Bi-Monthly</h3>
             <div className="mb-6">
-               <span className="text-4xl font-extrabold text-white">৳ 2,500</span>
-               <span className="text-slate-400 text-sm"> / 3 mo</span>
+               <span className="text-4xl font-extrabold text-white">৳ 999</span>
+               <span className="text-slate-400 text-sm"> / 2 mo</span>
             </div>
-            <p className="text-slate-400 text-sm mb-8">Save ৳500 — everything you need to automate your store.</p>
+            <p className="text-slate-400 text-sm mb-8">Everything you need to automate your store.</p>
             <ul className="space-y-4 mb-8 flex-1">
               <li className="flex items-center gap-3 text-slate-300 text-sm"><span className="text-emerald-500">✓</span> Unlimited API queries</li>
               <li className="flex items-center gap-3 text-slate-300 text-sm"><span className="text-emerald-500">✓</span> Advanced fraud analytics</li>
               <li className="flex items-center gap-3 text-slate-300 text-sm"><span className="text-emerald-500">✓</span> Priority email support</li>
               <li className="flex items-center gap-3 text-slate-300 text-sm"><span className="text-emerald-500">✓</span> Custom integrations</li>
-              <li className="flex items-center gap-3 text-slate-300 text-sm"><span className="text-emerald-500">✓</span> Dedicated onboarding</li>
             </ul>
             {!userId ? (
-              <LeadCTAButton serviceType="Quarterly Plan" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity cursor-pointer">Get Quarterly Plan</LeadCTAButton>
+              <LeadCTAButton serviceType="Monthly Plan" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity cursor-pointer">Get Started</LeadCTAButton>
             ) : (
               <Link href="/dashboard" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity">Subscribe Now</Link>
             )}
           </div>
 
-          {/* Plan 3 */}
+          {/* Plan 3 — Quarterly */}
           <div className="bg-white rounded-3xl border border-slate-100 p-8 shadow-sm flex flex-col">
-            <h3 className="text-slate-500 font-bold mb-4">Enterprise</h3>
-            <div className="mb-6"><span className="text-4xl font-extrabold text-slate-900">Custom</span></div>
-            <p className="text-slate-500 text-sm mb-8">For large-scale operations and agencies.</p>
+            <h3 className="text-slate-500 font-bold mb-4">Quarterly</h3>
+            <div className="mb-6">
+              <span className="text-4xl font-extrabold text-slate-900">৳ 1,499</span>
+              <span className="text-slate-400 text-sm"> / 3 mo</span>
+            </div>
+            <p className="text-slate-500 text-sm mb-8">Premium power for serious e-commerce builders.</p>
             <ul className="space-y-4 mb-8 flex-1">
-              <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Dedicated account manager</li>
-              <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Custom feature development</li>
-              <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> SLA & 24/7 Phone Support</li>
+              <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Unlimited API queries</li>
+              <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Advanced fraud analytics</li>
+              <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Priority email support</li>
+              <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Custom integrations</li>
+              <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Dedicated onboarding</li>
             </ul>
-            <a href="https://wa.me/+8801XXXXXXXXX" className="w-full py-3 block text-center bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors">Contact Sales</a>
+            {!userId ? (
+              <LeadCTAButton serviceType="Quarterly Plan" className="w-full py-3 block text-center bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors cursor-pointer">Get Started</LeadCTAButton>
+            ) : (
+              <Link href="/dashboard" className="w-full py-3 block text-center bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors">Subscribe Now</Link>
+            )}
           </div>
         </div>
       </div>
