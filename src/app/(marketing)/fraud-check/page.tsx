@@ -116,23 +116,23 @@ export default function FraudCheckPage() {
           </div>
 
           {/* Right Panel: Search & Stats */}
-          <div className="bg-slate-50/50 flex flex-col gap-6">
+          <div className="bg-slate-50/50 flex flex-col gap-6 w-full overflow-hidden">
             
             {/* Top Bar: Search Input */}
             <div>
-              <div className="bg-white rounded-full p-2 pl-6 flex items-center shadow-sm border border-slate-100">
+              <div className="bg-white rounded-2xl sm:rounded-full p-2 pl-4 sm:pl-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-0 shadow-sm border border-slate-100">
                 <input 
                   type="text" 
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                   placeholder="Mobile Number (e.g. 01712345678)" 
-                  className="flex-1 bg-transparent border-none outline-none text-slate-600 placeholder-slate-400 font-medium"
+                  className="flex-1 bg-transparent border-none outline-none text-slate-600 placeholder-slate-400 font-medium py-3 sm:py-0 px-2 sm:px-0 text-sm sm:text-base"
                 />
                 <button 
                   onClick={handleSearch}
                   disabled={loading}
-                  className="bg-[#ff4e00] hover:bg-[#e64600] disabled:opacity-70 disabled:cursor-not-allowed text-white px-8 py-3 rounded-full font-bold transition-colors min-w-[140px]"
+                  className="bg-[#ff4e00] hover:bg-[#e64600] disabled:opacity-70 disabled:cursor-not-allowed text-white px-6 sm:px-8 py-3 rounded-xl sm:rounded-full font-bold transition-colors min-w-[120px] sm:min-w-[140px] text-sm sm:text-base"
                 >
                   {loading ? "Searching..." : "রিপোর্ট দেখুন"}
                 </button>
@@ -141,54 +141,58 @@ export default function FraudCheckPage() {
             </div>
 
             {/* 3 Summary Stats Cards */}
-            <div className="grid grid-cols-3 gap-6">
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 text-center">
-                <div className="text-3xl font-bold text-sky-500 mb-1">{stats ? stats.total_parcel : 0}</div>
-                <div className="text-slate-500 font-medium">অর্ডার</div>
+            <div className="grid grid-cols-3 gap-3 sm:gap-6">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 sm:p-6 text-center">
+                <div className="text-xl sm:text-3xl font-bold text-sky-500 mb-1">{stats ? stats.total_parcel : 0}</div>
+                <div className="text-slate-500 text-xs sm:text-sm md:text-base font-medium">অর্ডার</div>
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 text-center">
-                <div className="text-3xl font-bold text-emerald-500 mb-1">{stats ? stats.success_parcel : 0}</div>
-                <div className="text-slate-500 font-medium">ডেলিভারি</div>
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 sm:p-6 text-center">
+                <div className="text-xl sm:text-3xl font-bold text-emerald-500 mb-1">{stats ? stats.success_parcel : 0}</div>
+                <div className="text-slate-500 text-xs sm:text-sm md:text-base font-medium">ডেলিভারি</div>
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 text-center">
-                <div className="text-3xl font-bold text-red-500 mb-1">{stats ? stats.cancelled_parcel : 0}</div>
-                <div className="text-slate-500 font-medium">বাতিল</div>
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 sm:p-6 text-center">
+                <div className="text-xl sm:text-3xl font-bold text-red-500 mb-1">{stats ? stats.cancelled_parcel : 0}</div>
+                <div className="text-slate-500 text-xs sm:text-sm md:text-base font-medium">বাতিল</div>
               </div>
             </div>
 
             {/* Table Area */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-              <div className="grid grid-cols-5 bg-slate-50 p-4 border-b border-slate-100 font-bold text-slate-800 text-center text-sm md:text-base">
-                <div>কুরিয়ার</div>
-                <div>অর্ডার</div>
-                <div>ডেলিভারি</div>
-                <div>বাতিল</div>
-                <div>ডেলিভারি হার</div>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden w-full">
+              <div className="overflow-x-auto w-full">
+                <div className="min-w-[550px]">
+                  <div className="grid grid-cols-5 bg-slate-50 p-4 border-b border-slate-100 font-bold text-slate-800 text-center text-sm sm:text-base">
+                    <div>কুরিয়ার</div>
+                    <div>অর্ডার</div>
+                    <div>ডেলিভারি</div>
+                    <div>বাতিল</div>
+                    <div>ডেলিভারি হার</div>
+                  </div>
+                  
+                  {!stats ? (
+                    <div className="p-16 text-center text-slate-400 text-sm">
+                      কোনো তথ্য পাওয়া যায়নি
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-100">
+                      {stats.couriers.map((courier) => {
+                        const hasData = courier.order > 0;
+                        return (
+                          <div key={courier.name} className={`grid grid-cols-5 p-4 text-center text-sm items-center font-medium ${!hasData ? 'opacity-60' : ''}`}>
+                            <div className="flex items-center justify-center gap-2">
+                               <span className={`w-2 h-2 rounded-full ${hasData ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
+                               {courier.name}
+                            </div>
+                            <div className="text-slate-700">{courier.order}</div>
+                            <div className="text-emerald-600">{courier.delivered}</div>
+                            <div className="text-red-500">{courier.cancelled}</div>
+                            <div className="text-emerald-500">{courier.rate}%</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
-              
-              {!stats ? (
-                <div className="p-16 text-center text-slate-400 text-sm">
-                  কোনো তথ্য পাওয়া যায়নি
-                </div>
-              ) : (
-                <div className="divide-y divide-slate-100">
-                  {stats.couriers.map((courier) => {
-                    const hasData = courier.order > 0;
-                    return (
-                      <div key={courier.name} className={`grid grid-cols-5 p-4 text-center text-sm items-center font-medium ${!hasData ? 'opacity-60' : ''}`}>
-                        <div className="flex items-center justify-center gap-2">
-                           <span className={`w-2 h-2 rounded-full ${hasData ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
-                           {courier.name}
-                        </div>
-                        <div className="text-slate-700">{courier.order}</div>
-                        <div className="text-emerald-600">{courier.delivered}</div>
-                        <div className="text-red-500">{courier.cancelled}</div>
-                        <div className="text-emerald-500">{courier.rate}%</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
 
           </div>
