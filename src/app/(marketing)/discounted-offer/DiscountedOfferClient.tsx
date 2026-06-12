@@ -270,7 +270,7 @@ export default function DiscountedOfferClient({ bkashNumber, bkashType }: Discou
               
               <div className="space-y-4">
                 <p className="text-teal-100/90 text-sm leading-relaxed">
-                  প্লাগিনটি অ্যাক্টিভ করতে নিচের বিকাশ নাম্বারে <span className="text-amber-300 font-extrabold">৳১,২০০ BDT</span> সেন্ডমানি (Send Money) করুন।
+                  প্লাগিনটি অ্যাক্টিভ করতে নিচের বিকাশ নাম্বারে অথবা QR কোড স্ক্যান করে <span className="text-amber-300 font-extrabold">৳১,২০০ BDT</span> সেন্ডমানি (Send Money) করুন।
                 </p>
 
                 {/* Displaying bKash Payment details */}
@@ -282,11 +282,23 @@ export default function DiscountedOfferClient({ bkashNumber, bkashType }: Discou
                     </span>
                   </div>
                   <div className="text-2xl sm:text-3xl font-black text-amber-400 tracking-wider font-mono">
-                    {bkashNumber || "01784962299"}
+                    {bkashNumber || "01977757486"}
                   </div>
                   <p className="text-xs text-teal-200/70 leading-relaxed pt-2 border-t border-teal-800/40">
                     * পেমেন্ট করার সময় রেফারেন্সে আপনার ফোন নাম্বার অথবা সাইটের নাম ব্যবহার করতে পারেন।
                   </p>
+                </div>
+
+                {/* QR Code Card */}
+                <div className="bg-white rounded-2xl p-4 flex flex-col items-center justify-center border border-teal-700/30 shadow-inner">
+                  <img 
+                    src="/bkash-qr.png" 
+                    alt="bKash QR Code" 
+                    className="w-48 h-auto object-contain rounded-lg"
+                  />
+                  <span className="text-[10px] text-slate-500 font-bold mt-2 text-center">
+                    বিকাশ অ্যাপ দিয়ে স্ক্যান করতে পারেন
+                  </span>
                 </div>
               </div>
 
@@ -295,7 +307,7 @@ export default function DiscountedOfferClient({ bkashNumber, bkashType }: Discou
                 <h4 className="text-sm font-bold text-teal-300 uppercase tracking-widest">ধাপসমূহ:</h4>
                 <div className="space-y-3">
                   {[
-                    "নির্ধারিত বিকাশ নম্বরে ১,২০০ টাকা সেন্ডমানি সম্পন্ন করুন।",
+                    "নির্ধারিত বিকাশ নম্বরে অথবা QR কোড স্ক্যান করে ১,২০০ টাকা সেন্ডমানি সম্পন্ন করুন।",
                     "লেনদেন শেষে বিকাশ ফিরতি এসএমএস থেকে Transaction ID (TrxID) টি সংরক্ষণ করুন।",
                     "ডানের ফরমে আপনার প্রয়োজনীয় তথ্যের সাথে Transaction ID এবং আপনার বিকাশ নম্বরটি দিয়ে সাবমিট করুন।"
                   ].map((step, idx) => (
@@ -312,7 +324,7 @@ export default function DiscountedOfferClient({ bkashNumber, bkashType }: Discou
 
             <div className="pt-8 border-t border-teal-800 text-center">
               <p className="text-xs text-teal-300/60 font-medium">
-                যেকোনো সমস্যায় কল করুন: +৮৮০১৭৮৪৯৬২২৯৯
+                যেকোনো সমস্যায় কল করুন: +৮৮০১৯৭৭৭৫৭৪৮৬
               </p>
             </div>
           </div>

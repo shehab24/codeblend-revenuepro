@@ -15,7 +15,7 @@ export default async function DiscountedOfferPage() {
     prisma.setting.findUnique({ where: { key: "BKASH_MANUAL_TYPE" } }),
   ]);
 
-  const bkashNumber = bkashNumberSetting?.value || "01784962299";
+  const bkashNumber = bkashNumberSetting?.value || "01977757486";
   const bkashType = bkashTypeSetting?.value || "Personal";
 
   return (
