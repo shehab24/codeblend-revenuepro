@@ -318,41 +318,36 @@ export default function DiscountedOfferClient({ bkashNumber, bkashType }: Discou
                   </div>
                 ) : (
                   /* QR Code Card */
-                  <div className="flex flex-col items-center justify-center">
+                  <div className="flex flex-col items-center justify-center py-2">
                     <img 
                       src="/bkash-qr.png" 
                       alt="bKash QR Code" 
-                      className="w-56 h-auto object-contain rounded-2xl shadow-xl border border-teal-700/30"
+                      className="w-full max-w-[320px] h-auto object-contain rounded-2xl shadow-xl border border-teal-700/30"
                     />
                   </div>
                 )}
               </div>
 
-              {/* Instructions steps */}
-              <div className="space-y-4 pt-4">
-                <h4 className="text-sm font-bold text-teal-300 uppercase tracking-widest">ধাপসমূহ:</h4>
-                <div className="space-y-3">
-                  {(paymentTab === "number"
-                    ? [
-                        `নির্ধারিত বিকাশ নম্বরে (${bkashNumber || "01977757486"}) ১,২০০ টাকা সেন্ডমানি সম্পন্ন করুন।`,
-                        "লেনদেন শেষে বিকাশ ফিরতি এসএমএস থেকে Transaction ID (TrxID) টি সংরক্ষণ করুন।",
-                        "ডানের ফরমে আপনার প্রয়োজনীয় তথ্যের সাথে Transaction ID এবং আপনার বিকাশ নম্বরটি দিয়ে সাবমিট করুন।"
-                      ]
-                    : [
-                        "বিকাশ অ্যাপ ওপেন করে স্ক্রিনে প্রদর্শিত QR কোডটি স্ক্যান করে ১,২০০ টাকা সেন্ডমানি সম্পন্ন করুন।",
-                        "লেনদেন শেষে বিকাশ ফিরতি এসএমএস থেকে Transaction ID (TrxID) টি সংরক্ষণ করুন।",
-                        "ডানের ফরমে আপনার প্রয়োজনীয় তথ্যের সাথে Transaction ID এবং আপনার বিকাশ নম্বরটি দিয়ে সাবমিট করুন।"
-                      ]
-                  ).map((step, idx) => (
-                    <div key={idx} className="flex gap-3 text-xs sm:text-sm text-teal-100/90 animate-fadeIn">
-                      <span className="shrink-0 w-5 h-5 rounded-full bg-[#08413c] flex items-center justify-center font-bold text-amber-400 text-xs border border-teal-700/50">
-                        {idx + 1}
-                      </span>
-                      <p className="leading-relaxed">{step}</p>
-                    </div>
-                  ))}
+              {/* Instructions steps - only shown for Number payment */}
+              {paymentTab === "number" && (
+                <div className="space-y-4 pt-4">
+                  <h4 className="text-sm font-bold text-teal-300 uppercase tracking-widest">ধাপসমূহ:</h4>
+                  <div className="space-y-3">
+                    {[
+                      `নির্ধারিত বিকাশ নম্বরে (${bkashNumber || "01977757486"}) ১,২০০ টাকা সেন্ডমানি সম্পন্ন করুন।`,
+                      "লেনদেন শেষে বিকাশ ফিরতি এসএমএস থেকে Transaction ID (TrxID) টি সংরক্ষণ করুন।",
+                      "ডানের ফরমে আপনার প্রয়োজনীয় তথ্যের সাথে Transaction ID এবং আপনার বিকাশ নম্বরটি দিয়ে সাবমিট করুন।"
+                    ].map((step, idx) => (
+                      <div key={idx} className="flex gap-3 text-xs sm:text-sm text-teal-100/90 animate-fadeIn">
+                        <span className="shrink-0 w-5 h-5 rounded-full bg-[#08413c] flex items-center justify-center font-bold text-amber-400 text-xs border border-teal-700/50">
+                          {idx + 1}
+                        </span>
+                        <p className="leading-relaxed">{step}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="pt-8 border-t border-teal-800 text-center">
