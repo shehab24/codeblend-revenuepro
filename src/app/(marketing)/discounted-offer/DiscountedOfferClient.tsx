@@ -6,15 +6,24 @@ import { submitDiscountedOfferRequest } from "@/actions/leadActions";
 type DiscountedOfferClientProps = {
   bkashNumber: string;
   bkashType: string;
+  timerHours?: string;
 };
 
-export default function DiscountedOfferClient({ bkashNumber, bkashType }: DiscountedOfferClientProps) {
-  // Dynamic relative countdown timer
+export default function DiscountedOfferClient({ 
+  bkashNumber, 
+  bkashType,
+  timerHours = "62"
+}: DiscountedOfferClientProps) {
+  // Parse and calculate initial timer fields
+  const parsedHours = parseInt(timerHours) || 62;
+  const initialDays = Math.floor(parsedHours / 24);
+  const initialHours = parsedHours % 24;
+
   const [timeLeft, setTimeLeft] = useState({
-    days: 2,
-    hours: 14,
-    minutes: 44,
-    seconds: 35,
+    days: initialDays,
+    hours: initialHours,
+    minutes: 0,
+    seconds: 0,
   });
 
   // Form states
@@ -44,14 +53,14 @@ export default function DiscountedOfferClient({ bkashNumber, bkashType }: Discou
         } else if (prev.days > 0) {
           return { ...prev, days: prev.days - 1, hours: 23, minutes: 59, seconds: 59 };
         } else {
-          // Reset to create infinite urgency
-          return { days: 2, hours: 12, minutes: 30, seconds: 0 };
+          // Reset to create infinite urgency using admin setting
+          return { days: initialDays, hours: initialHours, minutes: 0, seconds: 0 };
         }
       });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [initialDays, initialHours]);
 
   const scrollToForm = () => {
     document.getElementById("apply-form")?.scrollIntoView({ behavior: "smooth" });

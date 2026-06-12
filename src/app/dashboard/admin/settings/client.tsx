@@ -16,14 +16,16 @@ export function AdminSettingsClient({
   currentRevenueProLinks,
   paymentSettings,
   pixelSettings,
-  tutorialSettings 
+  tutorialSettings,
+  currentTimerHours
 }: { 
   currentKey: string, 
   currentAlertEmail: string, 
   currentRevenueProLinks: PluginVersion[],
   paymentSettings: any,
   pixelSettings: { pixelId: string; capiToken: string; testEventCode: string },
-  tutorialSettings: { videoUrl: string; playlistUrl: string } 
+  tutorialSettings: { videoUrl: string; playlistUrl: string },
+  currentTimerHours: string
 }) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -397,6 +399,34 @@ export function AdminSettingsClient({
               className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 text-sm font-mono focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/10 transition"
             />
             <p className="text-xs text-slate-400 mt-1.5">"See Full Playlist" button will link here.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Group 7: Discounted Offer Landing Page Timer */}
+      <div className="bg-white rounded-2xl border border-amber-200 p-6 shadow-sm">
+        <div className="mb-5 pb-4 border-b border-amber-100 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-amber-950 flex items-center gap-2">
+              ⏱️ Discounted Offer Landing Page Timer
+            </h3>
+            <p className="text-sm text-amber-700 mt-1">Set the relative countdown timer duration displayed to users.</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-600 mb-1" htmlFor="timerHours">Countdown Timer Duration (Hours)</label>
+            <input 
+              type="number" 
+              id="timerHours"
+              name="DISCOUNTED_OFFER_TIMER_HOURS" 
+              defaultValue={currentTimerHours} 
+              min="1"
+              placeholder="e.g. 62" 
+              className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 text-sm font-mono focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition"
+            />
+            <p className="text-xs text-slate-400 mt-1.5">This represents the starting value in hours (e.g. 62 hours is 2 days and 14 hours).</p>
           </div>
         </div>
       </div>

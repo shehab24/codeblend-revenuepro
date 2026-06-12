@@ -9,19 +9,22 @@ export const metadata: Metadata = {
 };
 
 export default async function DiscountedOfferPage() {
-  // Query manual bkash settings from DB
-  const [bkashNumberSetting, bkashTypeSetting] = await Promise.all([
+  // Query manual bkash settings and timer hours from DB
+  const [bkashNumberSetting, bkashTypeSetting, timerHoursSetting] = await Promise.all([
     prisma.setting.findUnique({ where: { key: "BKASH_MANUAL_NUMBER" } }),
     prisma.setting.findUnique({ where: { key: "BKASH_MANUAL_TYPE" } }),
+    prisma.setting.findUnique({ where: { key: "DISCOUNTED_OFFER_TIMER_HOURS" } }),
   ]);
 
   const bkashNumber = bkashNumberSetting?.value || "01977757486";
   const bkashType = bkashTypeSetting?.value || "Personal";
+  const timerHours = timerHoursSetting?.value || "62";
 
   return (
     <DiscountedOfferClient 
       bkashNumber={bkashNumber} 
       bkashType={bkashType} 
+      timerHours={timerHours}
     />
   );
 }

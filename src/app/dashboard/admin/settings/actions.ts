@@ -43,7 +43,8 @@ export async function adminSaveSettings(formData: FormData) {
     "BKASH_API_ENABLED", "BKASH_API_APP_KEY", "BKASH_API_APP_SECRET",
     "BKASH_API_USERNAME", "BKASH_API_PASSWORD",
     "FB_PIXEL_ID", "FB_CAPI_TOKEN", "FB_TEST_EVENT_CODE",
-    "TUTORIAL_VIDEO_URL", "TUTORIAL_PLAYLIST_URL"
+    "TUTORIAL_VIDEO_URL", "TUTORIAL_PLAYLIST_URL",
+    "DISCOUNTED_OFFER_TIMER_HOURS"
   ];
 
   for (const k of settingsKeys) {
@@ -59,5 +60,6 @@ export async function adminSaveSettings(formData: FormData) {
 
   revalidatePath("/dashboard/admin/settings");
   revalidatePath("/dashboard/user/revenuepro"); // also revalidate the user side where links show up
+  revalidatePath("/discounted-offer");
   return { success: true };
 }

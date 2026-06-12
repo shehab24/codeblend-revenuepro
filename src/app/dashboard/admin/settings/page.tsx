@@ -26,7 +26,8 @@ export default async function AdminSettingsPage() {
     fbCapiToken,
     fbTestEventCode,
     tutorialVideoUrl,
-    tutorialPlaylistUrl
+    tutorialPlaylistUrl,
+    discountedOfferTimerHours
   ] = await Promise.all([
     prisma.setting.findUnique({ where: { key: "BD_COURIER_API_KEY" } }),
     prisma.setting.findUnique({ where: { key: "ADMIN_ALERT_EMAIL" } }),
@@ -45,6 +46,7 @@ export default async function AdminSettingsPage() {
     prisma.setting.findUnique({ where: { key: "FB_TEST_EVENT_CODE" } }),
     prisma.setting.findUnique({ where: { key: "TUTORIAL_VIDEO_URL" } }),
     prisma.setting.findUnique({ where: { key: "TUTORIAL_PLAYLIST_URL" } }),
+    prisma.setting.findUnique({ where: { key: "DISCOUNTED_OFFER_TIMER_HOURS" } }),
   ]);
 
   let parsedLinks: PluginVersion[] = [];
@@ -96,6 +98,7 @@ export default async function AdminSettingsPage() {
         paymentSettings={paymentSettings}
         pixelSettings={pixelSettings}
         tutorialSettings={tutorialSettings}
+        currentTimerHours={discountedOfferTimerHours?.value || "62"}
       />
     </div>
   );
