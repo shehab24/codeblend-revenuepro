@@ -224,3 +224,156 @@ export async function submitLead(formData: FormData) {
     return { success: false, error: error.message || "আবেদন জমা দিতে সমস্যা হয়েছে।" };
   }
 }
+
+export async function submitDiscountedOfferRequest(formData: FormData) {
+  try {
+    const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
+    const phone = formData.get("phone") as string;
+    const websiteUrl = (formData.get("websiteUrl") as string) || "";
+    const senderNumber = formData.get("senderNumber") as string;
+    const transactionId = formData.get("transactionId") as string;
+
+    if (!name || !email || !phone || !senderNumber || !transactionId) {
+      return { success: false, error: "সবগুলো ফিল্ড পূরণ করা আবশ্যক।" };
+    }
+
+    // Check if TrxID already used
+    const existingTrx = await prisma.paymentTransaction.findUnique({
+      where: { transactionId }
+    });
+    if (existingTrx) {
+      return { success: false, error: "এই Transaction ID টি ইতিমধ্যে ব্যবহার করা হয়েছে।" };
+    }
+
+    const client = await clerkClient();
+
+    // Check if user exists in our DB
+    let dbUser = await prisma.user.findUnique({ where: { email } });
+
+    // Check if user exists in Clerk
+    const clerkUsers = await client.users.getUserList({ emailAddress: [email] });
+    const hasClerkAccount = clerkUsers.data.length > 0;
+
+    let userCase: "new" | "db_only" | "full" = "new";
+
+    if (!dbUser) {
+      userCase = "new";
+      const tempId = `lead_${crypto.randomBytes(8).toString("hex")}`;
+      dbUser = await prisma.user.create({
+        data: {
+          id: tempId,
+          email,
+          name,
+          phone,
+          role: "user",
+          verified: false,
+        },
+      });
+
+      // Send Clerk invitation if not already has account
+      if (!hasClerkAccount) {
+        try {
+          await client.invitations.createInvitation({
+            emailAddress: email,
+            redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL || "https://codeblend.co"}/sign-up`,
+            ignoreExisting: true,
+          });
+        } catch (inviteError) {
+          console.error("Clerk invitation failed:", inviteError);
+        }
+      }
+    } else {
+      userCase = hasClerkAccount ? "full" : "db_only";
+    }
+
+    // Always create a new ServiceRequest for this discounted offer
+    const serviceRequest = await prisma.serviceRequest.create({
+      data: {
+        applicantId: dbUser.id,
+        serviceType: "Discounted Offer (RevenuePro)",
+        websiteUrl: websiteUrl || null,
+        message: `bKash Payment Details:\nSender Number: ${senderNumber}\nTransaction ID (TrxID): ${transactionId}\nPrice: ৳৩,৪৯০`,
+        totalAmount: 3490,
+        paidAmount: 3490,
+      },
+    });
+
+    // Create the PaymentTransaction linked to the ServiceRequest
+    await prisma.paymentTransaction.create({
+      data: {
+        userId: dbUser.id,
+        serviceRequestId: serviceRequest.id,
+        amount: 3490,
+        paymentMethod: "bkash_manual",
+        transactionId: transactionId,
+        senderNumber: senderNumber,
+        status: "pending",
+        notes: `Discounted Offer Landing Page Submission.\nName: ${name}\nPhone: ${phone}`,
+      }
+    });
+
+    // ── FACEBOOK CAPI LEAD EVENT ──
+    try {
+      const eventId = `lead_discount_${crypto.randomBytes(8).toString("hex")}_${Date.now()}`;
+      await sendFacebookCAPIEvent({
+        eventName: "Lead",
+        eventId,
+        sourceUrl: `${process.env.NEXT_PUBLIC_APP_URL || "https://codeblend.co"}/discounted-offer`,
+        userData: {
+          email,
+          phone,
+          firstName: name.split(" ")[0],
+          lastName: name.split(" ").slice(1).join(" ") || undefined,
+        },
+        customData: {
+          content_name: "Discounted Offer (RevenuePro)",
+          content_category: "Discounted Offer Request",
+          value: 3490,
+          currency: "BDT",
+        },
+      });
+    } catch (fbError) {
+      console.error("[FB CAPI] Lead event failed:", fbError);
+    }
+
+    // ── ADMIN ALERT EMAIL ──
+    try {
+      const alertEmailSetting = await prisma.setting.findUnique({ where: { key: "ADMIN_ALERT_EMAIL" } });
+      const alertEmail = alertEmailSetting?.value || "mdshehab204@gmail.com";
+
+      await transporter.sendMail({
+        from: '"CodeBlend System" <hello@codeblend.co>', 
+        to: alertEmail,
+        subject: `🔥 CodeBlend: Discounted Offer Request (৳3,490)`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <h2 style="color: #ff4e00; margin-top: 0;">🔥 Discounted Offer Request Submitted!</h2>
+            <p>A customer has paid via bKash and applied for the Discounted Offer.</p>
+            <div style="background: #f8fafc; padding: 16px; border-radius: 6px; border: 1px solid #e2e8f0; margin: 16px 0;">
+              <p><strong>Name:</strong> ${name}</p>
+              <p><strong>Email:</strong> ${email}</p>
+              <p><strong>Phone:</strong> ${phone}</p>
+              <p><strong>Website URL:</strong> ${websiteUrl ? `<a href="${websiteUrl}">${websiteUrl}</a>` : "N/A"}</p>
+              <p><strong>Service Type:</strong> Discounted Offer (RevenuePro)</p>
+            </div>
+            <div style="background: #fff5f5; padding: 16px; border-radius: 6px; border: 1px solid #feb2b2; margin: 16px 0;">
+              <h3 style="color: #c53030; margin-top: 0; font-size: 15px;">💰 bKash Transaction Details</h3>
+              <p style="margin: 4px 0;"><strong>Sender bKash Phone:</strong> ${senderNumber}</p>
+              <p style="margin: 4px 0;"><strong>Transaction ID (TrxID):</strong> <code style="background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">${transactionId}</code></p>
+              <p style="margin: 4px 0;"><strong>Amount Paid:</strong> ৳৩,৪৯০ BDT</p>
+            </div>
+            <p style="color: #94a3b8; font-size: 12px; margin-top: 24px;">User Type: ${userCase}</p>
+          </div>
+        `,
+      });
+    } catch (adminMailError) {
+      console.error("Failed to send admin email alert:", adminMailError);
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error submitting discounted offer request:", error);
+    return { success: false, error: error.message || "আবেদন জমা দিতে সমস্যা হয়েছে।" };
+  }
+}
