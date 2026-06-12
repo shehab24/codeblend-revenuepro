@@ -318,15 +318,12 @@ export default function DiscountedOfferClient({ bkashNumber, bkashType }: Discou
                   </div>
                 ) : (
                   /* QR Code Card */
-                  <div className="bg-white rounded-2xl p-5 flex flex-col items-center justify-center border border-teal-700/30 shadow-inner">
+                  <div className="flex flex-col items-center justify-center">
                     <img 
                       src="/bkash-qr.png" 
                       alt="bKash QR Code" 
-                      className="w-44 h-auto object-contain rounded-lg shadow-sm"
+                      className="w-56 h-auto object-contain rounded-2xl shadow-xl border border-teal-700/30"
                     />
-                    <span className="text-[11px] text-slate-500 font-bold mt-2 text-center">
-                      বিকাশ অ্যাপ দিয়ে QR কোডটি স্ক্যান করুন
-                    </span>
                   </div>
                 )}
               </div>
@@ -335,12 +332,19 @@ export default function DiscountedOfferClient({ bkashNumber, bkashType }: Discou
               <div className="space-y-4 pt-4">
                 <h4 className="text-sm font-bold text-teal-300 uppercase tracking-widest">ধাপসমূহ:</h4>
                 <div className="space-y-3">
-                  {[
-                    "নির্ধারিত বিকাশ নম্বরে অথবা QR কোড স্ক্যান করে ১,২০০ টাকা সেন্ডমানি সম্পন্ন করুন।",
-                    "লেনদেন শেষে বিকাশ ফিরতি এসএমএস থেকে Transaction ID (TrxID) টি সংরক্ষণ করুন।",
-                    "ডানের ফরমে আপনার প্রয়োজনীয় তথ্যের সাথে Transaction ID এবং আপনার বিকাশ নম্বরটি দিয়ে সাবমিট করুন।"
-                  ].map((step, idx) => (
-                    <div key={idx} className="flex gap-3 text-xs sm:text-sm text-teal-100/90">
+                  {(paymentTab === "number"
+                    ? [
+                        `নির্ধারিত বিকাশ নম্বরে (${bkashNumber || "01977757486"}) ১,২০০ টাকা সেন্ডমানি সম্পন্ন করুন।`,
+                        "লেনদেন শেষে বিকাশ ফিরতি এসএমএস থেকে Transaction ID (TrxID) টি সংরক্ষণ করুন।",
+                        "ডানের ফরমে আপনার প্রয়োজনীয় তথ্যের সাথে Transaction ID এবং আপনার বিকাশ নম্বরটি দিয়ে সাবমিট করুন।"
+                      ]
+                    : [
+                        "বিকাশ অ্যাপ ওপেন করে স্ক্রিনে প্রদর্শিত QR কোডটি স্ক্যান করে ১,২০০ টাকা সেন্ডমানি সম্পন্ন করুন।",
+                        "লেনদেন শেষে বিকাশ ফিরতি এসএমএস থেকে Transaction ID (TrxID) টি সংরক্ষণ করুন।",
+                        "ডানের ফরমে আপনার প্রয়োজনীয় তথ্যের সাথে Transaction ID এবং আপনার বিকাশ নম্বরটি দিয়ে সাবমিট করুন।"
+                      ]
+                  ).map((step, idx) => (
+                    <div key={idx} className="flex gap-3 text-xs sm:text-sm text-teal-100/90 animate-fadeIn">
                       <span className="shrink-0 w-5 h-5 rounded-full bg-[#08413c] flex items-center justify-center font-bold text-amber-400 text-xs border border-teal-700/50">
                         {idx + 1}
                       </span>
