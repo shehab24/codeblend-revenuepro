@@ -127,13 +127,13 @@ export default function DiscountedOfferClient({ bkashNumber, bkashType }: Discou
             <div className="space-y-4">
               <span className="bg-amber-500/20 text-amber-300 text-xs font-bold px-3 py-1 rounded-full border border-amber-500/30 uppercase tracking-widest inline-flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-                LIFETIME TIME DEAL
+                1 YEAR SPECIAL DEAL
               </span>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight">
-                রেভিনিউপ্রো ইন্টেলিজেন্স লাইসেন্স
+                রেভিনিউপ্রো ইন্টেলিজেন্স লাইসেন্স (১ বছর)
               </h2>
               <p className="text-teal-100/80 text-xs sm:text-sm md:text-base leading-relaxed">
-                প্লাগিনটির লাইফটাইম ডিল ব্যবহারের মাধ্যমে কুরিয়ার রিটার্ন হ্রাস করুন, ফেক অর্ডার ডিটেক্ট করুন এবং ব্যবসার ১০০% রিয়েল টাইম লাভ-ক্ষতি হিসাব করুন একদম সহজে।
+                প্লাগিনটির ১ বছরের লাইসেন্স ব্যবহারের মাধ্যমে কুরিয়ার রিটার্ন হ্রাস করুন, ফেক অর্ডার ডিটেক্ট করুন এবং ব্যবসার ১০০% রিয়েল টাইম লাভ-ক্ষতি হিসাব করুন একদম সহজে।
               </p>
             </div>
 
@@ -167,9 +167,9 @@ export default function DiscountedOfferClient({ bkashNumber, bkashType }: Discou
           <div className="p-8 sm:p-12 bg-[#094d47] flex flex-col justify-center items-center text-center space-y-6">
             <div className="space-y-1">
               <span className="text-teal-300/70 text-sm line-through block">৳ ৪,৯৯৯</span>
-              <span className="text-4xl sm:text-5xl font-black text-white tracking-tight">৳ ৩,৪৯০</span>
+              <span className="text-4xl sm:text-5xl font-black text-white tracking-tight">৳ ১,২০০</span>
               <span className="bg-emerald-500 text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider block mt-2 w-max mx-auto shadow-md">
-                SAVE 1500 TK
+                SAVE 3799 TK
               </span>
             </div>
 
@@ -265,12 +265,12 @@ export default function DiscountedOfferClient({ bkashNumber, bkashType }: Discou
           <div className="bg-[#0b5b54] rounded-3xl text-white p-8 sm:p-10 flex flex-col justify-between space-y-8 shadow-xl border border-teal-500/20">
             <div className="space-y-6">
               <h3 className="text-xl sm:text-2xl font-black tracking-tight border-b border-teal-700/50 pb-4">
-                বিকারশ পেমেন্ট গাইডলাইন
+                বিকাশ পেমেন্ট গাইডলাইন
               </h3>
               
               <div className="space-y-4">
                 <p className="text-teal-100/90 text-sm leading-relaxed">
-                  প্লাগিনটি অ্যাক্টিভ করতে নিচের বিকাশ নাম্বারে <span className="text-amber-300 font-extrabold">৳৩,৪৯০ BDT</span> সেন্ডমানি (Send Money) করুন।
+                  প্লাগিনটি অ্যাক্টিভ করতে নিচের বিকাশ নাম্বারে <span className="text-amber-300 font-extrabold">৳১,২০০ BDT</span> সেন্ডমানি (Send Money) করুন।
                 </p>
 
                 {/* Displaying bKash Payment details */}
@@ -295,7 +295,7 @@ export default function DiscountedOfferClient({ bkashNumber, bkashType }: Discou
                 <h4 className="text-sm font-bold text-teal-300 uppercase tracking-widest">ধাপসমূহ:</h4>
                 <div className="space-y-3">
                   {[
-                    "নির্ধারিত বিকাশ নম্বরে ৩,৪৯০ টাকা সেন্ডমানি সম্পন্ন করুন।",
+                    "নির্ধারিত বিকাশ নম্বরে ১,২০০ টাকা সেন্ডমানি সম্পন্ন করুন।",
                     "লেনদেন শেষে বিকাশ ফিরতি এসএমএস থেকে Transaction ID (TrxID) টি সংরক্ষণ করুন।",
                     "ডানের ফরমে আপনার প্রয়োজনীয় তথ্যের সাথে Transaction ID এবং আপনার বিকাশ নম্বরটি দিয়ে সাবমিট করুন।"
                   ].map((step, idx) => (

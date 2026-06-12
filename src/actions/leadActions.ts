@@ -293,9 +293,9 @@ export async function submitDiscountedOfferRequest(formData: FormData) {
         applicantId: dbUser.id,
         serviceType: "Discounted Offer (RevenuePro)",
         websiteUrl: websiteUrl || null,
-        message: `bKash Payment Details:\nSender Number: ${senderNumber}\nTransaction ID (TrxID): ${transactionId}\nPrice: ৳৩,৪৯০`,
-        totalAmount: 3490,
-        paidAmount: 3490,
+        message: `bKash Payment Details:\nSender Number: ${senderNumber}\nTransaction ID (TrxID): ${transactionId}\nPrice: ৳১,২০০`,
+        totalAmount: 1200,
+        paidAmount: 1200,
       },
     });
 
@@ -304,7 +304,7 @@ export async function submitDiscountedOfferRequest(formData: FormData) {
       data: {
         userId: dbUser.id,
         serviceRequestId: serviceRequest.id,
-        amount: 3490,
+        amount: 1200,
         paymentMethod: "bkash_manual",
         transactionId: transactionId,
         senderNumber: senderNumber,
@@ -329,7 +329,7 @@ export async function submitDiscountedOfferRequest(formData: FormData) {
         customData: {
           content_name: "Discounted Offer (RevenuePro)",
           content_category: "Discounted Offer Request",
-          value: 3490,
+          value: 1200,
           currency: "BDT",
         },
       });
@@ -345,7 +345,7 @@ export async function submitDiscountedOfferRequest(formData: FormData) {
       await transporter.sendMail({
         from: '"CodeBlend System" <hello@codeblend.co>', 
         to: alertEmail,
-        subject: `🔥 CodeBlend: Discounted Offer Request (৳3,490)`,
+        subject: `🔥 CodeBlend: Discounted Offer Request (৳1,200)`,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
             <h2 style="color: #ff4e00; margin-top: 0;">🔥 Discounted Offer Request Submitted!</h2>
@@ -361,7 +361,7 @@ export async function submitDiscountedOfferRequest(formData: FormData) {
               <h3 style="color: #c53030; margin-top: 0; font-size: 15px;">💰 bKash Transaction Details</h3>
               <p style="margin: 4px 0;"><strong>Sender bKash Phone:</strong> ${senderNumber}</p>
               <p style="margin: 4px 0;"><strong>Transaction ID (TrxID):</strong> <code style="background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">${transactionId}</code></p>
-              <p style="margin: 4px 0;"><strong>Amount Paid:</strong> ৳৩,৪৯০ BDT</p>
+              <p style="margin: 4px 0;"><strong>Amount Paid:</strong> ৳১,২০০ BDT</p>
             </div>
             <p style="color: #94a3b8; font-size: 12px; margin-top: 24px;">User Type: ${userCase}</p>
           </div>
