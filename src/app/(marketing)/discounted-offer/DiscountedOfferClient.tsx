@@ -29,6 +29,7 @@ export default function DiscountedOfferClient({ bkashNumber, bkashType }: Discou
   const [isPending, setIsPending] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [paymentTab, setPaymentTab] = useState<"number" | "qr">("number");
 
   // Countdown timer logic
   useEffect(() => {
@@ -273,33 +274,61 @@ export default function DiscountedOfferClient({ bkashNumber, bkashType }: Discou
                   প্লাগিনটি অ্যাক্টিভ করতে নিচের বিকাশ নাম্বারে অথবা QR কোড স্ক্যান করে <span className="text-amber-300 font-extrabold">৳১,২০০ BDT</span> সেন্ডমানি (Send Money) করুন।
                 </p>
 
-                {/* Displaying bKash Payment details */}
-                <div className="bg-[#08413c] rounded-2xl p-6 border border-teal-700/50 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-teal-300 uppercase tracking-widest font-bold">বিকাশ নাম্বার</span>
-                    <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase border border-emerald-500/30">
-                      {bkashType || "Personal"}
-                    </span>
-                  </div>
-                  <div className="text-2xl sm:text-3xl font-black text-amber-400 tracking-wider font-mono">
-                    {bkashNumber || "01977757486"}
-                  </div>
-                  <p className="text-xs text-teal-200/70 leading-relaxed pt-2 border-t border-teal-800/40">
-                    * পেমেন্ট করার সময় রেফারেন্সে আপনার ফোন নাম্বার অথবা সাইটের নাম ব্যবহার করতে পারেন।
-                  </p>
+                {/* Tab switcher */}
+                <div className="flex bg-[#08413c] p-1 rounded-xl border border-teal-700/50">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentTab("number")}
+                    className={`flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all ${
+                      paymentTab === "number"
+                        ? "bg-[#0b5b54] text-white shadow-md"
+                        : "text-teal-300 hover:text-white"
+                    }`}
+                  >
+                    বিকাশ নম্বর
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentTab("qr")}
+                    className={`flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all ${
+                      paymentTab === "qr"
+                        ? "bg-[#0b5b54] text-white shadow-md"
+                        : "text-teal-300 hover:text-white"
+                    }`}
+                  >
+                    QR কোড স্ক্যান
+                  </button>
                 </div>
 
-                {/* QR Code Card */}
-                <div className="bg-white rounded-2xl p-4 flex flex-col items-center justify-center border border-teal-700/30 shadow-inner">
-                  <img 
-                    src="/bkash-qr.png" 
-                    alt="bKash QR Code" 
-                    className="w-48 h-auto object-contain rounded-lg"
-                  />
-                  <span className="text-[10px] text-slate-500 font-bold mt-2 text-center">
-                    বিকাশ অ্যাপ দিয়ে স্ক্যান করতে পারেন
-                  </span>
-                </div>
+                {paymentTab === "number" ? (
+                  /* Displaying bKash Payment details */
+                  <div className="bg-[#08413c] rounded-2xl p-6 border border-teal-700/50 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-teal-300 uppercase tracking-widest font-bold">বিকাশ নাম্বার</span>
+                      <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase border border-emerald-500/30">
+                        {bkashType || "Personal"}
+                      </span>
+                    </div>
+                    <div className="text-2xl sm:text-3xl font-black text-amber-400 tracking-wider font-mono">
+                      {bkashNumber || "01977757486"}
+                    </div>
+                    <p className="text-xs text-teal-200/70 leading-relaxed pt-2 border-t border-teal-800/40">
+                      * পেমেন্ট করার সময় রেফারেন্সে আপনার ফোন নাম্বার অথবা সাইটের নাম ব্যবহার করতে পারেন।
+                    </p>
+                  </div>
+                ) : (
+                  /* QR Code Card */
+                  <div className="bg-white rounded-2xl p-5 flex flex-col items-center justify-center border border-teal-700/30 shadow-inner">
+                    <img 
+                      src="/bkash-qr.png" 
+                      alt="bKash QR Code" 
+                      className="w-44 h-auto object-contain rounded-lg shadow-sm"
+                    />
+                    <span className="text-[11px] text-slate-500 font-bold mt-2 text-center">
+                      বিকাশ অ্যাপ দিয়ে QR কোডটি স্ক্যান করুন
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Instructions steps */}
