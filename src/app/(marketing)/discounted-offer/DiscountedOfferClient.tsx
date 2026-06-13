@@ -219,7 +219,9 @@ export default function DiscountedOfferClient({
               { icon: "🎯", title: "পিক্সেল ও কনভার্সন এপিআই (Pixel & CAPI)", desc: "ব্রাউজার পিক্সেল এবং সার্ভার-সাইড Conversions API (CAPI) এর মাধ্যমে আপনার সব সেলস ইভেন্ট ১০০% নির্ভুল ট্র্যাকিং।" },
               { icon: "🔗", title: "ইউটিএম ট্র্যাকিং (UTM Tracking)", desc: "কাস্টমার কোন বিজ্ঞাপন বা সোর্স থেকে এসে অর্ডার করেছে তা UTM প্যারামিটার দিয়ে সহজেই ট্র্যাক করার সুবিধা।" },
               { icon: "🔌", title: "সহজ ওয়ার্ডপ্রেস প্লাগইন সেটআপ", desc: "যেকোনো WooCommerce সাইটের সাথে মাত্র ২ মিনিটে প্লাগইনটি ইন্টিগ্রেট করুন। কোনো কোডিং অভিজ্ঞতার প্রয়োজন নেই।" },
-              { icon: "📊", title: "১০০% নির্ভুল লাভ-ক্ষতি হিসাব", desc: "বিজ্ঞাপন খরচ, কুরিয়ার চার্জ এবং রিটার্ন ড্যামেজ হিসাব করে প্রতিটি প্রোডাক্টের আসল প্রফিট রিয়েল টাইমে মনিটর করুন।" }
+              { icon: "📊", title: "১০০% নির্ভুল লাভ-ক্ষতি হিসাব", desc: "বিজ্ঞাপন খরচ, কুরিয়ার চার্জ এবং রিটার্ন ড্যামেজ হিসাব করে প্রতিটি প্রোডাক্টের আসল প্রফিট রিয়েল টাইমে মনিটর করুন।" },
+              { icon: "🚫", title: "ডুপ্লিকেট ও ফেক অর্ডার ফিল্টারিং", desc: "একই কাস্টমারের ডুপ্লিকেট অর্ডার, ওটিপি ভেরিফিকেশন এবং ভুয়া অর্ডার সিস্টেম অটোমেটিক ফিল্টার করে বাদ দিয়ে দেয়।" },
+              { icon: "📉", title: "অ্যাবানডনড কার্ট রিকভারি", desc: "অর্ডার সম্পূর্ণ না করে কার্ট ছেড়ে চলে যাওয়া কাস্টমারদের ট্র্যাক করে অফার বা রিমাইন্ডার পাঠানোর অটোমেটেড সিস্টেম।" }
             ].map((feat) => (
               <div key={feat.title} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all duration-300 group flex flex-col">
                 <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl mb-4 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
