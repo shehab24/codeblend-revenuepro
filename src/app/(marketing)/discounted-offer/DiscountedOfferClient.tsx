@@ -269,7 +269,7 @@ export default function DiscountedOfferClient({
         </div>
 
         {/* ── PAYMENT INSTRUCTIONS & APPLICATION FORM ── */}
-        <div id="apply-form" className="grid lg:grid-cols-[1fr_1.3fr] gap-8">
+        <div id="apply-form" className="grid lg:grid-cols-[1fr_1.3fr] gap-8 items-start">
           
           {/* Left Column: Payment Details */}
           <div className="bg-[#0b5b54] rounded-3xl text-white p-8 sm:p-10 flex flex-col justify-between space-y-8 shadow-xl border border-teal-500/20">
