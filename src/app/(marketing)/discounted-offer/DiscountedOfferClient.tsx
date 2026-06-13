@@ -358,12 +358,6 @@ export default function DiscountedOfferClient({
                 </div>
               )}
             </div>
-
-            <div className="pt-8 border-t border-teal-800 text-center">
-              <p className="text-xs text-teal-300/60 font-medium">
-                যেকোনো সমস্যায় কল করুন: +৮৮০১৯৭৭৭৫৭৪৮৬
-              </p>
-            </div>
           </div>
 
           {/* Right Column: Application Form */}
