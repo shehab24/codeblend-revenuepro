@@ -33,6 +33,15 @@ export async function POST(request: Request) {
       data: { licenseId: license.id, ipAddress, userAgent, status: "disconnected" }
     });
 
+    // Delete the stored site token to clean up all authenticated access
+    try {
+      await prisma.setting.delete({
+        where: { key: `SITE_TOKEN_${license.id}` }
+      });
+    } catch (err) {
+      // Ignore if setting was not found
+    }
+
     return NextResponse.json({ 
       success: true, 
       message: "License successfully unbound and disconnected." 
