@@ -45,11 +45,11 @@ function getStatusBadge(status: string) {
 function LicenseRow({ license }: { license: LicenseData }) {
   const [expanded, setExpanded] = useState(false);
   const badge = getStatusBadge(license.status);
-  const isOnline = license.status === "active" &&
-                   license.lastPing?.status === "success" &&
-                   (Date.now() - new Date(license.lastPing!.timestamp).getTime()) < 7200000; // 2-hour window
-  const lastPingAge = license.lastPing ? Math.round((Date.now() - new Date(license.lastPing.timestamp).getTime()) / 60000) : null; // minutes ago
+  // Online = license active AND last ping was success. No timer — sticks until next ping.
+  const isOnline = license.status === "active" && license.lastPing?.status === "success";
+  const lastPingAge = license.lastPing ? Math.round((Date.now() - new Date(license.lastPing.timestamp).getTime()) / 60000) : null;
   const isExpired = license.expirationDate && new Date(license.expirationDate) < new Date();
+
 
   return (
     <div className={`bg-white rounded-xl border transition-all ${expanded ? 'shadow-md border-slate-300' : 'border-slate-200 hover:border-slate-300'} ${license.status === 'pending' ? 'border-l-4 border-l-amber-400' : ''}`}>
