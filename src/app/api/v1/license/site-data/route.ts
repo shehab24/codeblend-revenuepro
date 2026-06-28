@@ -130,6 +130,26 @@ export async function GET(req: Request) {
       const status = response ? response.status : 502;
       const errorText = response ? await response.text().catch(() => "") : "";
       console.error(`[SITE-DATA PULL] HTTP ${status}: ${errorText.substring(0, 200)}`);
+
+      // WordPress critical error (500) — their plugin is crashing
+      if (status === 500) {
+        // Try stripping HTML tags from the WP error body for a cleaner message
+        const wpMessage = errorText
+          .replace(/<[^>]+>/g, " ")    // strip HTML tags
+          .replace(/\s+/g, " ")         // collapse whitespace
+          .trim()
+          .substring(0, 300);
+
+        return NextResponse.json({
+          success: false,
+          error: "WordPress critical error on the customer site",
+          details: "The RevenuePro plugin endpoint is crashing with a PHP fatal error on their WordPress server. " +
+                   "Ask the customer to: 1) Check their WordPress error logs, 2) Deactivate conflicting plugins, " +
+                   "3) Increase PHP memory_limit, or 4) Re-install the RevenuePro plugin.",
+          wp_error: wpMessage || "Unknown WordPress error"
+        }, { status: 502 });
+      }
+
       return NextResponse.json({ 
         success: false, 
         error: `Site returned HTTP ${status}`,

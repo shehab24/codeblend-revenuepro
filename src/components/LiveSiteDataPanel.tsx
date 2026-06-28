@@ -22,14 +22,14 @@ export function LiveSiteDataPanel({
   initialData?: any;
 }) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<{ message: string; details?: string; wp_error?: string } | null>(null);
   const [data, setData] = useState<any>(initialData?.data || null);
   const [pulledAt, setPulledAt] = useState<string>(initialData?.pulled_at || "");
   const [needsSetup, setNeedsSetup] = useState(false);
 
   const pullData = async () => {
     setLoading(true);
-    setError("");
+    setError(null);
     setNeedsSetup(false);
     try {
       const res = await fetch(`/api/v1/license/site-data?license_id=${licenseId}`);
@@ -42,10 +42,10 @@ export function LiveSiteDataPanel({
         // Show friendly setup guide instead of scary error
         setNeedsSetup(true);
       } else {
-        setError(json.error || "Failed to pull data");
+        setError({ message: json.error || "Failed to pull data", details: json.details, wp_error: json.wp_error });
       }
     } catch (err) {
-      setError("Network error. Could not reach server.");
+      setError({ message: "Network error. Could not reach server." });
     } finally {
       setLoading(false);
     }
@@ -64,11 +64,11 @@ export function LiveSiteDataPanel({
             setPulledAt(json.pulled_at);
           } else if (json.error?.includes("No site token")) {
             // Don't show error — show setup guide instead
-            setError("");
+            setError(null);
             setNeedsSetup(true);
           } else {
             // Real sync error
-            setError(json.error || "Failed to pull data");
+            setError({ message: json.error || "Failed to pull data", details: json.details, wp_error: json.wp_error });
           }
         } catch {
           // Network error — silently fail on auto-sync
@@ -126,9 +126,15 @@ export function LiveSiteDataPanel({
       {error && (
         <div className="m-6 p-4 bg-red-50 border border-red-100 rounded-2xl text-sm text-red-600 flex items-start gap-3">
           <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          <div>
+          <div className="flex-1 min-w-0">
             <span className="font-semibold block mb-1">Sync Error</span>
-            {error}
+            <p>{error.message}</p>
+            {error.details && (
+              <p className="mt-2 text-red-500 text-xs leading-relaxed">{error.details}</p>
+            )}
+            {error.wp_error && (
+              <pre className="mt-2 p-2 bg-red-100 rounded-lg text-[11px] text-red-700 font-mono whitespace-pre-wrap break-all">{error.wp_error}</pre>
+            )}
           </div>
         </div>
       )}
