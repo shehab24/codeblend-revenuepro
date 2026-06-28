@@ -274,22 +274,10 @@ export async function adminPingLicense(licenseId: string) {
     } else {
       /**
        * No stored token yet — customer hasn't verified via the plugin.
-       * Just confirm the site-data route is registered (returns 200 or 401).
-       * 401 = route exists but needs auth (expected without a token).
-       * 404 = route missing → plugin broken.
-       * 500 = PHP error in the handler.
+       * This means the license is not connected/verified with the store yet, so we show Offline.
        */
-      try {
-        await Promise.any([
-          tryFetch(`https://${base}/site-data`, [200, 401]),
-          tryFetch(`http://${base}/site-data`,  [200, 401]),
-        ]);
-        siteDataOk = true;
-        pingMessage = "Plugin is installed. Customer needs to verify their license from the plugin settings to enable live data sync.";
-      } catch {
-        siteDataOk = false;
-        pingMessage = "Plugin namespace found but site-data endpoint is not responding. Plugin may be partially broken.";
-      }
+      siteDataOk = false;
+      pingMessage = "License not connected. The customer needs to activate the API key inside their WordPress plugin settings.";
     }
   } else {
     pingMessage = "Plugin namespace not found. Plugin may be deactivated, uninstalled, or the site may be unreachable.";
