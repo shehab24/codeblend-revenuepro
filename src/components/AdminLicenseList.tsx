@@ -45,7 +45,8 @@ function getStatusBadge(status: string) {
 function LicenseRow({ license }: { license: LicenseData }) {
   const [expanded, setExpanded] = useState(false);
   const badge = getStatusBadge(license.status);
-  const isOnline = license.lastPing?.status === "success" && (Date.now() - new Date(license.lastPing.timestamp).getTime()) < 86400000;
+  const isOnline = license.lastPing?.status === "success" && (Date.now() - new Date(license.lastPing.timestamp).getTime()) < 7200000; // 2 hour window
+  const lastPingAge = license.lastPing ? Math.round((Date.now() - new Date(license.lastPing.timestamp).getTime()) / 60000) : null; // minutes ago
   const isExpired = license.expirationDate && new Date(license.expirationDate) < new Date();
 
   return (
@@ -59,7 +60,10 @@ function LicenseRow({ license }: { license: LicenseData }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             <span className="text-sm font-bold text-slate-800 truncate">{license.domain}</span>
-            <span className={`text-[0.6rem] uppercase tracking-wider font-bold px-2 py-0.5 rounded ${badge.bg} ${badge.text} flex items-center gap-1`}>
+            <span
+              className={`text-[0.6rem] uppercase tracking-wider font-bold px-2 py-0.5 rounded ${badge.bg} ${badge.text} flex items-center gap-1`}
+              title="License status (Active = admin approved the key, not plugin installation status)"
+            >
               <span className={`w-1.5 h-1.5 rounded-full ${badge.dot} ${license.status === 'pending' ? 'animate-pulse' : ''}`}></span>
               {badge.label}
             </span>
@@ -76,10 +80,15 @@ function LicenseRow({ license }: { license: LicenseData }) {
 
         {/* Ping Status */}
         {license.status !== "pending" && (
-          <div className="hidden md:block shrink-0">
+          <div className="hidden md:flex flex-col items-end shrink-0">
             <span className={`text-[0.6rem] font-bold px-2.5 py-1 rounded-full ${isOnline ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-400"}`}>
-              {isOnline ? "● Online" : "○ Offline"}
+              {isOnline ? "● Plugin Online" : "○ Plugin Offline"}
             </span>
+            {lastPingAge !== null && (
+              <span className="text-[0.55rem] text-slate-300 mt-0.5">
+                checked {lastPingAge < 1 ? "just now" : `${lastPingAge}m ago`}
+              </span>
+            )}
           </div>
         )}
 

@@ -218,27 +218,33 @@ export async function adminPingLicense(licenseId: string) {
   const normalizeDomain = (d: string) => d.replace(/^https?:\/\//, '').replace(/\/$/, '');
   const domain = normalizeDomain(license.domain);
 
-  // All candidate endpoints — fired in PARALLEL so the first successful one wins immediately
-  const targetUrls = [
+  /**
+   * IMPORTANT: We ONLY check the plugin's REST namespace index endpoints.
+   * WordPress returns HTTP 200 from /wp-json/<namespace>/v1 ONLY when that namespace
+   * is registered (i.e., the plugin is installed and active).
+   * 
+   * We do NOT accept 401/403 as success because WordPress security plugins (e.g. Wordfence,
+   * iThemes Security) return 401 for ALL REST routes, including routes that don't exist,
+   * which would cause false-positive "Online" status.
+   */
+  const namespaceUrls = [
     `https://${domain}/wp-json/revenuepro-bkash-wc/v1`,
     `http://${domain}/wp-json/revenuepro-bkash-wc/v1`,
-    `https://${domain}/wp-json/revenuepro-bkash-wc/v1/site-data`,
-    `http://${domain}/wp-json/revenuepro-bkash-wc/v1/site-data`,
-    `https://${domain}/wp-json/revenuepro/v1/status`,
-    `http://${domain}/wp-json/revenuepro/v1/status`
+    `https://${domain}/wp-json/revenuepro/v1`,
+    `http://${domain}/wp-json/revenuepro/v1`,
   ];
 
-  // Helper: resolves if the URL returns 200/401/403, rejects otherwise
-  const tryUrl = (url: string): Promise<void> =>
+  // Helper: resolves ONLY if the namespace index returns exactly 200
+  const tryNamespace = (url: string): Promise<void> =>
     new Promise(async (resolve, reject) => {
       try {
         const res = await fetch(url, {
           method: "GET",
-          headers: { "Content-Type": "application/json", "User-Agent": "revenuepro-bot" },
-          signal: AbortSignal.timeout(10000), // 10s per individual request
+          headers: { "User-Agent": "revenuepro-bot" },
+          signal: AbortSignal.timeout(10000),
         });
-        // 200 = OK, 401 = Unauthorized (plugin active but needs token), 403 = Forbidden
-        if (res.status === 200 || res.status === 401 || res.status === 403) {
+        // Only 200 means the namespace is registered (plugin is truly active)
+        if (res.status === 200) {
           resolve();
         } else {
           reject(new Error(`HTTP ${res.status}`));
@@ -248,13 +254,12 @@ export async function adminPingLicense(licenseId: string) {
       }
     });
 
-  // Race all URLs in parallel — first to resolve = site is online
+  // Race all namespace checks in parallel
   let pingSuccess = false;
   try {
-    await Promise.any(targetUrls.map(tryUrl));
+    await Promise.any(namespaceUrls.map(tryNamespace));
     pingSuccess = true;
   } catch {
-    // AggregateError: all URLs failed
     pingSuccess = false;
   }
 
