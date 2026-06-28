@@ -17,7 +17,8 @@ export function AdminSettingsClient({
   paymentSettings,
   pixelSettings,
   tutorialSettings,
-  currentTimerHours
+  currentTimerHours,
+  reminderSettings
 }: { 
   currentKey: string, 
   currentAlertEmail: string, 
@@ -25,7 +26,8 @@ export function AdminSettingsClient({
   paymentSettings: any,
   pixelSettings: { pixelId: string; capiToken: string; testEventCode: string },
   tutorialSettings: { videoUrl: string; playlistUrl: string },
-  currentTimerHours: string
+  currentTimerHours: string,
+  reminderSettings: { enabled: string; days: string; subject: string; body: string }
 }) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -49,10 +51,13 @@ export function AdminSettingsClient({
     currentKey ? currentKey.split(/[\n,;]+/).map(k => k.trim()).filter(Boolean) : [""]
   );
 
+  const [reminderEnabled, setReminderEnabled] = useState(reminderSettings.enabled === "true");
+
   const handleSubmit = (formData: FormData) => {
     formData.append("revenueProPluginLinks", JSON.stringify(links));
     const activeTokens = tokens.map(t => t.trim()).filter(Boolean);
     formData.append("bdCourierApiKey", activeTokens.join("\n"));
+    formData.append("INACTIVE_REMINDER_ENABLED", reminderEnabled ? "true" : "false");
     startTransition(async () => {
       await adminSaveSettings(formData);
     });
@@ -467,6 +472,80 @@ export function AdminSettingsClient({
             <p className="text-xs text-slate-400 mt-1.5">This represents the starting value in hours (e.g. 62 hours is 2 days and 14 hours).</p>
           </div>
         </div>
+      </div>
+
+      {/* Group 8: Inactive License Reminder Automation */}
+      <div className="bg-white rounded-2xl border border-rose-200 p-6 shadow-sm">
+        <div className="mb-5 pb-4 border-b border-rose-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-bold text-rose-950 flex items-center gap-2">
+              🔔 Inactive License Reminder Automation
+            </h3>
+            <p className="text-sm text-rose-700 mt-1">Automatically email users whose plugins are offline or inactive.</p>
+          </div>
+          
+          <label className="flex items-center gap-2 cursor-pointer group/toggle">
+            <div className={`w-10 h-5 rounded-full p-0.5 transition-colors ${reminderEnabled ? 'bg-rose-500' : 'bg-slate-300'}`}>
+               <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${reminderEnabled ? 'translate-x-5' : 'translate-x-0'}`}></div>
+            </div>
+            <input 
+              type="checkbox" 
+              className="sr-only" 
+              checked={reminderEnabled}
+              onChange={e => setReminderEnabled(e.target.checked)}
+            />
+            <span className={`text-xs font-bold uppercase transition-colors ${reminderEnabled ? 'text-rose-600' : 'text-slate-500'}`}>
+              {reminderEnabled ? 'Enabled' : 'Disabled'}
+            </span>
+          </label>
+        </div>
+
+        {reminderEnabled && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-1">
+                <label className="block text-sm font-medium text-slate-600 mb-1" htmlFor="reminderDays">Inactivity Trigger Period (Days)</label>
+                <input 
+                  type="number" 
+                  id="reminderDays"
+                  name="INACTIVE_REMINDER_DAYS" 
+                  defaultValue={reminderSettings.days} 
+                  min="1"
+                  placeholder="e.g. 2" 
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 text-sm font-mono focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/10 transition"
+                />
+                <p className="text-xs text-slate-400 mt-1.5">Days to wait before checking if the plugin has never pinged or went offline.</p>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-600 mb-1" htmlFor="reminderSubject">Email Subject</label>
+                <input 
+                  type="text" 
+                  id="reminderSubject"
+                  name="INACTIVE_REMINDER_SUBJECT" 
+                  defaultValue={reminderSettings.subject} 
+                  placeholder="Verify your RevenuePro plugin settings" 
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/10 transition"
+                />
+                <p className="text-xs text-slate-400 mt-1.5">You can use <code className="font-mono text-rose-500 bg-rose-50 px-1 rounded">{"{{domain}}"}</code> for the user's website domain.</p>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-1" htmlFor="reminderBody">Email Content (Markdown/Plain text)</label>
+              <textarea 
+                id="reminderBody"
+                name="INACTIVE_REMINDER_BODY" 
+                defaultValue={reminderSettings.body} 
+                rows={6}
+                placeholder="Hi there..." 
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/10 transition resize-y font-sans"
+              />
+              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Provide custom instructions to guide them to complete their setup. You can use the placeholder <code className="font-mono text-rose-500 bg-rose-50 px-1 rounded">{"{{domain}}"}</code> in the body as well.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="pt-4 sticky bottom-6 z-10 flex justify-end">

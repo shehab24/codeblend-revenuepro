@@ -27,7 +27,11 @@ export default async function AdminSettingsPage() {
     fbTestEventCode,
     tutorialVideoUrl,
     tutorialPlaylistUrl,
-    discountedOfferTimerHours
+    discountedOfferTimerHours,
+    reminderEnabled,
+    reminderDays,
+    reminderSubject,
+    reminderBody
   ] = await Promise.all([
     prisma.setting.findUnique({ where: { key: "BD_COURIER_API_KEY" } }),
     prisma.setting.findUnique({ where: { key: "ADMIN_ALERT_EMAIL" } }),
@@ -47,6 +51,10 @@ export default async function AdminSettingsPage() {
     prisma.setting.findUnique({ where: { key: "TUTORIAL_VIDEO_URL" } }),
     prisma.setting.findUnique({ where: { key: "TUTORIAL_PLAYLIST_URL" } }),
     prisma.setting.findUnique({ where: { key: "DISCOUNTED_OFFER_TIMER_HOURS" } }),
+    prisma.setting.findUnique({ where: { key: "INACTIVE_REMINDER_ENABLED" } }),
+    prisma.setting.findUnique({ where: { key: "INACTIVE_REMINDER_DAYS" } }),
+    prisma.setting.findUnique({ where: { key: "INACTIVE_REMINDER_SUBJECT" } }),
+    prisma.setting.findUnique({ where: { key: "INACTIVE_REMINDER_BODY" } }),
   ]);
 
   let parsedLinks: PluginVersion[] = [];
@@ -88,6 +96,13 @@ export default async function AdminSettingsPage() {
     videoUrl: tutorialVideoUrl?.value || "",
     playlistUrl: tutorialPlaylistUrl?.value || "",
   };
+
+  const reminderSettings = {
+    enabled: reminderEnabled?.value || "false",
+    days: reminderDays?.value || "2",
+    subject: reminderSubject?.value || "Verify your RevenuePro plugin settings on {{domain}}",
+    body: reminderBody?.value || "Hi there,\n\nWe noticed that your RevenuePro plugin is not online or hasn't sync'd any orders recently for {{domain}}.\n\nTo start tracking your Cash-On-Delivery orders and protecting your store against courier frauds, please navigate to your WordPress dashboard settings and verify your license.\n\nIf you need any help, feel free to reply to this email!\n\nBest regards,\nCodeBlend Team",
+  };
   
   return (
     <div className="max-w-5xl">
@@ -99,6 +114,7 @@ export default async function AdminSettingsPage() {
         pixelSettings={pixelSettings}
         tutorialSettings={tutorialSettings}
         currentTimerHours={discountedOfferTimerHours?.value || "62"}
+        reminderSettings={reminderSettings}
       />
     </div>
   );
