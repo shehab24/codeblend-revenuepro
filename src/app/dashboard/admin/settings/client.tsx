@@ -45,8 +45,14 @@ export function AdminSettingsClient({
     }]
   );
 
+  const [tokens, setTokens] = useState<string[]>(
+    currentKey ? currentKey.split(/[\n,;]+/).map(k => k.trim()).filter(Boolean) : [""]
+  );
+
   const handleSubmit = (formData: FormData) => {
     formData.append("revenueProPluginLinks", JSON.stringify(links));
+    const activeTokens = tokens.map(t => t.trim()).filter(Boolean);
+    formData.append("bdCourierApiKey", activeTokens.join("\n"));
     startTransition(async () => {
       await adminSaveSettings(formData);
     });
@@ -96,19 +102,48 @@ export function AdminSettingsClient({
               <p className="text-sm text-slate-400 mt-1">Configure your primary courier polling authentication token.</p>
             </div>
           </div>
-          <div className="flex-1 flex flex-col">
-            <label className="block text-sm font-medium text-slate-600 mb-1.5" htmlFor="bdCourierApiKey">Bearer Tokens (One per line)</label>
-            <textarea 
-              id="bdCourierApiKey"
-              name="bdCourierApiKey" 
-              defaultValue={currentKey} 
-              placeholder={"e.g.\ntoken_1_here\ntoken_2_here"} 
-              rows={4}
-              className="w-full flex-1 px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition font-mono resize-none"
-            />
-            <p className="text-xs text-slate-400 mt-2">
-              Add multiple tokens (one per line). If a key reaches its query limit, gets blocked, or fails, the system automatically rotates to the next active token.
-            </p>
+          <div className="flex-1 flex flex-col justify-between">
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-slate-600 mb-1">Bearer Tokens</label>
+              {tokens.map((token, idx) => (
+                <div key={idx} className="flex gap-2 items-center">
+                  <input 
+                    type="text" 
+                    value={token} 
+                    onChange={(e) => {
+                      const newTokens = [...tokens];
+                      newTokens[idx] = e.target.value;
+                      setTokens(newTokens);
+                    }}
+                    placeholder={`Token #${idx + 1}`} 
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition font-mono"
+                  />
+                  {tokens.length > 1 && (
+                    <button 
+                      type="button" 
+                      onClick={() => setTokens(tokens.filter((_, i) => i !== idx))}
+                      className="text-slate-400 hover:text-red-500 transition-colors bg-white p-2.5 rounded-xl border border-slate-200 hover:bg-red-50"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+              <button 
+                type="button" 
+                onClick={() => setTokens([...tokens, ""])}
+                className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl font-semibold text-xs hover:bg-emerald-100 transition flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                Add Token
+              </button>
+              <p className="text-xs text-slate-400 text-right max-w-xs leading-relaxed">
+                If a token reaches its query limit (e.g. 50/day), gets blocked, or fails, the system automatically falls back to the next key.
+              </p>
+            </div>
           </div>
         </div>
 
