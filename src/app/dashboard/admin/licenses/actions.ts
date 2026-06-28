@@ -265,7 +265,14 @@ export async function adminPingLicense(licenseId: string) {
   }
 
   revalidatePath("/dashboard/admin/licenses");
-  return { success: true };
+  revalidatePath(`/dashboard/admin/licenses/${licenseId}`);
+  return {
+    success: true,
+    isOnline: pingSuccess,
+    message: pingSuccess
+      ? "Plugin found and active on the WordPress site."
+      : "Plugin namespace not found. Plugin may be deactivated, uninstalled, or the site may be down."
+  };
 }
 
 export async function adminExtendLicense(licenseId: string, durationStr: string) {
