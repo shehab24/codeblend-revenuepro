@@ -45,7 +45,9 @@ function getStatusBadge(status: string) {
 function LicenseRow({ license }: { license: LicenseData }) {
   const [expanded, setExpanded] = useState(false);
   const badge = getStatusBadge(license.status);
-  const isOnline = license.lastPing?.status === "success" && (Date.now() - new Date(license.lastPing.timestamp).getTime()) < 7200000; // 2 hour window
+  const isOnline = license.status === "active" &&
+                   license.lastPing?.status === "success" &&
+                   (Date.now() - new Date(license.lastPing!.timestamp).getTime()) < 7200000; // 2-hour window
   const lastPingAge = license.lastPing ? Math.round((Date.now() - new Date(license.lastPing.timestamp).getTime()) / 60000) : null; // minutes ago
   const isExpired = license.expirationDate && new Date(license.expirationDate) < new Date();
 
