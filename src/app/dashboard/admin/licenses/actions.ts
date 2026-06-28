@@ -218,7 +218,7 @@ export async function adminPingLicense(licenseId: string) {
   const normalizeDomain = (d: string) => d.replace(/^https?:\/\//, '').replace(/\/$/, '');
   const domain = normalizeDomain(license.domain);
 
-  // Robust set of endpoints to ping: prefer HTTPS, fall back to HTTP, check multiple possible namespaces
+  // All candidate endpoints — fired in PARALLEL so the first successful one wins immediately
   const targetUrls = [
     `https://${domain}/wp-json/revenuepro-bkash-wc/v1`,
     `http://${domain}/wp-json/revenuepro-bkash-wc/v1`,
@@ -228,32 +228,34 @@ export async function adminPingLicense(licenseId: string) {
     `http://${domain}/wp-json/revenuepro/v1/status`
   ];
 
-  let pingSuccess = false;
-
-  for (const targetUrl of targetUrls) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout per check
-
-      const res = await fetch(targetUrl, {
-        method: "GET",
-        headers: { 
-          "Content-Type": "application/json",
-          "User-Agent": "revenuepro-bot"
-        },
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      // If endpoint returns 200 (OK), 401 (Unauthorized), or 403 (Forbidden), it means the plugin route is active
-      if (res.status === 200 || res.status === 401 || res.status === 403) {
-        pingSuccess = true;
-        break;
+  // Helper: resolves if the URL returns 200/401/403, rejects otherwise
+  const tryUrl = (url: string): Promise<void> =>
+    new Promise(async (resolve, reject) => {
+      try {
+        const res = await fetch(url, {
+          method: "GET",
+          headers: { "Content-Type": "application/json", "User-Agent": "revenuepro-bot" },
+          signal: AbortSignal.timeout(10000), // 10s per individual request
+        });
+        // 200 = OK, 401 = Unauthorized (plugin active but needs token), 403 = Forbidden
+        if (res.status === 200 || res.status === 401 || res.status === 403) {
+          resolve();
+        } else {
+          reject(new Error(`HTTP ${res.status}`));
+        }
+      } catch (err) {
+        reject(err);
       }
-    } catch (error) {
-      // Continue to try the next URL candidate
-    }
+    });
+
+  // Race all URLs in parallel — first to resolve = site is online
+  let pingSuccess = false;
+  try {
+    await Promise.any(targetUrls.map(tryUrl));
+    pingSuccess = true;
+  } catch {
+    // AggregateError: all URLs failed
+    pingSuccess = false;
   }
 
   if (pingSuccess) {
