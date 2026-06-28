@@ -209,23 +209,6 @@ export async function adminPingLicense(licenseId: string) {
   const normalizeDomain = (d: string) => d.replace(/^https?:\/\//, '').replace(/\/$/, '');
   const domain = normalizeDomain(license.domain);
 
-  /**
-   * TWO-STEP PING — both must pass to show "Online":
-   *
-   * Step 1 — Namespace index must return 200.
-   *   WordPress only returns 200 from /wp-json/<ns>/v1 when that namespace
-   *   is actually registered. Security plugins that block REST return 401 here
-   *   (not 200), so this step filters out false positives from security plugins.
-   *
-   * Step 2 — site-data endpoint must return 200 OR 401.
-   *   200 = endpoint working + authenticated.
-   *   401 = endpoint exists but needs auth token (correct and expected without a token).
-   *   404 = endpoint not registered (plugin broken/partial install) → FAIL.
-   *
-   * This catches the case where the namespace is registered (step 1 passes) but
-   * the site-data route specifically is missing/broken (step 2 returns 404 → fail).
-   */
-
   const tryFetch = (url: string, acceptStatuses: number[]): Promise<void> =>
     new Promise(async (resolve, reject) => {
       try {
@@ -244,36 +227,75 @@ export async function adminPingLicense(licenseId: string) {
       }
     });
 
-  const namespaceBase = `${domain}/wp-json/revenuepro-bkash-wc/v1`;
+  const base = `${domain}/wp-json/revenuepro-bkash-wc/v1`;
 
-  // Step 1: Namespace index must return exactly 200
+  // ── Step 1: Namespace must return 200 ──────────────────────────────────────
+  // WordPress only returns 200 from a namespace index when the plugin is
+  // actually installed and active. Security plugins return 401 here, not 200.
   let namespaceOk = false;
   try {
     await Promise.any([
-      tryFetch(`https://${namespaceBase}`, [200]),
-      tryFetch(`http://${namespaceBase}`, [200]),
+      tryFetch(`https://${base}`, [200]),
+      tryFetch(`http://${base}`,  [200]),
     ]);
     namespaceOk = true;
   } catch {
     namespaceOk = false;
   }
 
-  // Step 2: site-data endpoint must return 200 or 401 (proves the route is registered)
+  // ── Step 2: Verify data is actually accessible ─────────────────────────────
   let siteDataOk = false;
+  let pingMessage = "";
+
   if (namespaceOk) {
-    try {
-      await Promise.any([
-        tryFetch(`https://${namespaceBase}/site-data`, [200, 401]),
-        tryFetch(`http://${namespaceBase}/site-data`, [200, 401]),
-      ]);
-      siteDataOk = true;
-    } catch {
-      siteDataOk = false;
+    // Check if we have a stored auth token from a previous license verification
+    const tokenRecord = await prisma.setting.findUnique({
+      where: { key: `SITE_TOKEN_${licenseId}` }
+    });
+
+    if (tokenRecord?.value) {
+      /**
+       * We have a token → do an authenticated fetch.
+       * MUST return 200 with real data. Any other code (401=expired token,
+       * 500=PHP error in handler, 404=route missing) means data is not accessible
+       * and we should show Offline so it matches what "Sync Now" would show.
+       */
+      try {
+        await Promise.any([
+          tryFetch(`https://${base}/site-data?token=${encodeURIComponent(tokenRecord.value)}`, [200]),
+          tryFetch(`http://${base}/site-data?token=${encodeURIComponent(tokenRecord.value)}`,  [200]),
+        ]);
+        siteDataOk = true;
+        pingMessage = "Plugin is installed, license is active, and live data is accessible.";
+      } catch {
+        siteDataOk = false;
+        pingMessage = "Plugin endpoint exists but data fetch failed (token expired, PHP error, or route missing). Ask customer to re-verify the license from plugin settings.";
+      }
+    } else {
+      /**
+       * No stored token yet — customer hasn't verified via the plugin.
+       * Just confirm the site-data route is registered (returns 200 or 401).
+       * 401 = route exists but needs auth (expected without a token).
+       * 404 = route missing → plugin broken.
+       * 500 = PHP error in the handler.
+       */
+      try {
+        await Promise.any([
+          tryFetch(`https://${base}/site-data`, [200, 401]),
+          tryFetch(`http://${base}/site-data`,  [200, 401]),
+        ]);
+        siteDataOk = true;
+        pingMessage = "Plugin is installed. Customer needs to verify their license from the plugin settings to enable live data sync.";
+      } catch {
+        siteDataOk = false;
+        pingMessage = "Plugin namespace found but site-data endpoint is not responding. Plugin may be partially broken.";
+      }
     }
+  } else {
+    pingMessage = "Plugin namespace not found. Plugin may be deactivated, uninstalled, or the site may be unreachable.";
   }
 
   const pingSuccess = namespaceOk && siteDataOk;
-
 
   if (pingSuccess) {
     await prisma.verificationLog.create({
@@ -290,11 +312,10 @@ export async function adminPingLicense(licenseId: string) {
   return {
     success: true,
     isOnline: pingSuccess,
-    message: pingSuccess
-      ? "Plugin found and active on the WordPress site."
-      : "Plugin namespace not found. Plugin may be deactivated, uninstalled, or the site may be down."
+    message: pingMessage,
   };
 }
+
 
 export async function adminExtendLicense(licenseId: string, durationStr: string) {
   await requireAdmin();
