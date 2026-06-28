@@ -14,7 +14,7 @@ function sanitizePhone(raw: string): string {
 
 export async function POST(request: Request) {
   try {
-    const { key, domain, phone: rawPhone } = await request.json();
+    const { key, domain, phone: rawPhone, forceRefresh } = await request.json();
 
     if (!rawPhone) {
       return NextResponse.json({ success: false, error: "Missing phone number" }, { status: 400 });
@@ -42,10 +42,10 @@ export async function POST(request: Request) {
       await prisma.fraudStat.deleteMany({ where: { id: { in: idsToDelete } } });
     }
 
-    const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+    const ONE_DAY = 24 * 60 * 60 * 1000; // 24 hours cache window
     
-    // If it exists and firmly checked within the last 30 days, organically return it!
-    if (existing && new Date().getTime() - new Date(existing.last_checked).getTime() < THIRTY_DAYS) {
+    // If it exists, not force-refreshed, and checked within the last 24 hours, return cache
+    if (!forceRefresh && existing && new Date().getTime() - new Date(existing.last_checked).getTime() < ONE_DAY) {
       // Update the licenseId if this is a new license querying the same phone
       if (licenseId && existing.licenseId !== licenseId) {
         await prisma.fraudStat.update({ where: { id: existing.id }, data: { licenseId } });

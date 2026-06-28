@@ -5,20 +5,21 @@ export function ClientSearch() {
   const [phone, setPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [source, setSource] = useState("");
   const [error, setError] = useState("");
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = async (e?: React.FormEvent, force: boolean = false) => {
+    if (e) e.preventDefault();
     if (!phone) return;
     setIsLoading(true);
     setError("");
-    setResult(null);
+    if (!force) setResult(null);
 
     try {
       const res = await fetch("/api/v1/fraud-stats/check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone, forceRefresh: force }),
       });
       const data = await res.json();
       
@@ -26,6 +27,7 @@ export function ClientSearch() {
         setError(data.error || "Failed to fetch data.");
       } else {
         setResult(data.data);
+        setSource(data.source || "");
       }
     } catch (err) {
       setError("Network error occurred.");
@@ -89,6 +91,44 @@ export function ClientSearch() {
       {/* Result Metrics */}
       {result && (
         <>
+          {source === "cache" && (
+            <div style={{ 
+              display: "flex", 
+              alignItems: "center", 
+              justifyContent: "space-between", 
+              padding: "0.75rem 1rem", 
+              background: "#eff6ff", 
+              color: "#1e40af", 
+              borderRadius: "8px", 
+              fontSize: "0.875rem",
+              border: "1px solid #bfdbfe",
+              fontWeight: 500,
+              gap: "1rem"
+            }}>
+              <span>
+                💡 Showing cached data from <strong>{new Date(result.last_checked).toLocaleString()}</strong>.
+              </span>
+              <button 
+                onClick={() => handleSearch(undefined, true)} 
+                disabled={isLoading}
+                style={{ 
+                  background: "#3b82f6", 
+                  color: "white", 
+                  border: "none", 
+                  padding: "0.4rem 1rem", 
+                  borderRadius: "6px", 
+                  fontWeight: "bold", 
+                  fontSize: "0.75rem",
+                  cursor: isLoading ? "not-allowed" : "pointer",
+                  marginLeft: "auto",
+                  transition: "background 0.2s"
+                }}
+              >
+                {isLoading ? "Refreshing..." : "Refresh Live Stats"}
+              </button>
+            </div>
+          )}
+
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
             <div className="card" style={{ textAlign: "center", borderTop: "4px solid #3b82f6", background: "var(--background)" }}>
               <h4 style={{ color: "#3b82f6", margin: 0 }}>Total Orders</h4>
