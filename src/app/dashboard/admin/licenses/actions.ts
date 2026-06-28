@@ -216,30 +216,51 @@ export async function adminPingLicense(licenseId: string) {
   if (!license) throw new Error("Not found");
 
   const normalizeDomain = (d: string) => d.replace(/^https?:\/\//, '').replace(/\/$/, '');
-  const targetUrl = `http://${normalizeDomain(license.domain)}/wp-json/revenuepro/v1/status`;
+  const domain = normalizeDomain(license.domain);
 
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); 
+  // Robust set of endpoints to ping: prefer HTTPS, fall back to HTTP, check multiple possible namespaces
+  const targetUrls = [
+    `https://${domain}/wp-json/revenuepro-bkash-wc/v1`,
+    `http://${domain}/wp-json/revenuepro-bkash-wc/v1`,
+    `https://${domain}/wp-json/revenuepro-bkash-wc/v1/site-data`,
+    `http://${domain}/wp-json/revenuepro-bkash-wc/v1/site-data`,
+    `https://${domain}/wp-json/revenuepro/v1/status`,
+    `http://${domain}/wp-json/revenuepro/v1/status`
+  ];
 
-    const res = await fetch(targetUrl, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-      signal: controller.signal
-    });
+  let pingSuccess = false;
 
-    clearTimeout(timeoutId);
+  for (const targetUrl of targetUrls) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout per check
 
-    if (res.ok) {
-      await prisma.verificationLog.create({
-        data: { licenseId, ipAddress: "outbound-ping", userAgent: "revenuepro-bot", status: "success" }
+      const res = await fetch(targetUrl, {
+        method: "GET",
+        headers: { 
+          "Content-Type": "application/json",
+          "User-Agent": "revenuepro-bot"
+        },
+        signal: controller.signal
       });
-    } else {
-      await prisma.verificationLog.create({
-        data: { licenseId, ipAddress: "outbound-ping", userAgent: "revenuepro-bot", status: "disconnected" }
-      });
+
+      clearTimeout(timeoutId);
+
+      // If endpoint returns 200 (OK), 401 (Unauthorized), or 403 (Forbidden), it means the plugin route is active
+      if (res.status === 200 || res.status === 401 || res.status === 403) {
+        pingSuccess = true;
+        break;
+      }
+    } catch (error) {
+      // Continue to try the next URL candidate
     }
-  } catch (error) {
+  }
+
+  if (pingSuccess) {
+    await prisma.verificationLog.create({
+      data: { licenseId, ipAddress: "outbound-ping", userAgent: "revenuepro-bot", status: "success" }
+    });
+  } else {
     await prisma.verificationLog.create({
       data: { licenseId, ipAddress: "outbound-ping", userAgent: "revenuepro-bot", status: "disconnected" }
     });
