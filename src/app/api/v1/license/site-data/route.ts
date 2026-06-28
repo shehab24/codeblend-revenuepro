@@ -84,26 +84,58 @@ export async function GET(req: Request) {
 
     console.log(`\n[SITE-DATA PULL] Fetching from: ${siteUrl}\n`);
 
-    // Hit the customer's WP REST API
-    const response = await fetch(endpoint, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'CodeBlend-RevenuePro-Server/1.0',
-        'Accept': 'application/json',
-      },
-      signal: AbortSignal.timeout(15000), // 15 second timeout
-      cache: 'no-store',
-    });
+    let response: Response | null = null;
+    let fetchError: any = null;
 
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
-      console.error(`[SITE-DATA PULL] HTTP ${response.status}: ${errorText.substring(0, 200)}`);
+    try {
+      response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'CodeBlend-RevenuePro-Server/1.0',
+          'Accept': 'application/json',
+        },
+        signal: AbortSignal.timeout(15000), // 15 second timeout
+        cache: 'no-store',
+      });
+    } catch (err: any) {
+      fetchError = err;
+      
+      // If HTTPS failed due to SSL/TLS handshake or certificate verify issue, try falling back to HTTP
+      if (siteUrl.startsWith('https://')) {
+        const fallbackSiteUrl = siteUrl.replace(/^https:\/\//, 'http://');
+        const fallbackEndpoint = `${fallbackSiteUrl}/wp-json/revenuepro-bkash-wc/v1/site-data?${params.toString()}`;
+        console.log(`[SITE-DATA PULL] HTTPS fetch failed, trying HTTP fallback: ${fallbackSiteUrl}`);
+        try {
+          response = await fetch(fallbackEndpoint, {
+            method: 'GET',
+            headers: {
+              'User-Agent': 'CodeBlend-RevenuePro-Server/1.0',
+              'Accept': 'application/json',
+            },
+            signal: AbortSignal.timeout(15000), // 15 second timeout
+            cache: 'no-store',
+          });
+          fetchError = null; // Clear error since fallback succeeded
+        } catch (fallbackErr) {
+          fetchError = fallbackErr;
+        }
+      }
+    }
+
+    if (fetchError) {
+      throw fetchError;
+    }
+
+    if (!response || !response.ok) {
+      const status = response ? response.status : 502;
+      const errorText = response ? await response.text().catch(() => "") : "";
+      console.error(`[SITE-DATA PULL] HTTP ${status}: ${errorText.substring(0, 200)}`);
       return NextResponse.json({ 
         success: false, 
-        error: `Site returned HTTP ${response.status}`,
-        details: response.status === 404 ? "The RevenuePro plugin may not be installed or the REST API endpoint is not available." :
-                 response.status === 401 ? "Token expired or invalid. Ask the customer to re-verify their license from the plugin settings." :
-                 response.status === 403 ? "Access denied by the site." :
+        error: `Site returned HTTP ${status}`,
+        details: status === 404 ? "The RevenuePro plugin may not be installed or the REST API endpoint is not available." :
+                 status === 401 ? "Token expired or invalid. Ask the customer to re-verify their license from the plugin settings." :
+                 status === 403 ? "Access denied by the site." :
                  "Could not retrieve data from the customer site."
       }, { status: 502 });
     }
@@ -128,6 +160,10 @@ export async function GET(req: Request) {
       return NextResponse.json({ success: false, error: "Could not connect to the customer site. Domain may be offline or incorrect." }, { status: 502 });
     }
 
-    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
+    if (error.message?.includes('fetch failed')) {
+      return NextResponse.json({ success: false, error: "Could not establish connection to the customer site. This is usually due to local firewall, rate limiting, or SSL/TLS certificate configuration issues on their server." }, { status: 502 });
+    }
+
+    return NextResponse.json({ success: false, error: `Internal server error: ${error.message || "Unknown error"}` }, { status: 500 });
   }
 }
