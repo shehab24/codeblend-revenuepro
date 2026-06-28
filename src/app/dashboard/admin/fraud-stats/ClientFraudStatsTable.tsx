@@ -4,11 +4,24 @@ import { FraudStatActions } from "./FraudStatActions";
 
 export function ClientFraudStatsTable({ initialStats }: { initialStats: any[] }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
 
   // Filter stats based on search query matching the phone number
   const filteredStats = initialStats.filter((stat) => 
     stat.phone.includes(searchQuery.replace(/[^0-9]/g, ""))
   );
+
+  const totalItems = filteredStats.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedStats = filteredStats.slice(startIndex, endIndex);
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
 
   return (
     <div>
@@ -20,7 +33,7 @@ export function ClientFraudStatsTable({ initialStats }: { initialStats: any[] })
             type="text"
             placeholder="Search by phone number..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             style={{
               width: "100%",
               padding: "0.6rem 1rem 0.6rem 2.5rem",
@@ -32,6 +45,31 @@ export function ClientFraudStatsTable({ initialStats }: { initialStats: any[] })
               outline: "none",
             }}
           />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Show</span>
+          <select
+            value={itemsPerPage}
+            onChange={(e) => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            style={{
+              padding: "0.4rem 0.8rem",
+              borderRadius: "8px",
+              border: "1px solid var(--card-border)",
+              background: "var(--background)",
+              color: "var(--foreground)",
+              fontSize: "0.85rem",
+              outline: "none",
+              cursor: "pointer"
+            }}
+          >
+            <option value={10}>10 per page</option>
+            <option value={25}>25 per page</option>
+            <option value={50}>50 per page</option>
+            <option value={100}>100 per page</option>
+          </select>
         </div>
         {searchQuery && (
           <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: "500" }}>
@@ -61,7 +99,7 @@ export function ClientFraudStatsTable({ initialStats }: { initialStats: any[] })
             </tr>
           </thead>
           <tbody>
-            {filteredStats.map((stat) => {
+            {paginatedStats.map((stat) => {
               const ratioColor = stat.success_ratio >= 70 ? "var(--primary)" : stat.success_ratio >= 40 ? "#f59e0b" : "#ef4444";
               return (
                 <tr key={stat.id} style={{ borderBottom: "1px solid var(--card-border)" }}>
@@ -114,6 +152,91 @@ export function ClientFraudStatsTable({ initialStats }: { initialStats: any[] })
         {filteredStats.length === 0 && (
           <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>
             No records match this phone number.
+          </div>
+        )}
+
+        {/* Pagination controls */}
+        {totalPages > 1 && (
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "1rem 0.5rem",
+            marginTop: "1.5rem",
+            borderTop: "1px solid var(--card-border)",
+            fontSize: "0.85rem"
+          }}>
+            <div style={{ color: "var(--text-muted)" }}>
+              Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} records
+            </div>
+            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                style={{
+                  padding: "0.4rem 0.8rem",
+                  borderRadius: "8px",
+                  border: "1px solid var(--card-border)",
+                  background: "var(--background)",
+                  color: currentPage === 1 ? "var(--text-muted)" : "var(--foreground)",
+                  cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                  fontWeight: 600,
+                  fontSize: "0.8rem"
+                }}
+              >
+                Previous
+              </button>
+              <div style={{ display: "flex", gap: "0.25rem" }}>
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum = currentPage;
+                  if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  if (pageNum < 1 || pageNum > totalPages) return null;
+
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      style={{
+                        width: "32px",
+                        height: "32px",
+                        borderRadius: "8px",
+                        border: "1px solid var(--card-border)",
+                        background: currentPage === pageNum ? "var(--primary)" : "var(--background)",
+                        color: currentPage === pageNum ? "white" : "var(--foreground)",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                        fontSize: "0.8rem"
+                      }}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                style={{
+                  padding: "0.4rem 0.8rem",
+                  borderRadius: "8px",
+                  border: "1px solid var(--card-border)",
+                  background: "var(--background)",
+                  color: currentPage === totalPages ? "var(--text-muted)" : "var(--foreground)",
+                  cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                  fontWeight: 600,
+                  fontSize: "0.8rem"
+                }}
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
       </div>
