@@ -72,10 +72,12 @@ export async function GET(req: Request) {
     
     // Pass through optional filter params
     const limit = searchParams.get("limit");
+    const page = searchParams.get("page");
     const status = searchParams.get("status");
     const payment = searchParams.get("payment");
     const campaign = searchParams.get("campaign");
     if (limit) params.set("limit", limit);
+    if (page) params.set("page", page);
     if (status) params.set("status", status);
     if (payment) params.set("payment", payment);
     if (campaign) params.set("campaign", campaign);

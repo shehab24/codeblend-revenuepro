@@ -23,7 +23,8 @@ export function OrdersClient({ licenseId, domain }: { licenseId: string; domain:
   const [orders, setOrders] = useState<any[]>([]);
   const [activeStatus, setActiveStatus] = useState("all");
   const [activeCampaign, setActiveCampaign] = useState("all");
-  const [limit, setLimit] = useState("1000");
+  const [limit, setLimit] = useState("100");
+  const [page, setPage] = useState(1);
   const [campaigns, setCampaigns] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [fetched, setFetched] = useState(false);
@@ -38,14 +39,18 @@ export function OrdersClient({ licenseId, domain }: { licenseId: string; domain:
 
   // Auto-fetch on mount
   useEffect(() => {
-    fetchOrders("all", "all", "1000");
+    fetchOrders("all", "all", 1, "100");
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fetchOrders = async (status: string, campaign: string, currentLimit: string = limit) => {
+  const fetchOrders = async (status: string, campaign: string, currentPage: number = page, currentLimit: string = limit) => {
     setLoading(true);
     setError("");
     try {
-      const params = new URLSearchParams({ license_id: licenseId, limit: currentLimit });
+      const params = new URLSearchParams({ 
+        license_id: licenseId, 
+        limit: currentLimit,
+        page: currentPage.toString()
+      });
       if (status !== "all") params.set("status", status);
       if (campaign !== "all") params.set("campaign", campaign);
       
@@ -68,17 +73,25 @@ export function OrdersClient({ licenseId, domain }: { licenseId: string; domain:
 
   const handleStatusChange = (status: string) => {
     setActiveStatus(status);
-    fetchOrders(status, activeCampaign, limit);
+    setPage(1);
+    fetchOrders(status, activeCampaign, 1, limit);
   };
 
   const handleCampaignChange = (campaign: string) => {
     setActiveCampaign(campaign);
-    fetchOrders(activeStatus, campaign, limit);
+    setPage(1);
+    fetchOrders(activeStatus, campaign, 1, limit);
   };
 
   const handleLimitChange = (newLimit: string) => {
     setLimit(newLimit);
-    fetchOrders(activeStatus, activeCampaign, newLimit);
+    setPage(1);
+    fetchOrders(activeStatus, activeCampaign, 1, newLimit);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    fetchOrders(activeStatus, activeCampaign, newPage, limit);
   };
 
   const handleDownloadReport = () => {
@@ -104,6 +117,9 @@ export function OrdersClient({ licenseId, domain }: { licenseId: string; domain:
     if (method === 'COD') return 'bg-amber-50 text-amber-700 border-amber-200';
     return 'bg-slate-50 text-slate-700 border-slate-200';
   };
+
+  const countForCurrentStatus = stats?.status_counts?.[activeStatus] || stats?.total_orders || 0;
+  const totalPages = Math.ceil(countForCurrentStatus / Number(limit)) || 1;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto w-full pb-12">
@@ -131,7 +147,7 @@ export function OrdersClient({ licenseId, domain }: { licenseId: string; domain:
             {downloading ? "Generating..." : "Download Report"}
           </button>
           <button
-            onClick={() => fetchOrders(activeStatus, activeCampaign, limit)}
+            onClick={() => fetchOrders(activeStatus, activeCampaign, page, limit)}
             disabled={loading}
             className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm disabled:opacity-70"
           >
@@ -206,12 +222,10 @@ export function OrdersClient({ licenseId, domain }: { licenseId: string; domain:
             onChange={(e) => handleLimitChange(e.target.value)}
             className="bg-transparent text-sm font-bold text-slate-700 outline-none cursor-pointer pr-4 uppercase tracking-wider"
           >
-            <option value="100">Load 100 Orders</option>
-            <option value="250">Load 250 Orders</option>
-            <option value="500">Load 500 Orders</option>
-            <option value="1000">Load 1000 Orders</option>
-            <option value="2000">Load 2000 Orders</option>
-            <option value="5000">Load 5000 Orders</option>
+            <option value="10">10 Orders Per Page</option>
+            <option value="25">25 Orders Per Page</option>
+            <option value="50">50 Orders Per Page</option>
+            <option value="100">100 Orders Per Page</option>
           </select>
         </div>
       </div>
@@ -420,6 +434,60 @@ export function OrdersClient({ licenseId, domain }: { licenseId: string; domain:
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Footer */}
+          {totalPages > 1 && (
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 print:hidden">
+              <span className="text-xs font-semibold text-slate-500">
+                Showing Page <span className="text-slate-800 font-bold">{page}</span> of <span className="text-slate-800 font-bold">{totalPages}</span> ({countForCurrentStatus} total orders)
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(Math.max(1, page - 1))}
+                  disabled={page === 1 || loading}
+                  className="px-3.5 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 rounded-lg text-xs font-bold text-slate-600 transition-all shadow-sm disabled:opacity-50 disabled:pointer-events-none"
+                >
+                  Previous
+                </button>
+                
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum = page;
+                  if (page <= 3) {
+                    pageNum = i + 1;
+                  } else if (page >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = page - 2 + i;
+                  }
+                  
+                  if (pageNum < 1 || pageNum > totalPages) return null;
+
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      disabled={loading}
+                      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all shadow-sm ${
+                        page === pageNum
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-white border border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+
+                <button
+                  onClick={() => handlePageChange(Math.min(totalPages, page + 1))}
+                  disabled={page === totalPages || loading}
+                  className="px-3.5 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 rounded-lg text-xs font-bold text-slate-600 transition-all shadow-sm disabled:opacity-50 disabled:pointer-events-none"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
