@@ -162,6 +162,13 @@ export async function GET(req: Request) {
 
     const siteData = await response.json();
     
+    // Process recent transactions asynchronously (non-blocking) to populate our FraudStat database
+    if (siteData && Array.isArray(siteData.recent_transactions)) {
+      processSyncOrders(siteData.recent_transactions, license.id, license.domain).catch((err) => {
+        console.error("[SITE-DATA PULL] Error processing synced orders for fraud stats:", err);
+      });
+    }
+
     return NextResponse.json({
       success: true, 
       data: siteData,
@@ -185,5 +192,108 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.json({ success: false, error: `Internal server error: ${error.message || "Unknown error"}` }, { status: 500 });
+  }
+}
+
+function sanitizePhone(raw: string): string {
+  let cleaned = raw.replace(/[\s\-\(\)]/g, "");
+  cleaned = cleaned.replace(/^\+880/, "0");
+  cleaned = cleaned.replace(/^\+88/, "0");
+  cleaned = cleaned.replace(/^880/, "0");
+  cleaned = cleaned.replace(/^88/, "0");
+  cleaned = cleaned.replace(/[^0-9]/g, "");
+  return cleaned;
+}
+
+async function processSyncOrders(transactions: any[], licenseId: string, domain: string) {
+  for (const trx of transactions) {
+    try {
+      if (!trx.phone) continue;
+      const phone = sanitizePhone(String(trx.phone));
+      if (phone.length !== 11) continue;
+
+      // Skip if number already has an existing record/order ratio in FraudStat
+      const existing = await prisma.fraudStat.findFirst({
+        where: { phone }
+      });
+      if (existing) {
+        continue;
+      }
+
+      const statusStr = (trx.status || "").toLowerCase();
+      const isCancel = ["cancelled", "failed", "refunded"].includes(statusStr);
+      const isSuccess = ["completed", "processing", "on-hold", "pending"].includes(statusStr) || !isCancel;
+
+      let courier = "steadfast";
+      const rawCourier = String(trx.courier || trx.courier_name || trx.courier_provider || trx.courier_data || "").toLowerCase();
+      if (rawCourier.includes("pathao")) courier = "pathao";
+      else if (rawCourier.includes("steadfast")) courier = "steadfast";
+      else if (rawCourier.includes("parceldex")) courier = "parceldex";
+      else if (rawCourier.includes("redx")) courier = "redx";
+      else if (rawCourier.includes("paperfly")) courier = "paperfly";
+      else if (rawCourier.includes("carrybee")) courier = "carrybee";
+
+      const total_parcel = 1;
+      const success_parcel = isSuccess ? 1 : 0;
+      const cancelled_parcel = isCancel ? 1 : 0;
+      const success_ratio = success_parcel ? 100 : 0;
+
+      let pathao_success = 0, pathao_cancel = 0;
+      let steadfast_success = 0, steadfast_cancel = 0;
+      let parceldex_success = 0, parceldex_cancel = 0;
+      let redx_success = 0, redx_cancel = 0;
+      let paperfly_success = 0, paperfly_cancel = 0;
+      let carrybee_success = 0, carrybee_cancel = 0;
+
+      if (courier === "pathao") {
+        if (isSuccess) pathao_success = 1; else pathao_cancel = 1;
+      } else if (courier === "parceldex") {
+        if (isSuccess) parceldex_success = 1; else parceldex_cancel = 1;
+      } else if (courier === "redx") {
+        if (isSuccess) redx_success = 1; else redx_cancel = 1;
+      } else if (courier === "paperfly") {
+        if (isSuccess) paperfly_success = 1; else paperfly_cancel = 1;
+      } else if (courier === "carrybee") {
+        if (isSuccess) carrybee_success = 1; else carrybee_cancel = 1;
+      } else {
+        // steadfast default
+        if (isSuccess) steadfast_success = 1; else steadfast_cancel = 1;
+      }
+
+      await prisma.fraudStat.create({
+        data: {
+          licenseId,
+          domain,
+          phone,
+          total_parcel,
+          success_parcel,
+          cancelled_parcel,
+          success_ratio,
+          pathao_success,
+          pathao_cancel,
+          steadfast_success,
+          steadfast_cancel,
+          parceldex_success,
+          parceldex_cancel,
+          redx_success,
+          redx_cancel,
+          paperfly_success,
+          paperfly_cancel,
+          carrybee_success,
+          carrybee_cancel,
+          courier_data: JSON.stringify({
+            source: "plugin_sync",
+            customer_name: trx.customer || null,
+            order_id: trx.order_id || trx.order_number || null,
+            payment_method: trx.payment_method || null,
+            courier_provider: trx.courier || trx.courier_name || null,
+            status: trx.status || null
+          }),
+          last_checked: new Date()
+        }
+      });
+    } catch (err) {
+      console.error("[processSyncOrders] Error saving trx phone record:", err);
+    }
   }
 }
