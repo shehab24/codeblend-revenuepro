@@ -47,20 +47,47 @@ export async function checkFraudData(rawPhone: string) {
       return { success: false, error: "BD Courier API key not configured." };
     }
 
-    const res = await fetch("https://api.bdcourier.com/courier-check", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${bdCourierKeySetting.value}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ phone })
-    });
-
-    if (!res.ok) {
-      return { success: false, error: "External courier API unreachable. Please try again later." };
+    const keys = bdCourierKeySetting.value.split(/[\n,;]+/).map((k: string) => k.trim()).filter(Boolean);
+    if (keys.length === 0) {
+      return { success: false, error: "No valid BD Courier API keys configured." };
     }
 
-    const externalData = await res.json();
+    let externalData = null;
+    let fetchError = "";
+
+    for (let i = 0; i < keys.length; i++) {
+      const keyToUse = keys[i];
+      try {
+        const res = await fetch("https://api.bdcourier.com/courier-check", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${keyToUse}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ phone })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data && (data.success || data.steadfast || data.pathao || data.data)) {
+            externalData = data;
+            break;
+          } else {
+            fetchError = `Key #${i + 1} returned invalid structure: ${JSON.stringify(data)}`;
+          }
+        } else {
+          const errText = await res.text().catch(() => "");
+          fetchError = `Key #${i + 1} failed (HTTP ${res.status}): ${errText || res.statusText}`;
+        }
+      } catch (err: any) {
+        fetchError = `Key #${i + 1} error: ${err?.message || err}`;
+      }
+    }
+
+    if (!externalData) {
+      return { success: false, error: `All configured BD Courier API tokens failed. Last error: ${fetchError}` };
+    }
+
     const payloadData = externalData.data || externalData;
 
     const parseCount = (val: any) => parseInt(val) || 0;

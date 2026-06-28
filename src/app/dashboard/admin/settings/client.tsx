@@ -96,16 +96,19 @@ export function AdminSettingsClient({
               <p className="text-sm text-slate-400 mt-1">Configure your primary courier polling authentication token.</p>
             </div>
           </div>
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-slate-600 mb-1.5" htmlFor="bdCourierApiKey">Bearer Token</label>
-            <input 
-              type="text" 
+          <div className="flex-1 flex flex-col">
+            <label className="block text-sm font-medium text-slate-600 mb-1.5" htmlFor="bdCourierApiKey">Bearer Tokens (One per line)</label>
+            <textarea 
               id="bdCourierApiKey"
               name="bdCourierApiKey" 
               defaultValue={currentKey} 
-              placeholder="e.g. 521c7a8b9f..." 
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition"
+              placeholder={"e.g.\ntoken_1_here\ntoken_2_here"} 
+              rows={4}
+              className="w-full flex-1 px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition font-mono resize-none"
             />
+            <p className="text-xs text-slate-400 mt-2">
+              Add multiple tokens (one per line). If a key reaches its query limit, gets blocked, or fails, the system automatically rotates to the next active token.
+            </p>
           </div>
         </div>
 
