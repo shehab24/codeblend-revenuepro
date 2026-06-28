@@ -23,6 +23,7 @@ export function OrdersClient({ licenseId, domain }: { licenseId: string; domain:
   const [orders, setOrders] = useState<any[]>([]);
   const [activeStatus, setActiveStatus] = useState("all");
   const [activeCampaign, setActiveCampaign] = useState("all");
+  const [limit, setLimit] = useState("1000");
   const [campaigns, setCampaigns] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [fetched, setFetched] = useState(false);
@@ -37,14 +38,14 @@ export function OrdersClient({ licenseId, domain }: { licenseId: string; domain:
 
   // Auto-fetch on mount
   useEffect(() => {
-    fetchOrders("all", "all");
+    fetchOrders("all", "all", "1000");
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fetchOrders = async (status: string, campaign: string) => {
+  const fetchOrders = async (status: string, campaign: string, currentLimit: string = limit) => {
     setLoading(true);
     setError("");
     try {
-      const params = new URLSearchParams({ license_id: licenseId, limit: "100" });
+      const params = new URLSearchParams({ license_id: licenseId, limit: currentLimit });
       if (status !== "all") params.set("status", status);
       if (campaign !== "all") params.set("campaign", campaign);
       
@@ -67,12 +68,17 @@ export function OrdersClient({ licenseId, domain }: { licenseId: string; domain:
 
   const handleStatusChange = (status: string) => {
     setActiveStatus(status);
-    fetchOrders(status, activeCampaign);
+    fetchOrders(status, activeCampaign, limit);
   };
 
   const handleCampaignChange = (campaign: string) => {
     setActiveCampaign(campaign);
-    fetchOrders(activeStatus, campaign);
+    fetchOrders(activeStatus, campaign, limit);
+  };
+
+  const handleLimitChange = (newLimit: string) => {
+    setLimit(newLimit);
+    fetchOrders(activeStatus, activeCampaign, newLimit);
   };
 
   const handleDownloadReport = () => {
@@ -125,7 +131,7 @@ export function OrdersClient({ licenseId, domain }: { licenseId: string; domain:
             {downloading ? "Generating..." : "Download Report"}
           </button>
           <button
-            onClick={() => fetchOrders(activeStatus, activeCampaign)}
+            onClick={() => fetchOrders(activeStatus, activeCampaign, limit)}
             disabled={loading}
             className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm disabled:opacity-70"
           >
@@ -187,6 +193,25 @@ export function OrdersClient({ licenseId, domain }: { licenseId: string; domain:
             {campaigns.map((camp, i) => (
               <option key={i} value={camp}>{camp}</option>
             ))}
+          </select>
+        </div>
+
+        {/* Limit Dropdown */}
+        <div className="flex items-center gap-3 bg-white p-3 border border-slate-200 rounded-2xl w-fit shadow-sm">
+          <svg className="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          <select
+            value={limit}
+            onChange={(e) => handleLimitChange(e.target.value)}
+            className="bg-transparent text-sm font-bold text-slate-700 outline-none cursor-pointer pr-4 uppercase tracking-wider"
+          >
+            <option value="100">Load 100 Orders</option>
+            <option value="250">Load 250 Orders</option>
+            <option value="500">Load 500 Orders</option>
+            <option value="1000">Load 1000 Orders</option>
+            <option value="2000">Load 2000 Orders</option>
+            <option value="5000">Load 5000 Orders</option>
           </select>
         </div>
       </div>
