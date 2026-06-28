@@ -210,23 +210,23 @@ export async function adminPingLicense(licenseId: string) {
   const domain = normalizeDomain(license.domain);
 
   /**
-   * IMPORTANT: We ONLY check the plugin's REST namespace index endpoints.
-   * WordPress returns HTTP 200 from /wp-json/<namespace>/v1 ONLY when that namespace
-   * is registered (i.e., the plugin is installed and active).
-   * 
-   * We do NOT accept 401/403 as success because WordPress security plugins (e.g. Wordfence,
-   * iThemes Security) return 401 for ALL REST routes, including routes that don't exist,
-   * which would cause false-positive "Online" status.
+   * TWO-STEP PING — both must pass to show "Online":
+   *
+   * Step 1 — Namespace index must return 200.
+   *   WordPress only returns 200 from /wp-json/<ns>/v1 when that namespace
+   *   is actually registered. Security plugins that block REST return 401 here
+   *   (not 200), so this step filters out false positives from security plugins.
+   *
+   * Step 2 — site-data endpoint must return 200 OR 401.
+   *   200 = endpoint working + authenticated.
+   *   401 = endpoint exists but needs auth token (correct and expected without a token).
+   *   404 = endpoint not registered (plugin broken/partial install) → FAIL.
+   *
+   * This catches the case where the namespace is registered (step 1 passes) but
+   * the site-data route specifically is missing/broken (step 2 returns 404 → fail).
    */
-  const namespaceUrls = [
-    `https://${domain}/wp-json/revenuepro-bkash-wc/v1`,
-    `http://${domain}/wp-json/revenuepro-bkash-wc/v1`,
-    `https://${domain}/wp-json/revenuepro/v1`,
-    `http://${domain}/wp-json/revenuepro/v1`,
-  ];
 
-  // Helper: resolves ONLY if the namespace index returns exactly 200
-  const tryNamespace = (url: string): Promise<void> =>
+  const tryFetch = (url: string, acceptStatuses: number[]): Promise<void> =>
     new Promise(async (resolve, reject) => {
       try {
         const res = await fetch(url, {
@@ -234,8 +234,7 @@ export async function adminPingLicense(licenseId: string) {
           headers: { "User-Agent": "revenuepro-bot" },
           signal: AbortSignal.timeout(10000),
         });
-        // Only 200 means the namespace is registered (plugin is truly active)
-        if (res.status === 200) {
+        if (acceptStatuses.includes(res.status)) {
           resolve();
         } else {
           reject(new Error(`HTTP ${res.status}`));
@@ -245,14 +244,36 @@ export async function adminPingLicense(licenseId: string) {
       }
     });
 
-  // Race all namespace checks in parallel
-  let pingSuccess = false;
+  const namespaceBase = `${domain}/wp-json/revenuepro-bkash-wc/v1`;
+
+  // Step 1: Namespace index must return exactly 200
+  let namespaceOk = false;
   try {
-    await Promise.any(namespaceUrls.map(tryNamespace));
-    pingSuccess = true;
+    await Promise.any([
+      tryFetch(`https://${namespaceBase}`, [200]),
+      tryFetch(`http://${namespaceBase}`, [200]),
+    ]);
+    namespaceOk = true;
   } catch {
-    pingSuccess = false;
+    namespaceOk = false;
   }
+
+  // Step 2: site-data endpoint must return 200 or 401 (proves the route is registered)
+  let siteDataOk = false;
+  if (namespaceOk) {
+    try {
+      await Promise.any([
+        tryFetch(`https://${namespaceBase}/site-data`, [200, 401]),
+        tryFetch(`http://${namespaceBase}/site-data`, [200, 401]),
+      ]);
+      siteDataOk = true;
+    } catch {
+      siteDataOk = false;
+    }
+  }
+
+  const pingSuccess = namespaceOk && siteDataOk;
+
 
   if (pingSuccess) {
     await prisma.verificationLog.create({
