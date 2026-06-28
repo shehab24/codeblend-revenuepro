@@ -2,15 +2,21 @@
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 import { revalidatePath } from "next/cache";
-import { auth } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
+
+/** Shared guard: throws if the caller is not an authenticated admin */
+async function requireAdmin() {
+  const user = await currentUser();
+  if (!user) throw new Error("Unauthorized");
+  if (user.publicMetadata?.role !== "admin") throw new Error("Unauthorized access");
+}
 
 export async function adminCreateLicense(formData: FormData) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Unauthorized");
+  const adminUser = await currentUser();
+  if (!adminUser) throw new Error("Unauthorized");
+  if (adminUser.publicMetadata?.role !== "admin") throw new Error("Unauthorized access");
+  const userId = adminUser.id;
 
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (user?.role !== "admin" && user?.role !== "ADMIN") throw new Error("Unauthorized access");
-  
   const domain = formData.get("domain") as string;
   const durationStr = formData.get("duration") as string;
   const customerEmail = formData.get("customerEmail") as string | null;
@@ -54,7 +60,7 @@ export async function adminCreateLicense(formData: FormData) {
 
   await prisma.license.create({
     data: {
-      userId, // Owned by the admin initially
+      userId,    // Owned by the admin initially
       customerEmail: customerEmail?.trim() || null,
       domain,
       tier,
@@ -73,11 +79,7 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_EMAIL_API);
 
 export async function adminToggleLicenseStatus(licenseId: string, status: string) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Unauthorized");
-  
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (user?.role !== "admin" && user?.role !== "ADMIN") throw new Error("Unauthorized access");
+  await requireAdmin();
 
   const license = await prisma.license.findUnique({ 
     where: { id: licenseId },
@@ -176,11 +178,7 @@ export async function adminToggleLicenseStatus(licenseId: string, status: string
 }
 
 export async function adminTogglePaymentStatus(licenseId: string, paymentStatus: string) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Unauthorized");
-  
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (user?.role !== "admin" && user?.role !== "ADMIN") throw new Error("Unauthorized access");
+  await requireAdmin();
 
   await prisma.license.update({
     where: { id: licenseId },
@@ -192,11 +190,7 @@ export async function adminTogglePaymentStatus(licenseId: string, paymentStatus:
 }
 
 export async function adminDeleteLicense(licenseId: string) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Unauthorized");
-  
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (user?.role !== "admin" && user?.role !== "ADMIN") throw new Error("Unauthorized access");
+  await requireAdmin();
 
   await prisma.license.delete({
     where: { id: licenseId }
@@ -207,10 +201,7 @@ export async function adminDeleteLicense(licenseId: string) {
 }
 
 export async function adminPingLicense(licenseId: string) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Unauthorized");
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (user?.role !== "admin" && user?.role !== "ADMIN") throw new Error("Unauthorized access");
+  await requireAdmin();
 
   const license = await prisma.license.findUnique({ where: { id: licenseId } });
   if (!license) throw new Error("Not found");
@@ -278,11 +269,7 @@ export async function adminPingLicense(licenseId: string) {
 }
 
 export async function adminExtendLicense(licenseId: string, durationStr: string) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Unauthorized");
-  
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (user?.role !== "admin" && user?.role !== "ADMIN") throw new Error("Unauthorized access");
+  await requireAdmin();
 
   const license = await prisma.license.findUnique({ where: { id: licenseId } });
   if (!license) throw new Error("License not found");
