@@ -96,8 +96,7 @@ export async function POST(request: Request) {
         email: user.email,
         role: user.role,
       },
-      JWT_SECRET,
-      { expiresIn: "30d" }
+      JWT_SECRET
     );
 
     // 5. Return user data and auth token
