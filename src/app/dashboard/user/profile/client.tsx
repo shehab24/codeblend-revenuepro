@@ -52,6 +52,12 @@ export function ProfileClient({ profile }: { profile: ProfileData }) {
   const [showPhoneEdit, setShowPhoneEdit] = useState(!profile.phone);
   const [updateMsg, setUpdateMsg] = useState("");
 
+  // Password Update State
+  const [passwordInput, setPasswordInput] = useState("");
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState("");
+  const [passwordMsg, setPasswordMsg] = useState("");
+  const [isUpdatingPassword, startPasswordUpdate] = useTransition();
+
   const handlePhoneUpdate = () => {
     startUpdate(async () => {
       try {
@@ -65,6 +71,38 @@ export function ProfileClient({ profile }: { profile: ProfileData }) {
         }
       } catch {
         setUpdateMsg("আপডেট করতে ব্যর্থ হয়েছে।");
+      }
+    });
+  };
+
+  const handlePasswordUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passwordInput || !confirmPasswordInput) {
+      setPasswordMsg("সবগুলো ঘর পূরণ করুন (Fill all fields)");
+      return;
+    }
+    if (passwordInput !== confirmPasswordInput) {
+      setPasswordMsg("পাসওয়ার্ড দুটি মেলেনি (Passwords do not match)");
+      return;
+    }
+    if (passwordInput.length < 8) {
+      setPasswordMsg("পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে (Min 8 characters)");
+      return;
+    }
+
+    startPasswordUpdate(async () => {
+      try {
+        const { updateUserPassword } = await import("./actions");
+        const res = await updateUserPassword(passwordInput);
+        if (res?.error) {
+          setPasswordMsg(res.error);
+        } else {
+          setPasswordMsg("পাসওয়ার্ড সফলভাবে সেট/পরিবর্তন হয়েছে! (Password successfully updated!)");
+          setPasswordInput("");
+          setConfirmPasswordInput("");
+        }
+      } catch (err) {
+        setPasswordMsg("পাসওয়ার্ড পরিবর্তন করতে ব্যর্থ হয়েছে।");
       }
     });
   };
@@ -239,8 +277,59 @@ export function ProfileClient({ profile }: { profile: ProfileData }) {
                 </div>
               )}
 
+              {/* Password Setting Card */}
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 mt-6">
+                <h4 className="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
+                  🔑 সেট / পরিবর্তন করুন পাসওয়ার্ড (Set or Update Password)
+                </h4>
+                <p className="text-xs text-slate-500 mb-4">
+                  আপনার মোবাইল অ্যাপে লগইন করার জন্য একটি পাসওয়ার্ড সেট করুন। (Set a password to use when logging into the mobile application).
+                </p>
+
+                <form onSubmit={handlePasswordUpdate} className="space-y-4 max-w-md">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">নতুন পাসওয়ার্ড (New Password)</label>
+                      <input
+                        type="password"
+                        required
+                        value={passwordInput}
+                        onChange={(e) => setPasswordInput(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm focus:outline-none focus:border-emerald-500 transition"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">পাসওয়ার্ড নিশ্চিত করুন (Confirm)</label>
+                      <input
+                        type="password"
+                        required
+                        value={confirmPasswordInput}
+                        onChange={(e) => setConfirmPasswordInput(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm focus:outline-none focus:border-emerald-500 transition"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isUpdatingPassword}
+                    className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow transition-all border-none cursor-pointer disabled:opacity-50"
+                  >
+                    {isUpdatingPassword ? "আপডেট হচ্ছে..." : "পাসওয়ার্ড আপডেট করুন"}
+                  </button>
+
+                  {passwordMsg && (
+                    <div className={`p-3 rounded-xl text-xs font-bold mt-2 ${passwordMsg.includes("সফলভাবে") ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
+                      {passwordMsg}
+                    </div>
+                  )}
+                </form>
+              </div>
+
               {/* Quick Actions */}
-              <div className="pt-4 border-t border-slate-100">
+              <div className="pt-6 border-t border-slate-200">
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">দ্রুত কার্যক্রম</h4>
                 <div className="flex flex-wrap gap-3">
                   <Link href="/dashboard/user/revenuepro" className="px-4 py-2.5 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-bold hover:bg-emerald-100 transition no-underline flex items-center gap-2">
