@@ -315,15 +315,15 @@ export function ClientUsersTable({ initialUsers, currentUserId }: Props) {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-slate-100">
-              <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Name</th>
-              <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Email</th>
-              <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Phone</th>
-              <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Role</th>
-              <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Licenses</th>
-              <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Downloads</th>
-              <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Expense Tracker</th>
-              <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Joined</th>
-              <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Actions</th>
+              <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Name</th>
+              <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Email</th>
+              <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Phone</th>
+              <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Role</th>
+              <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider text-center whitespace-nowrap">Licenses</th>
+              <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Downloads</th>
+              <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Expense Tracker</th>
+              <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Joined</th>
+              <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -334,9 +334,9 @@ export function ClientUsersTable({ initialUsers, currentUserId }: Props) {
 
                 return (
                   <tr key={u.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
-                    <td className="p-3 text-sm font-semibold text-slate-900">{u.name || "N/A"}</td>
-                    <td className="p-3 text-sm text-slate-600">{u.email}</td>
-                    <td className="p-3 text-sm font-mono text-slate-700">
+                    <td className="p-3 text-sm font-semibold text-slate-900 whitespace-nowrap">{u.name || "N/A"}</td>
+                    <td className="p-3 text-sm text-slate-600 whitespace-nowrap">{u.email}</td>
+                    <td className="p-3 text-sm font-mono text-slate-700 whitespace-nowrap">
                       {u.phone ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-sky-50 text-sky-700 rounded-lg text-xs font-bold border border-sky-100">
                           📱 {u.phone}
@@ -345,7 +345,7 @@ export function ClientUsersTable({ initialUsers, currentUserId }: Props) {
                         <span className="text-xs text-slate-400 italic">Not Set</span>
                       )}
                     </td>
-                    <td className="p-3 text-sm">
+                    <td className="p-3 text-sm whitespace-nowrap">
                       <span
                         className={`px-2.5 py-1 rounded-full text-[0.7rem] font-bold tracking-wide ${
                           isUserAdmin ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-500"
@@ -354,8 +354,8 @@ export function ClientUsersTable({ initialUsers, currentUserId }: Props) {
                         {isUserAdmin ? "ADMIN" : "USER"}
                       </span>
                     </td>
-                    <td className="p-3 text-sm text-slate-700 text-center font-bold">{u._count.licenses}</td>
-                    <td className="p-3 text-sm">
+                    <td className="p-3 text-sm text-slate-700 text-center font-bold whitespace-nowrap">{u._count.licenses}</td>
+                    <td className="p-3 text-sm whitespace-nowrap">
                       <button
                         onClick={() => handleToggleDownloads(u.id, u.downloadAllowed)}
                         disabled={isPending}
@@ -368,7 +368,7 @@ export function ClientUsersTable({ initialUsers, currentUserId }: Props) {
                         {u.downloadAllowed ? "✅ Allowed" : "🚫 Restricted"}
                       </button>
                     </td>
-                    <td className="p-3 text-sm">
+                    <td className="p-3 text-sm whitespace-nowrap">
                       <button
                         onClick={() => handleToggleExpenseTracker(u.id, u.expenseTrackerAllowed)}
                         disabled={isPending}
@@ -381,8 +381,8 @@ export function ClientUsersTable({ initialUsers, currentUserId }: Props) {
                         {u.expenseTrackerAllowed ? "✅ Enabled" : "🚫 Disabled"}
                       </button>
                     </td>
-                    <td className="p-3 text-sm text-slate-500">{new Date(u.createdAt).toLocaleDateString()}</td>
-                    <td className="p-3 text-sm">
+                    <td className="p-3 text-sm text-slate-500 whitespace-nowrap">{new Date(u.createdAt).toLocaleDateString()}</td>
+                    <td className="p-3 text-sm whitespace-nowrap">
                       {isCurrentUser ? (
                         <span className="text-xs text-slate-400 italic font-medium pl-2">You</span>
                       ) : (
