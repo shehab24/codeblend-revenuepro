@@ -206,11 +206,13 @@ function LicenseRow({ license }: { license: LicenseData }) {
 
 export function AdminLicenseList({ licenses }: { licenses: LicenseData[] }) {
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "pending" | "active" | "suspended" | "revoked">("all");
+  const [filter, setFilter] = useState<"all" | "pending" | "active" | "other">("all");
 
   const filtered = licenses.filter(l => {
     // Status filter
-    if (filter !== "all" && l.status !== filter) return false;
+    if (filter === "pending" && l.status !== "pending") return false;
+    if (filter === "active" && l.status !== "active") return false;
+    if (filter === "other" && ["pending", "active"].includes(l.status)) return false;
 
     // Search filter
     if (search) {
@@ -255,8 +257,7 @@ export function AdminLicenseList({ licenses }: { licenses: LicenseData[] }) {
             { value: "all" as const, label: "All", count: licenses.length },
             { value: "pending" as const, label: "Pending", count: licenses.filter(l => l.status === "pending").length },
             { value: "active" as const, label: "Active", count: licenses.filter(l => l.status === "active").length },
-            { value: "suspended" as const, label: "Suspended", count: licenses.filter(l => l.status === "suspended").length },
-            { value: "revoked" as const, label: "Revoked", count: licenses.filter(l => l.status === "revoked").length },
+            { value: "other" as const, label: "Other", count: licenses.filter(l => !["pending", "active"].includes(l.status)).length },
           ].map(tab => (
             <button
               key={tab.value}
