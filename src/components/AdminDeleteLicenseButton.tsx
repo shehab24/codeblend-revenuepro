@@ -20,7 +20,7 @@ export function AdminDeleteLicenseButton({ licenseId }: { licenseId: string }) {
       disabled={isPending}
       className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-50 text-red-500 border-none cursor-pointer hover:bg-red-500 hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      {isPending ? "..." : "Revoke"}
+      {isPending ? "..." : "Delete"}
     </button>
   );
 }
