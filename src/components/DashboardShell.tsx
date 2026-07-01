@@ -27,6 +27,7 @@ const Icon = {
   PlusCircle: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
   CloudDownload: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" /></svg>,
   PlayCircle: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" /></svg>,
+  ExpenseTracker: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" /><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" /></svg>,
 };
 
 const adminLinks: { section: string; links: NavLink[] }[] = [
@@ -81,15 +82,44 @@ interface DashboardShellProps {
   userEmail: string;
   userImageUrl?: string;
   hasPhone?: boolean;
+  expenseTrackerAllowed?: boolean;
 }
 
-export function DashboardShell({ children, isAdmin, userName, userEmail, userImageUrl, hasPhone = true }: DashboardShellProps) {
+export function DashboardShell({ 
+  children, 
+  isAdmin, 
+  userName, 
+  userEmail, 
+  userImageUrl, 
+  hasPhone = true,
+  expenseTrackerAllowed = false
+}: DashboardShellProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const sections = isAdmin ? adminLinks : userSections;
+  
+  const sections = isAdmin ? adminLinks : [
+    {
+      section: "YOUR WORKSPACE",
+      links: [
+        { href: "/dashboard/user", label: "Dashboard", icon: Icon.Dashboard },
+        { href: "/dashboard/user/requests", label: "My Requests", icon: Icon.ClipboardList },
+        { href: "/dashboard/user/services", label: "Get Service", icon: Icon.PlusCircle },
+        { href: "/dashboard/user/transactions", label: "Billing & Payments", icon: Icon.CreditCard },
+      ],
+    },
+    {
+      section: "PRODUCTS",
+      links: [
+        { href: "/dashboard/user/revenuepro", label: "Revenue Pro", icon: Icon.CloudDownload },
+        ...(expenseTrackerAllowed ? [{ href: "/dashboard/user/expense-tracker", label: "Expense Tracker", icon: Icon.ExpenseTracker }] : []),
+        { href: "/dashboard/user/tutorials", label: "Tutorials", icon: Icon.PlayCircle },
+      ],
+    },
+  ];
+
   const profileRef = useRef<HTMLDivElement>(null);
   const { signOut } = useClerk();
 

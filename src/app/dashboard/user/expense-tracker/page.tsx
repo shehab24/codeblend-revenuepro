@@ -1,0 +1,323 @@
+"use client";
+
+import { useState, useEffect } from "react";
+
+type Transaction = {
+  id: string;
+  title: string;
+  amount: number;
+  type: "income" | "expense";
+  category: string;
+  date: string;
+};
+
+const CATEGORIES = {
+  income: ["Salary", "Freelance", "Investment", "Other Income"],
+  expense: ["Food", "Rent", "Utilities", "Marketing", "Hosting/Cloud", "Plugins", "Office", "Salary Payouts", "Other Expense"]
+};
+
+export default function ExpenseTrackerPage() {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [title, setTitle] = useState("");
+  const [amount, setAmount] = useState("");
+  const [type, setType] = useState<"income" | "expense">("expense");
+  const [category, setCategory] = useState(CATEGORIES.expense[0]);
+  const [filter, setFilter] = useState<"all" | "income" | "expense">("all");
+
+  // Load from local storage
+  useEffect(() => {
+    const saved = localStorage.getItem("revenuepro_expenses");
+    if (saved) {
+      try {
+        setTransactions(JSON.parse(saved));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
+
+  // Save to local storage
+  const saveTransactions = (newTx: Transaction[]) => {
+    setTransactions(newTx);
+    localStorage.setItem("revenuepro_expenses", JSON.stringify(newTx));
+  };
+
+  // Handle category reset when type changes
+  useEffect(() => {
+    setCategory(CATEGORIES[type][0]);
+  }, [type]);
+
+  // Calculations
+  const totalIncome = transactions
+    .filter((t) => t.type === "income")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalExpense = transactions
+    .filter((t) => t.type === "expense")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const balance = totalIncome - totalExpense;
+
+  const handleAddTransaction = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || !amount || parseFloat(amount) <= 0) return;
+
+    const newTx: Transaction = {
+      id: crypto.randomUUID(),
+      title: title.trim(),
+      amount: parseFloat(amount),
+      type,
+      category,
+      date: new Date().toISOString(),
+    };
+
+    saveTransactions([newTx, ...transactions]);
+    setTitle("");
+    setAmount("");
+  };
+
+  const handleDeleteTransaction = (id: string) => {
+    if (confirm("Are you sure you want to delete this transaction?")) {
+      saveTransactions(transactions.filter((t) => t.id !== id));
+    }
+  };
+
+  const filtered = transactions.filter((t) => {
+    if (filter === "all") return true;
+    return t.type === filter;
+  });
+
+  return (
+    <div className="space-y-6 max-w-5xl mx-auto w-full pb-12">
+      {/* Header */}
+      <div className="border-b border-slate-200 pb-5">
+        <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+          💰 Expense Tracker
+        </h1>
+        <p className="text-sm font-medium text-slate-400 mt-1">
+          Monitor your income, plugin costs, marketing expenses, and overall business cashflow.
+        </p>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Balance Card */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Net Balance</span>
+            <div className={`text-3xl font-black mt-2 tracking-tight ${balance >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+              ৳ {balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          </div>
+          <div className="mt-4 text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+            <span className={`w-2.5 h-2.5 rounded-full ${balance >= 0 ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`}></span>
+            {balance >= 0 ? "In Surplus" : "In Deficit"}
+          </div>
+        </div>
+
+        {/* Income Card */}
+        <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Total Revenue</span>
+            <div className="text-3xl font-black text-emerald-600 mt-2 tracking-tight">
+              ৳ {totalIncome.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          </div>
+          <div className="mt-4 text-xs font-semibold text-emerald-700">
+            📈 {transactions.filter((t) => t.type === "income").length} Income entries logged
+          </div>
+        </div>
+
+        {/* Expense Card */}
+        <div className="bg-rose-50/50 border border-rose-100 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <span className="text-xs font-bold text-rose-700 uppercase tracking-wider">Total Expenses</span>
+            <div className="text-3xl font-black text-rose-600 mt-2 tracking-tight">
+              ৳ {totalExpense.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          </div>
+          <div className="mt-4 text-xs font-semibold text-rose-700">
+            📉 {transactions.filter((t) => t.type === "expense").length} Expense entries logged
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Add Transaction Form */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm h-fit">
+          <h3 className="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+            📝 Log Transaction
+          </h3>
+          <form onSubmit={handleAddTransaction} className="space-y-4">
+            {/* Type Toggle */}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Type</label>
+              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-50 border border-slate-200 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setType("expense")}
+                  className={`py-2 text-xs font-bold rounded-lg transition-all ${
+                    type === "expense"
+                      ? "bg-white text-rose-600 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  Expense
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setType("income")}
+                  className={`py-2 text-xs font-bold rounded-lg transition-all ${
+                    type === "income"
+                      ? "bg-white text-emerald-600 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  Income
+                </button>
+              </div>
+            </div>
+
+            {/* Title */}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Description</label>
+              <input
+                type="text"
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Hosting billing, Client payout..."
+                className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 bg-white text-slate-900 focus:outline-none focus:border-emerald-500 transition"
+              />
+            </div>
+
+            {/* Amount */}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Amount (৳)</label>
+              <input
+                type="number"
+                required
+                step="0.01"
+                min="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+                className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 bg-white text-slate-900 focus:outline-none focus:border-emerald-500 transition"
+              />
+            </div>
+
+            {/* Category */}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Category</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 bg-white text-slate-700 focus:outline-none focus:border-emerald-500 transition cursor-pointer"
+              >
+                {CATEGORIES[type].map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              className={`w-full py-2.5 rounded-xl text-xs font-bold text-white shadow-md transition-all cursor-pointer border-none ${
+                type === "income"
+                  ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/10"
+                  : "bg-rose-600 hover:bg-rose-700 shadow-rose-600/10"
+              }`}
+            >
+              Add {type === "income" ? "Income" : "Expense"}
+            </button>
+          </form>
+        </div>
+
+        {/* Transaction History List */}
+        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-3">
+            <h3 className="text-base font-bold text-slate-800">
+              📋 Transactions History
+            </h3>
+            {/* Filter Tabs */}
+            <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-1 shrink-0 self-start sm:self-auto">
+              {[
+                { value: "all" as const, label: "All" },
+                { value: "income" as const, label: "Income" },
+                { value: "expense" as const, label: "Expenses" },
+              ].map((tab) => (
+                <button
+                  key={tab.value}
+                  onClick={() => setFilter(tab.value)}
+                  className={`px-3 py-1 rounded-md text-xs font-bold transition-all border-none cursor-pointer ${
+                    filter === tab.value
+                      ? "bg-white text-slate-800 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex-1 mt-4 overflow-y-auto max-h-[400px] pr-1 space-y-2.5 custom-scrollbar">
+            {filtered.length > 0 ? (
+              filtered.map((tx) => (
+                <div
+                  key={tx.id}
+                  className={`p-3.5 rounded-xl border border-solid transition flex items-center justify-between gap-4 ${
+                    tx.type === "income"
+                      ? "bg-emerald-50/10 border-emerald-100 hover:border-emerald-200"
+                      : "bg-rose-50/10 border-rose-100 hover:border-rose-200"
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-semibold text-slate-800 truncate">{tx.title}</span>
+                      <span
+                        className={`text-[0.6rem] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-md ${
+                          tx.type === "income"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-rose-100 text-rose-800"
+                        }`}
+                      >
+                        {tx.category}
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-semibold">
+                      {new Date(tx.date).toLocaleString()}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className={`text-sm font-extrabold font-mono ${tx.type === "income" ? "text-emerald-600" : "text-rose-600"}`}>
+                      {tx.type === "income" ? "+" : "-"} ৳{tx.amount.toFixed(2)}
+                    </span>
+                    <button
+                      onClick={() => handleDeleteTransaction(tx.id)}
+                      className="p-1 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition border-none cursor-pointer"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-12 text-slate-400">
+                <div className="text-3xl mb-2">🔍</div>
+                <div className="text-xs font-bold">No transactions found</div>
+                <p className="text-[11px] text-slate-400 mt-1">Logged items will display here.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
