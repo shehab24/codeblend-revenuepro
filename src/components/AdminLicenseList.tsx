@@ -255,11 +255,12 @@ export function AdminLicenseList({ licenses }: { licenses: LicenseData[] }) {
             { value: "all" as const, label: "All", count: licenses.length },
             { value: "pending" as const, label: "Pending", count: licenses.filter(l => l.status === "pending").length },
             { value: "active" as const, label: "Active", count: licenses.filter(l => l.status === "active").length },
-            { value: "suspended" as const, label: "Other", count: licenses.filter(l => !["pending", "active"].includes(l.status)).length },
+            { value: "suspended" as const, label: "Suspended", count: licenses.filter(l => l.status === "suspended").length },
+            { value: "revoked" as const, label: "Revoked", count: licenses.filter(l => l.status === "revoked").length },
           ].map(tab => (
             <button
               key={tab.value}
-              onClick={() => setFilter(tab.value === "suspended" ? "all" : tab.value)}
+              onClick={() => setFilter(tab.value)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 filter === tab.value
                   ? "bg-white text-slate-800 shadow-sm"
