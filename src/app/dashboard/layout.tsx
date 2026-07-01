@@ -45,6 +45,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
     }
   }
 
+  console.log("DB USER IN LAYOUT:", {
+    email: dbUser?.email,
+    expenseTrackerAllowed: dbUser?.expenseTrackerAllowed,
+    downloadAllowed: dbUser?.downloadAllowed
+  });
+
   const hasPhone = !!dbUser?.phone;
 
   return (
