@@ -142,3 +142,17 @@ model PaymentTransaction {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }
+
+model BkashSmsTransaction {
+  id          String   @id @default(cuid())
+  trxId       String   @unique  // bKash transaction ID (e.g. 8N34KJL98S)
+  sender      String   // Parsed bKash sender number (customer number)
+  amount      Float    // Parsed amount sent
+  rawMessage  String   // Raw SMS body
+  status      String   @default("unused") // "unused", "used"
+  orderId     String?  // Optional local WooCommerce order/payment ID
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([sender, amount, status])
+}
