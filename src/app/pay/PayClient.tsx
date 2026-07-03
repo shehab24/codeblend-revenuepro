@@ -12,6 +12,7 @@ export function PayClient() {
   const callbackUrl = searchParams.get("callback") || "";
   const merchantName = searchParams.get("merchant") || "CodeBlend Store";
   const configuredNumber = searchParams.get("number") || "01784450219";
+  const merchantId = searchParams.get("merchant_id") || "";
 
   const [senderNumber, setSenderNumber] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
@@ -33,6 +34,12 @@ export function PayClient() {
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanNumber = senderNumber.trim().replace(/[^0-9]/g, "");
+
+    if (!merchantId) {
+      setMsg("ত্রুটি: মার্চেন্ট আইডি পাওয়া যায়নি (Error: Merchant ID is missing)");
+      setMsgType("error");
+      return;
+    }
 
     if (!cleanNumber || cleanNumber.length < 11) {
       setMsg("একটি সঠিক ১১ ডিজিটের bKash নম্বর দিন (Enter a valid 11-digit number)");
@@ -57,6 +64,7 @@ export function PayClient() {
         body: JSON.stringify({
           senderNumber: cleanNumber,
           amount: amount,
+          merchantId: merchantId,
         }),
       });
 

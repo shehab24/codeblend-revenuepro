@@ -4,11 +4,18 @@ import { prisma } from "@/lib/prisma";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { senderNumber, trxId, amount } = body;
+    const { senderNumber, trxId, amount, merchantId } = body;
 
     if (!amount || isNaN(parseFloat(amount))) {
       return NextResponse.json(
         { error: "Valid payment amount is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!merchantId) {
+      return NextResponse.json(
+        { error: "merchantId is required to identify the store owner" },
         { status: 400 }
       );
     }
@@ -38,6 +45,7 @@ export async function POST(request: Request) {
       const cleanTrx = trxId.trim().toUpperCase();
       transaction = await prisma.bkashSmsTransaction.findFirst({
         where: {
+          userId: merchantId,
           trxId: cleanTrx,
           status: "unused",
         },
@@ -49,6 +57,7 @@ export async function POST(request: Request) {
       // Allow +/- 1.0 Taka tolerance for rounding differences
       transaction = await prisma.bkashSmsTransaction.findFirst({
         where: {
+          userId: merchantId,
           sender: {
             endsWith: cleanSender,
           },

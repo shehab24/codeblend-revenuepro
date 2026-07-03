@@ -22,6 +22,7 @@ model User {
   licenses        License[]
   serviceRequests ServiceRequest[]
   transactions    PaymentTransaction[]
+  bkashSmsTransactions BkashSmsTransaction[]
 }
 
 model License {
@@ -145,6 +146,8 @@ model PaymentTransaction {
 
 model BkashSmsTransaction {
   id          String   @id @default(cuid())
+  userId      String   // Links to the merchant who owns the phone
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   trxId       String   @unique  // bKash transaction ID (e.g. 8N34KJL98S)
   sender      String   // Parsed bKash sender number (customer number)
   amount      Float    // Parsed amount sent
@@ -154,5 +157,5 @@ model BkashSmsTransaction {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@index([sender, amount, status])
+  @@index([userId, sender, amount, status])
 }

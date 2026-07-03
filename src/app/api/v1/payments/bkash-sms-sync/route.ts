@@ -91,6 +91,7 @@ export async function POST(request: Request) {
         if (!existing) {
           await prisma.bkashSmsTransaction.create({
             data: {
+              userId: decoded.userId,
               trxId: parsed.trxId,
               sender: parsed.sender,
               amount: parsed.amount,
