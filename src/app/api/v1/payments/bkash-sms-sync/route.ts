@@ -55,6 +55,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { smsList } = body;
 
+    console.log(`[SMS Sync] Received request from user ${decoded.userId}. smsList length: ${smsList?.length || 0}`);
+
     if (!smsList || !Array.isArray(smsList)) {
       return NextResponse.json(
         { error: "Invalid payload: smsList is required and must be an array" },
@@ -72,13 +74,23 @@ export async function POST(request: Request) {
 
       // Only process bKash messages (case-insensitive checks)
       const isBkash = sender?.toLowerCase() === "bkash" || messageBody.toLowerCase().includes("bkash");
-      if (!isBkash) continue;
+      if (!isBkash) {
+        console.log(`[SMS Sync] Skipping non-bKash message from ${sender}`);
+        continue;
+      }
 
       // Parse bKash SMS details
       const parsed = parseBkashSms(messageBody);
 
+      console.log(`[SMS Sync] Parsed bKash SMS:`, {
+        rawLength: messageBody.length,
+        parsedTrxId: parsed.trxId || "NONE",
+        parsedSender: parsed.sender || "NONE",
+        parsedAmount: parsed.amount
+      });
+
       if (!parsed.trxId || parsed.amount <= 0 || !parsed.sender) {
-        // Log skipped message if it contains bKash but isn't a transaction
+        console.log(`[SMS Sync] Message skipped: missing trxId, amount <= 0, or missing sender.`);
         continue;
       }
 
@@ -89,6 +101,7 @@ export async function POST(request: Request) {
         });
 
         if (!existing) {
+          console.log(`[SMS Sync] Creating new transaction record for TrxID: ${parsed.trxId}`);
           await prisma.bkashSmsTransaction.create({
             data: {
               userId: decoded.userId,
@@ -107,12 +120,15 @@ export async function POST(request: Request) {
             status: "saved",
           });
         } else {
+          console.log(`[SMS Sync] Transaction already exists (duplicate): ${parsed.trxId}`);
           duplicateCount++;
         }
       } catch (dbErr) {
         console.error(`Failed to save bKash SMS transaction ${parsed.trxId}:`, dbErr);
       }
     }
+
+    console.log(`[SMS Sync] Done processing. Saved: ${savedCount}, Duplicates: ${duplicateCount}`);
 
     return NextResponse.json({
       success: true,
