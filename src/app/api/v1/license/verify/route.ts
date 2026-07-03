@@ -74,6 +74,7 @@ export async function POST(request: Request) {
       domain: license.domain,
       plan: license.tier,
       expiresAt: license.expirationDate ? license.expirationDate.getTime() : null, // Unix Timestamp
+      userId: license.userId,
     };
 
     let token = null;
