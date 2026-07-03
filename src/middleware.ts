@@ -19,7 +19,9 @@ export default clerkMiddleware(async (auth, req) => {
 
   // 1. Subdomain isolation for pay.codeblend.co
   if (host.includes("pay.codeblend.co")) {
-    const hasParams = req.nextUrl.searchParams.has("amount") && req.nextUrl.searchParams.has("merchant_id");
+    const amount = req.nextUrl.searchParams.get("amount");
+    const merchantId = req.nextUrl.searchParams.get("merchant_id");
+    const hasParams = amount && merchantId;
 
     // Redirect direct visitors accessing root or /pay without parameters to main domain
     if (pathname === "/") {
