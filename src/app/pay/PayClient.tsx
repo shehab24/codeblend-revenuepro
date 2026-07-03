@@ -312,7 +312,9 @@ export function PayClient() {
                 <button
                   onClick={() => {
                     if (callbackUrl) {
-                      window.location.href = callbackUrl;
+                      const redirectTarget = new URL(callbackUrl);
+                      redirectTarget.searchParams.set("status", "pending");
+                      window.location.href = redirectTarget.toString();
                     }
                   }}
                   type="button"
