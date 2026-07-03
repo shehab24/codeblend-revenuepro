@@ -110,7 +110,7 @@ export function PayClient() {
 
   return (
     <div className="min-h-screen bg-[#8f9296] flex flex-col items-center justify-center p-4 antialiased font-sans selection:bg-[#e2136e] selection:text-white">
-      <div className="w-full max-w-[370px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col relative">
+      <div className="w-full max-w-[390px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col relative">
         
         {/* Header White Bar with bKash Logo */}
         <div className="bg-white py-4 flex items-center justify-center border-b-4 border-[#e2136e]">
@@ -304,12 +304,6 @@ export function PayClient() {
 
         {/* Footer info (matches bKash style) */}
         <div className="bg-white py-4 text-center border-t border-gray-100 flex flex-col items-center justify-center gap-1">
-          <div className="flex items-center gap-1 text-xs font-bold text-[#e2136e]">
-            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M6.62 10.79a15.15 15.15 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
-            </svg>
-            <span>16247</span>
-          </div>
           <p className="text-[0.55rem] text-gray-400 font-medium">
             Powered by CodeBlend Automations | © {new Date().getFullYear()} bKash
           </p>
