@@ -23,8 +23,48 @@ export function PayClient() {
   const [msgType, setMsgType] = useState<"success" | "error" | "info" | "">("");
   const [isCopied, setIsCopied] = useState(false);
   const [countdown, setCountdown] = useState(4);
+  const [timerSeconds, setTimerSeconds] = useState(15 * 60);
+  const [isTimeOut, setIsTimeOut] = useState(false);
 
   const amount = parseFloat(amountParam) || 0;
+
+  // Track transition to step 2 to start/reset the 15-min countdown
+  useEffect(() => {
+    if (step === 2) {
+      setTimerSeconds(15 * 60);
+      setIsTimeOut(false);
+      if (msgType === "error" && msg.includes("সময় শেষ")) {
+        setMsg("");
+        setMsgType("");
+      }
+    }
+  }, [step]);
+
+  // Countdown logic
+  useEffect(() => {
+    if (step !== 2 || isTimeOut || msgType === "success") return;
+
+    const interval = setInterval(() => {
+      setTimerSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setIsTimeOut(true);
+          setMsg("ভেরিফিকেশন সময় শেষ হয়ে গেছে! অনুগ্রহ করে আবার চেষ্টা করুন। (Verification timeout! Please go back and try again.)");
+          setMsgType("error");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [step, isTimeOut, msgType]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
 
   // Handle number copy
   const handleCopy = () => {
@@ -223,6 +263,14 @@ export function PayClient() {
           ) : (
             /* STEP 2: SENDER PHONE NUMBER INPUT */
             <div className="flex-1 flex flex-col justify-center space-y-5 py-4">
+              {/* Countdown Timer */}
+              <div className="text-center bg-black/20 py-2 px-3 rounded-lg border border-white/10 flex items-center justify-center gap-2">
+                <span className="text-[11px] font-medium text-pink-200">⌛ ভেরিফিকেশন করার বাকি সময়:</span>
+                <span className="text-xs font-black text-white font-mono bg-white/15 px-2 py-0.5 rounded tracking-widest animate-pulse">
+                  {formatTime(timerSeconds)}
+                </span>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-pink-100 uppercase tracking-widest text-center mb-3">
                   আপনার বিকাশ অ্যাকাউন্ট নম্বর দিন (Your bKash Number)
@@ -230,7 +278,7 @@ export function PayClient() {
                 <input
                   type="text"
                   required
-                  disabled={msgType === "success"}
+                  disabled={msgType === "success" || isTimeOut}
                   value={senderNumber}
                   onChange={(e) => setSenderNumber(e.target.value)}
                   placeholder="017XXXXXXXX"
@@ -292,7 +340,7 @@ export function PayClient() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isVerifying || msgType === "success"}
+                  disabled={isVerifying || msgType === "success" || isTimeOut}
                   className="w-1/2 py-2 bg-[#e2136e] hover:bg-[#b00e54] text-white text-xs font-bold rounded cursor-pointer transition border-none uppercase tracking-wider disabled:opacity-50 flex items-center justify-center gap-1.5"
                 >
                   {isVerifying ? "Verifying..." : "Confirm"}

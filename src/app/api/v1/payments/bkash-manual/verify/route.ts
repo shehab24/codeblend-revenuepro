@@ -80,6 +80,15 @@ export async function POST(request: Request) {
       });
     }
 
+    // Check if the transaction is older than 15 minutes
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+    if (transaction.createdAt < fifteenMinutesAgo) {
+      return NextResponse.json({
+        success: false,
+        error: "পেমেন্ট সময়সীমা (১৫ মিনিট) পার হয়ে গেছে। সহায়তার জন্য যোগাযোগ করুন। (Payment verification timeframe of 15 minutes has expired. Please contact support.)",
+      });
+    }
+
     // 3. Mark transaction as used
     await prisma.bkashSmsTransaction.update({
       where: { id: transaction.id },
