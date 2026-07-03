@@ -14,6 +14,33 @@ export default clerkMiddleware(async (auth, req) => {
     });
   }
 
+  const host = req.headers.get("host") || "";
+  const { pathname } = req.nextUrl;
+
+  // 1. Subdomain isolation for pay.codeblend.co
+  if (host.includes("pay.codeblend.co")) {
+    // If accessing the root, internally rewrite to /pay
+    if (pathname === "/") {
+      const url = req.nextUrl.clone();
+      url.pathname = "/pay";
+      const res = NextResponse.rewrite(url);
+      res.headers.set("Access-Control-Allow-Origin", "*");
+      return res;
+    }
+
+    // Only allow /pay and the payment APIs
+    const isPaymentPath = pathname === "/pay" || pathname.startsWith("/api/v1/payments");
+    if (!isPaymentPath) {
+      // Redirect all other requests on pay.codeblend.co to the main website
+      return NextResponse.redirect("https://codeblend.co");
+    }
+  } else {
+    // 2. Prevent accessing /pay directly from the main domain (codeblend.co)
+    if (pathname === "/pay") {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+  }
+
   // Forward the rest of the API payloads securely, wrapping generic access across origins
   const response = NextResponse.next();
   response.headers.set("Access-Control-Allow-Origin", "*");
