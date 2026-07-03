@@ -19,13 +19,22 @@ export default clerkMiddleware(async (auth, req) => {
 
   // 1. Subdomain isolation for pay.codeblend.co
   if (host.includes("pay.codeblend.co")) {
-    // If accessing the root, internally rewrite to /pay
+    const hasParams = req.nextUrl.searchParams.has("amount") && req.nextUrl.searchParams.has("merchant_id");
+
+    // Redirect direct visitors accessing root or /pay without parameters to main domain
     if (pathname === "/") {
+      if (!hasParams) {
+        return NextResponse.redirect("https://codeblend.co");
+      }
       const url = req.nextUrl.clone();
       url.pathname = "/pay";
       const res = NextResponse.rewrite(url);
       res.headers.set("Access-Control-Allow-Origin", "*");
       return res;
+    }
+
+    if (pathname === "/pay" && !hasParams) {
+      return NextResponse.redirect("https://codeblend.co");
     }
 
     // Only allow /pay and the payment APIs
