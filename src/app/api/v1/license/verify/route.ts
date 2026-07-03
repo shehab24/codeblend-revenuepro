@@ -71,12 +71,28 @@ export async function POST(request: Request) {
       data: { licenseId: license.id, ipAddress, userAgent, status: "success" }
     });
 
+    // Find the actual customer user in our DB if one exists with this email
+    let activeUserId = license.userId;
+    if (license.customerEmail) {
+      const customerUser = await prisma.user.findFirst({
+        where: {
+          email: {
+            equals: license.customerEmail,
+            mode: "insensitive"
+          }
+        }
+      });
+      if (customerUser) {
+        activeUserId = customerUser.id;
+      }
+    }
+
     const payload = {
       license: license.key,
       domain: license.domain,
       plan: license.tier,
       expiresAt: license.expirationDate ? license.expirationDate.getTime() : null, // Unix Timestamp
-      userId: license.userId,
+      userId: activeUserId,
     };
 
     let token = null;

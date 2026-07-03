@@ -58,9 +58,24 @@ export async function adminCreateLicense(formData: FormData) {
 
   const key = "REVPRO-WP-" + crypto.randomBytes(12).toString("hex").toUpperCase();
 
+  let targetUserId = userId; // Default to admin who created it
+  if (customerEmail?.trim()) {
+    const customerUser = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: customerEmail.trim(),
+          mode: "insensitive"
+        }
+      }
+    });
+    if (customerUser) {
+      targetUserId = customerUser.id;
+    }
+  }
+
   await prisma.license.create({
     data: {
-      userId,    // Owned by the admin initially
+      userId: targetUserId,
       customerEmail: customerEmail?.trim() || null,
       domain,
       tier,
@@ -169,6 +184,20 @@ export async function adminToggleLicenseStatus(licenseId: string, status: string
       } catch (err) {
         console.error("Failed to send activation email", err);
       }
+    }
+  }
+
+  if (license.customerEmail) {
+    const customerUser = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: license.customerEmail,
+          mode: "insensitive"
+        }
+      }
+    });
+    if (customerUser) {
+      updateData.userId = customerUser.id;
     }
   }
 
