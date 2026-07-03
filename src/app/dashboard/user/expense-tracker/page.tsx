@@ -26,6 +26,14 @@ export default function ExpenseTrackerPage() {
   const [type, setType] = useState<"income" | "expense">("expense");
   const [category, setCategory] = useState(CATEGORIES.expense[0]);
   const [filter, setFilter] = useState<"all" | "income" | "expense">("all");
+  const [smsFilter, setSmsFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
+
+  // Reset page when SMS filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [smsFilter]);
 
   // Load bKash SMS transactions
   useEffect(() => {
@@ -102,6 +110,69 @@ export default function ExpenseTrackerPage() {
     if (filter === "all") return true;
     return t.type === filter;
   });
+
+  // Filter synced SMS transactions based on selected keyword
+  const filteredBkashTransactions = bkashTransactions.filter((tx) => {
+    if (smsFilter === "all") return true;
+
+    const senderLower = (tx.sender || "").toLowerCase();
+    const rawLower = (tx.rawMessage || "").toLowerCase();
+
+    if (smsFilter === "bkash") {
+      return senderLower.includes("bkash") || rawLower.includes("bkash");
+    }
+    if (smsFilter === "nagad") {
+      return senderLower.includes("nagad") || rawLower.includes("nagad");
+    }
+    if (smsFilter === "rocket") {
+      return senderLower.includes("rocket") || rawLower.includes("rocket");
+    }
+    if (smsFilter === "bank_asia") {
+      return (
+        senderLower.includes("bank asia") ||
+        rawLower.includes("bank asia") ||
+        senderLower.includes("bankasia") ||
+        rawLower.includes("bankasia")
+      );
+    }
+    if (smsFilter === "other_bank") {
+      const isBankAsia =
+        senderLower.includes("bank asia") ||
+        rawLower.includes("bank asia") ||
+        senderLower.includes("bankasia") ||
+        rawLower.includes("bankasia");
+      if (isBankAsia) return false;
+
+      // Detect general bank keywords
+      const bankKeywords = [
+        "bank",
+        "visa",
+        "mastercard",
+        "card",
+        "ibanking",
+        "deposit",
+        "credited",
+        "debited",
+        "account",
+        "scb",
+        "ebl",
+        "brac",
+        "citybank",
+        "nexus",
+        "agent",
+      ];
+      return bankKeywords.some((kw) => senderLower.includes(kw) || rawLower.includes(kw));
+    }
+    return false;
+  });
+
+  // Calculate pagination
+  const totalItems = filteredBkashTransactions.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  const paginatedTransactions = filteredBkashTransactions.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto w-full pb-12">
@@ -335,34 +406,50 @@ export default function ExpenseTrackerPage() {
         </div>
       </div>
 
-      {/* bKash SMS Sync Transactions Card */}
+      {/* Synced SMS Transactions Card */}
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-3">
           <div>
             <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-              📱 Synced bKash SMS Transactions
+              📱 Synced SMS Transactions
             </h3>
             <p className="text-xs font-semibold text-slate-400 mt-1">
-              Payments forwarded in real-time from your Android SMS Listener mobile app.
+              Payments and deposits forwarded in real-time from your Android SMS Listener mobile app.
             </p>
           </div>
-          <button
-            onClick={async () => {
-              setIsLoadingBkash(true);
-              const res = await getBkashSmsTransactions();
-              if (res.success && res.transactions) {
-                setBkashTransactions(res.transactions);
-              }
-              setIsLoadingBkash(false);
-            }}
-            disabled={isLoadingBkash}
-            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg border-none cursor-pointer flex items-center gap-1.5 transition disabled:opacity-50"
-          >
-            <svg className={`w-3.5 h-3.5 ${isLoadingBkash ? "animate-spin" : ""}`} fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-            </svg>
-            Refresh
-          </button>
+          <div className="flex items-center gap-2">
+            {/* SMS Filter Selector */}
+            <select
+              value={smsFilter}
+              onChange={(e) => setSmsFilter(e.target.value)}
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg border border-slate-200 outline-none cursor-pointer transition"
+            >
+              <option value="all">All Senders</option>
+              <option value="bkash">bKash</option>
+              <option value="nagad">Nagad</option>
+              <option value="rocket">Rocket</option>
+              <option value="bank_asia">Bank Asia</option>
+              <option value="other_bank">Other Bank / Cards</option>
+            </select>
+
+            <button
+              onClick={async () => {
+                setIsLoadingBkash(true);
+                const res = await getBkashSmsTransactions();
+                if (res.success && res.transactions) {
+                  setBkashTransactions(res.transactions);
+                }
+                setIsLoadingBkash(false);
+              }}
+              disabled={isLoadingBkash}
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg border-none cursor-pointer flex items-center gap-1.5 transition disabled:opacity-50"
+            >
+              <svg className={`w-3.5 h-3.5 ${isLoadingBkash ? "animate-spin" : ""}`} fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+              Refresh
+            </button>
+          </div>
         </div>
 
         <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50/50">
@@ -387,8 +474,8 @@ export default function ExpenseTrackerPage() {
                     Loading synced payments...
                   </td>
                 </tr>
-              ) : bkashTransactions.length > 0 ? (
-                bkashTransactions.map((tx) => (
+              ) : paginatedTransactions.length > 0 ? (
+                paginatedTransactions.map((tx) => (
                   <tr key={tx.id} className="hover:bg-slate-50/80 transition text-slate-700">
                     <td className="p-3.5 font-semibold text-slate-500 min-w-[140px]">
                       {new Date(tx.createdAt).toLocaleString()}
@@ -435,15 +522,47 @@ export default function ExpenseTrackerPage() {
               ) : (
                 <tr>
                   <td colSpan={6} className="p-12 text-center text-slate-400">
-                    <div className="text-2xl mb-1.5">📱</div>
-                    <div className="text-xs font-bold">No synced SMS transactions yet</div>
-                    <p className="text-[11px] text-slate-400 mt-1">Connect your mobile app to begin syncing incoming payments.</p>
+                    <div className="text-2xl mb-1.5">🔍</div>
+                    <div className="text-xs font-bold">No synced SMS transactions found matching filter</div>
+                    <p className="text-[11px] text-slate-400 mt-1">Try selecting a different sender or sync new payments.</p>
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-4">
+            <div className="text-xs text-slate-500 font-semibold">
+              Showing <span className="text-slate-800 font-bold">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
+              <span className="text-slate-800 font-bold">
+                {Math.min(currentPage * itemsPerPage, totalItems)}
+              </span>{" "}
+              of <span className="text-slate-800 font-bold">{totalItems}</span> transactions
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 text-xs font-bold rounded-lg border-none cursor-pointer transition flex items-center gap-1"
+              >
+                Previous
+              </button>
+              <div className="text-xs font-bold text-slate-600 px-2">
+                Page {currentPage} of {totalPages}
+              </div>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 text-xs font-bold rounded-lg border-none cursor-pointer transition flex items-center gap-1"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
