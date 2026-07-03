@@ -105,12 +105,15 @@ export function PayClient() {
     }
   };
 
+  const showQr = (displayMode === "both" || displayMode === "qr" || displayMode === "qr_code") && qrCode;
+  const showNumber = displayMode !== "qr" && displayMode !== "qr_code";
+
   return (
-    <div className="min-h-screen bg-[#8f9296] flex flex-col items-center justify-center p-4 antialiased font-sans selection:bg-[#de0a26] selection:text-white">
+    <div className="min-h-screen bg-[#8f9296] flex flex-col items-center justify-center p-4 antialiased font-sans selection:bg-[#e2136e] selection:text-white">
       <div className="w-full max-w-[370px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col relative">
         
         {/* Header White Bar with bKash Logo */}
-        <div className="bg-white py-4 flex items-center justify-center border-b border-gray-150">
+        <div className="bg-white py-4 flex items-center justify-center border-b-4 border-[#e2136e]">
           <svg width="130" height="55" viewBox="0 0 140 65" fill="none" role="img" xmlns="http://www.w3.org/2000/svg">
             <title>bKash Logo</title>
             <g clipPath="url(#clip0_2750_4283)">
@@ -140,27 +143,34 @@ export function PayClient() {
           </svg>
         </div>
 
-        {/* Invoice Info bar */}
-        <div className="bg-[#f3f4f6] px-4 py-3 flex justify-between items-center border-b border-gray-200">
-          <div className="flex flex-col">
-            <span className="text-[0.6rem] uppercase tracking-wider text-gray-500 font-bold">Merchant</span>
-            <span className="text-xs text-gray-900 font-extrabold">{merchantName}</span>
+        {/* Invoice & Merchant Info Bar with Bangladesh Flag Avatar */}
+        <div className="bg-white px-4 py-3 flex justify-between items-center border-b border-gray-150">
+          <div className="flex items-center gap-3">
+            {/* Green and red circular avatar (flag style) */}
+            <div className="w-10 h-10 bg-[#006a4e] rounded-full flex items-center justify-center shadow-sm">
+              <div className="w-4 h-4 bg-[#f42a41] rounded-full"></div>
+            </div>
+            <div className="flex flex-col text-left">
+              <span className="text-sm text-gray-800 font-extrabold leading-tight">{merchantName}</span>
+              <span className="text-[0.65rem] text-gray-400 font-semibold mt-0.5">Invoice: {orderId}</span>
+            </div>
           </div>
-          <div className="flex flex-col text-right">
-            <span className="text-[0.6rem] uppercase tracking-wider text-gray-500 font-bold">Amount</span>
-            <span className="text-sm text-[#de0a26] font-black">৳{amount.toLocaleString("bn-BD")}</span>
+          <div className="text-right">
+            <span className="text-lg text-gray-800 font-black tracking-tight">৳{amount.toLocaleString("bn-BD")}</span>
           </div>
         </div>
 
-        {/* bKash Official Red/Pink Content Area */}
-        <form onSubmit={handleVerify} className="bg-[#de0a26] text-white p-5 flex-1 flex flex-col justify-between min-h-[340px]">
-          
+        {/* bKash Official Red/Pink Content Area with poly style background gradient */}
+        <form 
+          onSubmit={handleVerify} 
+          className="bg-[#e2136e] bg-gradient-to-br from-[#e2136e] via-[#d12053] to-[#b00e54] text-white p-5 flex-1 flex flex-col justify-between min-h-[330px]"
+        >
           {step === 1 ? (
             /* STEP 1: QR CODE & INSTRUCTIONS */
             <div className="space-y-4 flex-1">
               
-              {/* QR Code (if displayMode is both or qr, and qrCode is present) */}
-              {(displayMode === "both" || displayMode === "qr") && qrCode && (
+              {/* QR Code */}
+              {showQr && (
                 <div className="flex flex-col items-center justify-center p-3 bg-white/10 rounded-xl border border-white/20">
                   <span className="block text-[0.6rem] font-bold text-pink-200 uppercase tracking-widest mb-2">
                     scan qr code to pay
@@ -176,21 +186,21 @@ export function PayClient() {
               )}
 
               {/* Instructions steps */}
-              <div className="bg-white/10 rounded-xl p-4 border border-white/20">
+              <div className="bg-white/10 rounded-xl p-3 border border-white/20">
                 <h3 className="text-[0.7rem] font-extrabold text-pink-200 uppercase tracking-wider mb-2 text-center">
                   টাকা পাঠানোর নিয়মাবলি (Steps)
                 </h3>
                 <ol className="text-xs text-pink-50 space-y-1.5 list-decimal list-inside font-medium leading-relaxed">
                   <li>যেকোনো bKash অ্যাপ অথবা <code className="bg-black/20 text-white px-1 py-0.5 rounded font-mono">*247#</code> ডায়াল করুন।</li>
                   <li>নিচের নম্বরে <span className="underline decoration-pink-300 font-bold">Send Money</span> করুন।</li>
-                  <li>টাকা পাঠানোর পর, নিচে আপনার bKash নম্বরটি দিয়ে পেমেন্ট কনফার্ম করুন।</li>
+                  <li>টাকা পাঠানোর পর, নিচের <span className="font-bold">Verify</span> বাটনে ক্লিক করে ভেরিফাই করুন।</li>
                 </ol>
               </div>
 
-              {/* Target bKash Number (hidden if displayMode is qr) */}
-              {displayMode !== "qr" && (
+              {/* Target bKash Number */}
+              {showNumber && (
                 <div className="flex items-center justify-between p-3 bg-black/20 border border-white/10 rounded-xl">
-                  <div>
+                  <div className="text-left">
                     <span className="block text-[0.55rem] font-bold text-pink-200 uppercase tracking-wider mb-0.5">Send Money To (bKash Personal)</span>
                     <span className="text-base font-extrabold text-white tracking-widest font-mono">{configuredNumber}</span>
                   </div>
@@ -199,8 +209,8 @@ export function PayClient() {
                     type="button"
                     className={`px-3 py-1.5 rounded-lg text-[0.65rem] font-bold transition-all border cursor-pointer ${
                       isCopied 
-                        ? "bg-emerald-500 text-white border-emerald-600" 
-                        : "bg-white text-[#de0a26] hover:bg-pink-50 border-white"
+                        ? "bg-emerald-500 text-white border-emerald-600 shadow-sm" 
+                        : "bg-white text-[#e2136e] hover:bg-pink-50 border-white shadow-sm"
                     }`}
                   >
                     {isCopied ? "Copied!" : "Copy"}
@@ -211,7 +221,7 @@ export function PayClient() {
             </div>
           ) : (
             /* STEP 2: SENDER PHONE NUMBER INPUT */
-            <div className="flex-1 flex flex-col justify-center space-y-4 py-4">
+            <div className="flex-1 flex flex-col justify-center space-y-5 py-4">
               <div>
                 <label className="block text-xs font-bold text-pink-100 uppercase tracking-widest text-center mb-3">
                   আপনার বিকাশ অ্যাকাউন্ট নম্বর দিন (Your bKash Number)
@@ -223,7 +233,7 @@ export function PayClient() {
                   value={senderNumber}
                   onChange={(e) => setSenderNumber(e.target.value)}
                   placeholder="017XXXXXXXX"
-                  className="w-full px-4 py-3 rounded-xl border border-white/20 bg-black/20 text-white placeholder-white/30 text-lg font-bold text-center focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition font-mono tracking-widest"
+                  className="w-full px-4 py-3 rounded-lg border-none bg-white text-gray-800 placeholder-gray-300 text-lg font-bold text-center focus:outline-none focus:ring-2 focus:ring-pink-300 transition font-mono tracking-widest"
                 />
               </div>
 
@@ -246,7 +256,7 @@ export function PayClient() {
             </div>
           )}
 
-          {/* Bottom Gray Actions Bar (inside form container but styled to fit cleanly) */}
+          {/* Bottom Actions Bar */}
           <div className="mt-6 -mx-5 -mb-5 bg-[#e6e6e6] p-3.5 flex justify-between gap-3 border-t border-gray-300">
             {step === 1 ? (
               <>
@@ -257,14 +267,14 @@ export function PayClient() {
                     }
                   }}
                   type="button"
-                  className="w-1/2 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold rounded-lg cursor-pointer transition border border-gray-400/50 uppercase tracking-wider"
+                  className="w-1/2 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold rounded cursor-pointer transition border border-gray-400/50 uppercase tracking-wider"
                 >
                   Close
                 </button>
                 <button
                   onClick={() => setStep(2)}
                   type="button"
-                  className="w-1/2 py-2.5 bg-[#de0a26] hover:bg-[#b00e54] text-white text-xs font-bold rounded-lg cursor-pointer transition border-none uppercase tracking-wider"
+                  className="w-1/2 py-2 bg-[#e2136e] hover:bg-[#b00e54] text-white text-xs font-bold rounded cursor-pointer transition border-none uppercase tracking-wider"
                 >
                   Verify
                 </button>
@@ -275,26 +285,16 @@ export function PayClient() {
                   onClick={() => setStep(1)}
                   type="button"
                   disabled={isVerifying || msgType === "success"}
-                  className="w-1/2 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold rounded-lg cursor-pointer transition border border-gray-400/50 uppercase tracking-wider disabled:opacity-50"
+                  className="w-1/2 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold rounded cursor-pointer transition border border-gray-400/50 uppercase tracking-wider disabled:opacity-50"
                 >
                   Back
                 </button>
                 <button
                   type="submit"
                   disabled={isVerifying || msgType === "success"}
-                  className="w-1/2 py-2.5 bg-[#de0a26] hover:bg-[#b00e54] text-white text-xs font-bold rounded-lg cursor-pointer transition border-none uppercase tracking-wider disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  className="w-1/2 py-2 bg-[#e2136e] hover:bg-[#b00e54] text-white text-xs font-bold rounded cursor-pointer transition border-none uppercase tracking-wider disabled:opacity-50 flex items-center justify-center gap-1.5"
                 >
-                  {isVerifying ? (
-                    <>
-                      <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Verifying...
-                    </>
-                  ) : (
-                    "Confirm"
-                  )}
+                  {isVerifying ? "Verifying..." : "Confirm"}
                 </button>
               </>
             )}
@@ -302,15 +302,15 @@ export function PayClient() {
 
         </form>
 
-        {/* Footer info (keeps same styled Powered by but in bKash PG design) */}
-        <div className="bg-white py-4 text-center border-t border-gray-150 flex flex-col items-center justify-center gap-1">
-          <div className="flex items-center gap-1 text-xs font-bold text-[#de0a26]">
+        {/* Footer info (matches bKash style) */}
+        <div className="bg-white py-4 text-center border-t border-gray-100 flex flex-col items-center justify-center gap-1">
+          <div className="flex items-center gap-1 text-xs font-bold text-[#e2136e]">
             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M6.62 10.79a15.15 15.15 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
             </svg>
             <span>16247</span>
           </div>
-          <p className="text-[0.6rem] text-gray-500 font-medium">
+          <p className="text-[0.55rem] text-gray-400 font-medium">
             Powered by CodeBlend Automations | © {new Date().getFullYear()} bKash
           </p>
         </div>
