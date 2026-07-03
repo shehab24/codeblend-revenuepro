@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getBkashSmsTransactions } from "../actions";
 
 type Transaction = {
   id: string;
@@ -18,11 +19,26 @@ const CATEGORIES = {
 
 export default function ExpenseTrackerPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [bkashTransactions, setBkashTransactions] = useState<any[]>([]);
+  const [isLoadingBkash, setIsLoadingBkash] = useState(true);
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<"income" | "expense">("expense");
   const [category, setCategory] = useState(CATEGORIES.expense[0]);
   const [filter, setFilter] = useState<"all" | "income" | "expense">("all");
+
+  // Load bKash SMS transactions
+  useEffect(() => {
+    async function loadBkashTransactions() {
+      setIsLoadingBkash(true);
+      const res = await getBkashSmsTransactions();
+      if (res.success && res.transactions) {
+        setBkashTransactions(res.transactions);
+      }
+      setIsLoadingBkash(false);
+    }
+    loadBkashTransactions();
+  }, []);
 
   // Load from local storage
   useEffect(() => {
@@ -316,6 +332,117 @@ export default function ExpenseTrackerPage() {
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* bKash SMS Sync Transactions Card */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-3">
+          <div>
+            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+              📱 Synced bKash SMS Transactions
+            </h3>
+            <p className="text-xs font-semibold text-slate-400 mt-1">
+              Payments forwarded in real-time from your Android SMS Listener mobile app.
+            </p>
+          </div>
+          <button
+            onClick={async () => {
+              setIsLoadingBkash(true);
+              const res = await getBkashSmsTransactions();
+              if (res.success && res.transactions) {
+                setBkashTransactions(res.transactions);
+              }
+              setIsLoadingBkash(false);
+            }}
+            disabled={isLoadingBkash}
+            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg border-none cursor-pointer flex items-center gap-1.5 transition disabled:opacity-50"
+          >
+            <svg className={`w-3.5 h-3.5 ${isLoadingBkash ? "animate-spin" : ""}`} fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+            Refresh
+          </button>
+        </div>
+
+        <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50/50">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-100/80 text-slate-500 font-bold uppercase tracking-wider">
+                <th className="p-3.5 font-bold">Received Date</th>
+                <th className="p-3.5 font-bold">Transaction ID</th>
+                <th className="p-3.5 font-bold">Sender Phone</th>
+                <th className="p-3.5 font-bold">Amount</th>
+                <th className="p-3.5 font-bold">Status</th>
+                <th className="p-3.5 font-bold">Raw SMS</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-150">
+              {isLoadingBkash ? (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-slate-400 font-semibold">
+                    <svg className="w-6 h-6 animate-spin mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                    </svg>
+                    Loading synced payments...
+                  </td>
+                </tr>
+              ) : bkashTransactions.length > 0 ? (
+                bkashTransactions.map((tx) => (
+                  <tr key={tx.id} className="hover:bg-slate-50/80 transition text-slate-700">
+                    <td className="p-3.5 font-semibold text-slate-500 min-w-[140px]">
+                      {new Date(tx.createdAt).toLocaleString()}
+                    </td>
+                    <td className="p-3.5 font-extrabold font-mono text-slate-800 tracking-wider">
+                      <div className="flex items-center gap-1.5">
+                        <span>{tx.trxId}</span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(tx.trxId);
+                            alert("Transaction ID copied!");
+                          }}
+                          className="p-1 hover:bg-slate-250 rounded text-slate-400 hover:text-slate-600 transition border-none bg-transparent cursor-pointer"
+                          title="Copy TrxID"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                    <td className="p-3.5 font-bold font-mono">
+                      {tx.sender}
+                    </td>
+                    <td className="p-3.5 font-black text-slate-800 font-mono">
+                      ৳{tx.amount.toFixed(2)}
+                    </td>
+                    <td className="p-3.5">
+                      <span
+                        className={`text-[0.6rem] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-md ${
+                          tx.status === "used"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-blue-100 text-blue-800"
+                        }`}
+                      >
+                        {tx.status}
+                      </span>
+                    </td>
+                    <td className="p-3.5 max-w-[220px] truncate text-[10px] text-slate-400 font-medium" title={tx.rawMessage}>
+                      {tx.rawMessage}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="p-12 text-center text-slate-400">
+                    <div className="text-2xl mb-1.5">📱</div>
+                    <div className="text-xs font-bold">No synced SMS transactions yet</div>
+                    <p className="text-[11px] text-slate-400 mt-1">Connect your mobile app to begin syncing incoming payments.</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

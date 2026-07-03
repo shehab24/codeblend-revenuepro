@@ -149,3 +149,20 @@ export async function deleteLicense(licenseId: string) {
   revalidatePath("/dashboard/user");
   return { success: true };
 }
+
+export async function getBkashSmsTransactions() {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  try {
+    const transactions = await prisma.bkashSmsTransaction.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return { success: true, transactions };
+  } catch (error: any) {
+    console.error("Error fetching bkash SMS transactions:", error);
+    return { success: false, error: error.message || "Failed to fetch transactions" };
+  }
+}
