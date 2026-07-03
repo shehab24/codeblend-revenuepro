@@ -13,6 +13,8 @@ export function PayClient() {
   const merchantName = searchParams.get("merchant") || "CodeBlend Store";
   const configuredNumber = searchParams.get("number") || "01784450219";
   const merchantId = searchParams.get("merchant_id") || "";
+  const qrCode = searchParams.get("qr_code") || "";
+  const displayMode = searchParams.get("display_mode") || "both";
 
   const [senderNumber, setSenderNumber] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
@@ -112,10 +114,7 @@ export function PayClient() {
         
         {/* Header Pink Bar */}
         <div className="bg-gradient-to-r from-pink-600 to-rose-600 p-6 text-center text-white relative">
-          <div className="absolute top-4 right-4 bg-white/10 px-2 py-0.5 rounded-md text-[0.65rem] font-bold uppercase tracking-wider">
-            Manual Pay
-          </div>
-          <h2 className="text-xl font-bold tracking-tight">bKash Central Merchant</h2>
+          <h2 className="text-xl font-bold tracking-tight">bKash Payment</h2>
           <p className="text-xs text-pink-100/80 mt-1 font-medium">নিরাপদ ও সহজ অটোমেটেড পেমেন্ট গেটওয়ে</p>
         </div>
 
@@ -133,6 +132,22 @@ export function PayClient() {
 
         {/* QR & Payment Instructions */}
         <div className="p-6 space-y-5">
+          {/* QR Code Display (shown if displayMode is both or qr, and qrCode URL is present) */}
+          {(displayMode === "both" || displayMode === "qr") && qrCode && (
+            <div className="flex flex-col items-center justify-center p-5 bg-slate-950/80 rounded-2xl border border-slate-800/80">
+              <span className="block text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest mb-3">
+                scan qr code to pay
+              </span>
+              <div className="bg-white p-3 rounded-2xl shadow-inner relative overflow-hidden group">
+                <img
+                  src={qrCode}
+                  alt="bKash QR Code"
+                  className="w-48 h-48 object-contain rounded-lg"
+                />
+              </div>
+            </div>
+          )}
+
           <div className="bg-slate-950/80 rounded-2xl p-4 border border-slate-800/80">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">টাকা পাঠানোর নিয়মাবলি (Steps)</h3>
             <ol className="text-xs text-slate-300 space-y-2 list-decimal list-inside font-medium leading-relaxed">
@@ -141,24 +156,26 @@ export function PayClient() {
               <li>টাকা পাঠানোর পর, নিচে আপনার bKash নম্বরটি দিয়ে পেমেন্ট কনফার্ম করুন।</li>
             </ol>
           </div>
-
-          {/* Target bKash Number Display */}
-          <div className="flex items-center justify-between p-4 bg-slate-950/40 border border-slate-800 rounded-2xl">
-            <div>
-              <span className="block text-[0.65rem] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Send Money To (bKash Personal)</span>
-              <span className="text-xl font-extrabold text-white tracking-widest font-mono">{configuredNumber}</span>
+          {/* Target bKash Number Display (hidden if displayMode is qr) */}
+          {displayMode !== "qr" && (
+            <div className="flex items-center justify-between p-4 bg-slate-950/40 border border-slate-800 rounded-2xl">
+              <div>
+                <span className="block text-[0.65rem] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Send Money To (bKash Personal)</span>
+                <span className="text-xl font-extrabold text-white tracking-widest font-mono">{configuredNumber}</span>
+              </div>
+              <button
+                onClick={handleCopy}
+                type="button"
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                  isCopied 
+                    ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" 
+                    : "bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700"
+                }`}
+              >
+                {isCopied ? "Copied!" : "Copy"}
+              </button>
             </div>
-            <button
-              onClick={handleCopy}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                isCopied 
-                  ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" 
-                  : "bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700"
-              }`}
-            >
-              {isCopied ? "Copied!" : "Copy"}
-            </button>
-          </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleVerify} className="space-y-4">
