@@ -5,12 +5,14 @@ import jwt from "jsonwebtoken";
 import fs from "fs";
 import path from "path";
 
-const privateKeyPath = path.join(process.cwd(), 'keys', 'private_key.pem');
-let privateKey = "";
-try {
-  privateKey = fs.readFileSync(privateKeyPath, 'utf8');
-} catch (error) {
-  console.warn("Private key missing! Cannot sign JWT tokens.");
+let privateKey = process.env.LICENSE_PRIVATE_KEY || "";
+if (!privateKey) {
+  try {
+    const privateKeyPath = path.join(process.cwd(), 'keys', 'private_key.pem');
+    privateKey = fs.readFileSync(privateKeyPath, 'utf8');
+  } catch (error) {
+    console.warn("Private key missing! Cannot sign JWT tokens.");
+  }
 }
 
 export async function POST(request: Request) {
