@@ -21,6 +21,7 @@ export default function ExpenseTrackerPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [bkashTransactions, setBkashTransactions] = useState<any[]>([]);
   const [isLoadingBkash, setIsLoadingBkash] = useState(true);
+  const [selectedSmsTx, setSelectedSmsTx] = useState<any | null>(null);
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<"income" | "expense">("expense");
@@ -461,7 +462,7 @@ export default function ExpenseTrackerPage() {
                 <th className="p-3.5 font-bold">Sender Phone</th>
                 <th className="p-3.5 font-bold">Amount</th>
                 <th className="p-3.5 font-bold">Status</th>
-                <th className="p-3.5 font-bold">Raw SMS</th>
+                <th className="p-3.5 font-bold text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-150">
@@ -481,21 +482,7 @@ export default function ExpenseTrackerPage() {
                       {new Date(tx.createdAt).toLocaleString()}
                     </td>
                     <td className="p-3.5 font-extrabold font-mono text-slate-800 tracking-wider">
-                      <div className="flex items-center gap-1.5">
-                        <span>{tx.trxId}</span>
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(tx.trxId);
-                            alert("Transaction ID copied!");
-                          }}
-                          className="p-1 hover:bg-slate-250 rounded text-slate-400 hover:text-slate-600 transition border-none bg-transparent cursor-pointer"
-                          title="Copy TrxID"
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                          </svg>
-                        </button>
-                      </div>
+                      {tx.trxId}
                     </td>
                     <td className="p-3.5 font-bold font-mono">
                       {tx.sender}
@@ -514,8 +501,31 @@ export default function ExpenseTrackerPage() {
                         {tx.status}
                       </span>
                     </td>
-                    <td className="p-3.5 max-w-[220px] truncate text-[10px] text-slate-400 font-medium" title={tx.rawMessage}>
-                      {tx.rawMessage}
+                    <td className="p-3.5">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(tx.trxId);
+                            alert("Transaction ID copied!");
+                          }}
+                          className="p-1 hover:bg-slate-250 rounded text-slate-400 hover:text-slate-600 transition border-none bg-transparent cursor-pointer"
+                          title="Copy TrxID"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => setSelectedSmsTx(tx)}
+                          className="p-1 hover:bg-slate-250 rounded text-slate-400 hover:text-slate-600 transition border-none bg-transparent cursor-pointer"
+                          title="View Raw SMS details"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -564,6 +574,103 @@ export default function ExpenseTrackerPage() {
           </div>
         )}
       </div>
+
+      {/* Details Modal */}
+      {selectedSmsTx && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between">
+              <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
+                ✉️ SMS Transaction Source Details
+              </h3>
+              <button
+                onClick={() => setSelectedSmsTx(null)}
+                className="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-1.5 rounded-lg border-none bg-transparent cursor-pointer transition"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div className="bg-slate-50/50 p-3 rounded-xl border border-slate-200">
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Received Date</span>
+                  <span className="block mt-1 font-bold text-slate-700">
+                    {new Date(selectedSmsTx.createdAt).toLocaleString()}
+                  </span>
+                </div>
+                <div className="bg-slate-50/50 p-3 rounded-xl border border-slate-200">
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Status</span>
+                  <span className="block mt-1">
+                    <span
+                      className={`inline-block text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-md ${
+                        selectedSmsTx.status === "used"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-blue-100 text-blue-800"
+                      }`}
+                    >
+                      {selectedSmsTx.status}
+                    </span>
+                  </span>
+                </div>
+                <div className="bg-slate-50/50 p-3 rounded-xl border border-slate-200">
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Transaction ID</span>
+                  <span className="block mt-1 font-mono font-black text-slate-800 select-all">
+                    {selectedSmsTx.trxId}
+                  </span>
+                </div>
+                <div className="bg-slate-50/50 p-3 rounded-xl border border-slate-200">
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Sender Phone</span>
+                  <span className="block mt-1 font-mono font-bold text-slate-700 select-all">
+                    {selectedSmsTx.sender}
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-slate-50/50 p-3 rounded-xl border border-slate-200 text-xs">
+                <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Parsed Amount</span>
+                <span className="block mt-1 font-mono font-black text-lg text-emerald-600">
+                  ৳{selectedSmsTx.amount.toFixed(2)}
+                </span>
+              </div>
+
+              {/* Raw message block */}
+              <div className="space-y-1.5">
+                <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Raw SMS Message</span>
+                <div className="relative bg-slate-900 text-slate-200 p-4 rounded-xl font-mono text-[11px] leading-relaxed break-words pr-12 select-all">
+                  {selectedSmsTx.rawMessage}
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(selectedSmsTx.rawMessage);
+                      alert("Raw message copied!");
+                    }}
+                    className="absolute top-3 right-3 p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition border-none cursor-pointer"
+                    title="Copy full message"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-150 flex justify-end">
+              <button
+                onClick={() => setSelectedSmsTx(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl border-none cursor-pointer transition"
+              >
+                Close Details
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
