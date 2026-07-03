@@ -72,17 +72,10 @@ export async function POST(request: Request) {
       const { sender, body: messageBody } = sms;
       if (!messageBody) continue;
 
-      // Only process bKash messages (case-insensitive checks)
-      const isBkash = sender?.toLowerCase() === "bkash" || messageBody.toLowerCase().includes("bkash");
-      if (!isBkash) {
-        console.log(`[SMS Sync] Skipping non-bKash message from ${sender}`);
-        continue;
-      }
+      // Parse financial transaction details
+      const parsed = parseFinancialSms(messageBody, sender);
 
-      // Parse bKash SMS details
-      const parsed = parseBkashSms(messageBody);
-
-      console.log(`[SMS Sync] Parsed bKash SMS:`, {
+      console.log(`[SMS Sync] Parsed SMS from ${sender}:`, {
         rawLength: messageBody.length,
         parsedTrxId: parsed.trxId || "NONE",
         parsedSender: parsed.sender || "NONE",
@@ -124,7 +117,7 @@ export async function POST(request: Request) {
           duplicateCount++;
         }
       } catch (dbErr) {
-        console.error(`Failed to save bKash SMS transaction ${parsed.trxId}:`, dbErr);
+        console.error(`Failed to save SMS transaction ${parsed.trxId}:`, dbErr);
       }
     }
 
@@ -148,22 +141,22 @@ export async function POST(request: Request) {
 }
 
 /**
- * Parses bKash SMS messages for TrxID, Amount, and Sender Number
+ * Parses financial SMS messages (bKash, Nagad, Rocket, Upay, Bank transfers)
  */
-function parseBkashSms(message: string) {
+function parseFinancialSms(message: string, senderName: string) {
   let trxId = "";
   let amount = 0.0;
   let sender = "";
 
-  // 1. Find TrxID (alphanumeric, typically 8-12 characters, e.g. 8N34KJL98S)
-  const trxMatch = message.match(/TrxID\s*:?\s*([A-Z0-9]{8,12})/i);
+  // 1. Find TrxID (alphanumeric, typically 8-15 characters, e.g. 8N34KJL98S or Ref id)
+  const trxMatch = message.match(/(?:TrxID|TxnID|TxID|Transaction\s*ID|Ref\s*ID|Ref)\s*:?\s*([A-Z0-9]{8,15})/i);
   if (trxMatch) {
     trxId = trxMatch[1].toUpperCase().trim();
   }
 
-  // 2. Find Amount
-  const amountMatch1 = message.match(/(?:received|In|payment)\s+(?:of\s+)?(?:Tk|TK)\s*([\d,]+\.?\d*)/i);
-  const amountMatch2 = message.match(/(?:Tk|TK)\s*([\d,]+\.?\d*)\s+(?:received|payment)/i);
+  // 2. Find Amount (Tk XXX, BDT XXX, TK. XXX etc.)
+  const amountMatch1 = message.match(/(?:received|credited|payment|of|In)\s+(?:of\s+)?(?:Tk|TK|BDT)\.?\s*([\d,]+\.?\d*)/i);
+  const amountMatch2 = message.match(/(?:Tk|TK|BDT)\.?\s*([\d,]+\.?\d*)\s+(?:received|payment|credited|debited)/i);
 
   if (amountMatch1) {
     amount = parseFloat(amountMatch1[1].replace(/,/g, ""));
@@ -171,10 +164,26 @@ function parseBkashSms(message: string) {
     amount = parseFloat(amountMatch2[1].replace(/,/g, ""));
   }
 
+  // Fallback for amount if not matched by verbs: just look for Tk/TK/BDT followed by a number
+  if (!amount || isNaN(amount)) {
+    const fallbackAmountMatch = message.match(/(?:Tk|TK|BDT)\.?\s*([\d,]+\.?\d*)/i);
+    if (fallbackAmountMatch) {
+      amount = parseFloat(fallbackAmountMatch[1].replace(/,/g, ""));
+    }
+  }
+
   // 3. Find sender phone number (typically 11 digits starting with 01)
-  const senderMatch = message.match(/from\s+(01[3-9]\d{8})/i);
+  const senderMatch = message.match(/(?:from|sender|by)\s+(01[3-9]\d{8})/i);
   if (senderMatch) {
     sender = senderMatch[1].trim();
+  } else {
+    // If not matching "from phone", check if senderName itself is a phone number
+    const cleanSenderName = senderName.replace(/[^0-9]/g, "");
+    if (cleanSenderName.length >= 11) {
+      sender = cleanSenderName.substring(cleanSenderName.length - 11);
+    } else {
+      sender = senderName || "unknown";
+    }
   }
 
   return { trxId, amount, sender };
