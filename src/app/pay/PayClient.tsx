@@ -167,38 +167,35 @@ export function PayClient() {
         >
           {step === 1 ? (
             /* STEP 1: QR CODE & INSTRUCTIONS */
-            <div className="space-y-3.5 flex-1">
+            <div className="space-y-4 flex-1">
               
-              {/* QR and Instructions Side by Side */}
-              <div className="flex gap-2.5 items-stretch">
-                {/* QR Code */}
-                {showQr && (
-                  <div className="w-[105px] flex-shrink-0 flex flex-col items-center justify-center p-2.5 bg-white/10 rounded-xl border border-white/20">
-                    <span className="block text-[0.45rem] font-bold text-pink-200 uppercase tracking-widest mb-1.5 text-center leading-none">
-                      Scan QR
-                    </span>
-                    <div className="bg-white p-1 rounded-lg flex items-center justify-center">
-                      <img
-                        src={qrCode}
-                        alt="bKash QR Code"
-                        className="w-[55px] h-[55px] object-contain rounded w-55"
-                        style={{ width: '55px', height: '55px' }}
-                      />
-                    </div>
+              {/* QR Code */}
+              {showQr && (
+                <div className="flex flex-col items-center justify-center p-3 bg-white/10 rounded-xl border border-white/20">
+                  <span className="block text-[0.6rem] font-bold text-pink-200 uppercase tracking-widest mb-2">
+                    scan qr code to pay
+                  </span>
+                  <div className="bg-white p-2 rounded-xl shadow-inner">
+                    <img
+                      src={qrCode}
+                      alt="bKash QR Code"
+                      className="w-[250px] h-[250px] object-contain rounded-md"
+                      style={{ width: '250px', height: '250px' }}
+                    />
                   </div>
-                )}
-
-                {/* Instructions steps */}
-                <div className="flex-1 bg-white/10 rounded-xl p-2.5 border border-white/20 flex flex-col justify-center text-left">
-                  <h3 className="text-[0.65rem] font-extrabold text-pink-200 uppercase tracking-wider mb-1.5 text-center">
-                    টাকা পাঠানোর নিয়মাবলি
-                  </h3>
-                  <ol className="text-[0.65rem] text-pink-50 space-y-1 list-decimal list-inside font-medium leading-relaxed">
-                    <li>যেকোনো bKash অ্যাপ অথবা <code className="bg-black/20 text-white px-0.5 py-0.2 rounded font-mono text-[0.6rem]">*247#</code> ডায়াল করুন।</li>
-                    <li>নিচের নম্বরে <span className="underline decoration-pink-300 font-bold">Send Money</span> করুন।</li>
-                    <li>টাকা পাঠানোর পর, নিচের <span className="font-bold">Verify</span> বাটনে ক্লিক করুন।</li>
-                  </ol>
                 </div>
+              )}
+
+              {/* Instructions steps */}
+              <div className="bg-white/10 rounded-xl p-3 border border-white/20">
+                <h3 className="text-[0.7rem] font-extrabold text-pink-200 uppercase tracking-wider mb-2 text-center">
+                  টাকা পাঠানোর নিয়মাবলি (Steps)
+                </h3>
+                <ol className="text-xs text-pink-50 space-y-1.5 list-decimal list-inside font-medium leading-relaxed text-left">
+                  <li>যেকোনো bKash অ্যাপ অথবা <code className="bg-black/20 text-white px-1 py-0.5 rounded font-mono">*247#</code> ডায়াল করুন।</li>
+                  <li>নিচের নম্বরে <span className="underline decoration-pink-300 font-bold">Send Money</span> করুন।</li>
+                  <li>টাকা পাঠানোর পর, নিচের <span className="font-bold">Verify</span> বাটনে ক্লিক করুন।</li>
+                </ol>
               </div>
 
               {/* Target bKash Number */}
