@@ -178,16 +178,11 @@ export async function POST(request: Request) {
     };
 
     let updatedStat;
-    if (existing) {
-      updatedStat = await prisma.fraudStat.update({
-        where: { id: existing.id },
-        data: payloadToSave
-      });
-    } else {
-      updatedStat = await prisma.fraudStat.create({
-        data: payloadToSave
-      });
-    }
+    updatedStat = await prisma.fraudStat.upsert({
+      where: { phone },
+      update: payloadToSave,
+      create: payloadToSave
+    });
 
     return NextResponse.json({
       success: true,

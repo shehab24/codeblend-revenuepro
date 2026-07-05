@@ -102,6 +102,7 @@ export async function POST(request: Request) {
               sender: parsed.sender,
               amount: parsed.amount,
               rawMessage: messageBody,
+              senderAddress: sender,
               status: "unused",
             },
           });
@@ -148,15 +149,15 @@ function parseFinancialSms(message: string, senderName: string) {
   let amount = 0.0;
   let sender = "";
 
-  // 1. Find TrxID (alphanumeric, typically 8-15 characters, e.g. 8N34KJL98S or Ref id)
-  const trxMatch = message.match(/(?:TrxID|TxnID|TxID|Transaction\s*ID|Ref\s*ID|Ref)\s*:?\s*([A-Z0-9]{8,15})/i);
+  // 1. Find TrxID (alphanumeric, typically 6-20 characters, e.g. 8N34KJL98S or Ref id)
+  const trxMatch = message.match(/(?:TrxID|TxnID|TxID|TnxID|Tnx\s*ID|Transaction\s*ID|Ref\s*ID|Ref|Txn|Trx)\s*:?\s*([A-Z0-9]{6,20})/i);
   if (trxMatch) {
     trxId = trxMatch[1].toUpperCase().trim();
   }
 
   // 2. Find Amount (Tk XXX, BDT XXX, TK. XXX etc.)
-  const amountMatch1 = message.match(/(?:received|credited|payment|of|In)\s+(?:of\s+)?(?:Tk|TK|BDT)\.?\s*([\d,]+\.?\d*)/i);
-  const amountMatch2 = message.match(/(?:Tk|TK|BDT)\.?\s*([\d,]+\.?\d*)\s+(?:received|payment|credited|debited)/i);
+  const amountMatch1 = message.match(/(?:received|credited|payment|of|In|out|debited|spent|paid)\s+(?:of\s+)?(?:Tk|TK|BDT|৳)\.?\s*([\d,]+\.?\d*)/i);
+  const amountMatch2 = message.match(/(?:Tk|TK|BDT|৳)\.?\s*([\d,]+\.?\d*)\s+(?:received|payment|credited|debited|sent)/i);
 
   if (amountMatch1) {
     amount = parseFloat(amountMatch1[1].replace(/,/g, ""));
@@ -164,16 +165,16 @@ function parseFinancialSms(message: string, senderName: string) {
     amount = parseFloat(amountMatch2[1].replace(/,/g, ""));
   }
 
-  // Fallback for amount if not matched by verbs: just look for Tk/TK/BDT followed by a number
+  // Fallback for amount if not matched by verbs: just look for Tk/TK/BDT/৳ followed by a number
   if (!amount || isNaN(amount)) {
-    const fallbackAmountMatch = message.match(/(?:Tk|TK|BDT)\.?\s*([\d,]+\.?\d*)/i);
+    const fallbackAmountMatch = message.match(/(?:Tk|TK|BDT|৳)\.?\s*([\d,]+\.?\d*)/i);
     if (fallbackAmountMatch) {
       amount = parseFloat(fallbackAmountMatch[1].replace(/,/g, ""));
     }
   }
 
   // 3. Find sender phone number (typically 11 digits starting with 01)
-  const senderMatch = message.match(/(?:from|sender|by)\s+(01[3-9]\d{8})/i);
+  const senderMatch = message.match(/(?:from|sender|by|to)\s+(01[3-9]\d{8})/i);
   if (senderMatch) {
     sender = senderMatch[1].trim();
   } else {

@@ -118,31 +118,52 @@ export default function ExpenseTrackerPage() {
 
     const senderLower = (tx.sender || "").toLowerCase();
     const rawLower = (tx.rawMessage || "").toLowerCase();
+    const smsSenderLower = (tx.senderAddress || "").toLowerCase();
 
-    if (smsFilter === "bkash") {
-      return senderLower.includes("bkash") || rawLower.includes("bkash");
-    }
-    if (smsFilter === "nagad") {
-      return senderLower.includes("nagad") || rawLower.includes("nagad");
-    }
-    if (smsFilter === "rocket") {
-      return senderLower.includes("rocket") || rawLower.includes("rocket");
-    }
-    if (smsFilter === "bank_asia") {
-      return (
-        senderLower.includes("bank asia") ||
+    const isBkash =
+      smsSenderLower.includes("bkash") ||
+      senderLower.includes("bkash") ||
+      (!tx.senderAddress && (
+        rawLower.includes("bkash") ||
+        rawLower.includes("received tk") ||
+        rawLower.includes("received deposit") ||
+        rawLower.includes("cashback")
+      ));
+
+    const isNagad =
+      smsSenderLower.includes("nagad") ||
+      senderLower.includes("nagad") ||
+      (!tx.senderAddress && (
+        rawLower.includes("nagad") ||
+        (rawLower.includes("cash in tk") && rawLower.includes("successful"))
+      ));
+
+    const isRocket =
+      smsSenderLower.includes("rocket") ||
+      smsSenderLower.includes("16216") ||
+      senderLower.includes("rocket") ||
+      (!tx.senderAddress && (
+        rawLower.includes("rocket") ||
+        rawLower.includes("dbbl")
+      ));
+
+    const isBankAsia =
+      smsSenderLower.includes("bank asia") ||
+      smsSenderLower.includes("bankasia") ||
+      senderLower.includes("bank asia") ||
+      senderLower.includes("bankasia") ||
+      (!tx.senderAddress && (
         rawLower.includes("bank asia") ||
-        senderLower.includes("bankasia") ||
         rawLower.includes("bankasia")
-      );
-    }
+      ));
+
+    if (smsFilter === "bkash") return isBkash;
+    if (smsFilter === "nagad") return isNagad;
+    if (smsFilter === "rocket") return isRocket;
+    if (smsFilter === "bank_asia") return isBankAsia;
+
     if (smsFilter === "other_bank") {
-      const isBankAsia =
-        senderLower.includes("bank asia") ||
-        rawLower.includes("bank asia") ||
-        senderLower.includes("bankasia") ||
-        rawLower.includes("bankasia");
-      if (isBankAsia) return false;
+      if (isBkash || isNagad || isRocket || isBankAsia) return false;
 
       // Detect general bank keywords
       const bankKeywords = [
@@ -162,7 +183,12 @@ export default function ExpenseTrackerPage() {
         "nexus",
         "agent",
       ];
-      return bankKeywords.some((kw) => senderLower.includes(kw) || rawLower.includes(kw));
+      return bankKeywords.some(
+        (kw) =>
+          smsSenderLower.includes(kw) ||
+          senderLower.includes(kw) ||
+          rawLower.includes(kw)
+      );
     }
     return false;
   });

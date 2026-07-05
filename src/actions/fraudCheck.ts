@@ -156,16 +156,11 @@ export async function checkFraudData(rawPhone: string) {
     };
 
     let savedStat;
-    if (existing) {
-      savedStat = await prisma.fraudStat.update({
-        where: { id: existing.id },
-        data: payloadToSave
-      });
-    } else {
-      savedStat = await prisma.fraudStat.create({
-        data: payloadToSave
-      });
-    }
+    savedStat = await prisma.fraudStat.upsert({
+      where: { phone },
+      update: payloadToSave,
+      create: payloadToSave
+    });
 
     return {
       success: true,

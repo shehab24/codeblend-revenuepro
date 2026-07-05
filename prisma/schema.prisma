@@ -16,6 +16,7 @@ model User {
   verified              Boolean  @default(false)
   downloadAllowed       Boolean  @default(false)
   expenseTrackerAllowed Boolean  @default(false)
+  whitelistKeywords     String[] @default([])
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
@@ -23,6 +24,7 @@ model User {
   serviceRequests ServiceRequest[]
   transactions    PaymentTransaction[]
   bkashSmsTransactions BkashSmsTransaction[]
+  expenseTransactions ExpenseTransaction[]
 }
 
 model License {
@@ -65,7 +67,7 @@ model FraudStat {
   licenseId          String?
   license            License? @relation(fields: [licenseId], references: [id], onDelete: SetNull)
   domain             String?
-  phone              String
+  phone              String   @unique
   total_parcel       Int      @default(0)
   success_parcel     Int      @default(0)
   cancelled_parcel   Int      @default(0)
@@ -145,17 +147,36 @@ model PaymentTransaction {
 }
 
 model BkashSmsTransaction {
-  id          String   @id @default(cuid())
-  userId      String   // Links to the merchant who owns the phone
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  trxId       String   @unique  // bKash transaction ID (e.g. 8N34KJL98S)
-  sender      String   // Parsed bKash sender number (customer number)
-  amount      Float    // Parsed amount sent
-  rawMessage  String   // Raw SMS body
-  status      String   @default("unused") // "unused", "used"
-  orderId     String?  // Optional local WooCommerce order/payment ID
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  userId        String   // Links to the merchant who owns the phone
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trxId         String   @unique  // bKash transaction ID (e.g. 8N34KJL98S)
+  sender        String   // Parsed bKash sender number (customer number)
+  amount        Float    // Parsed amount sent
+  rawMessage    String   // Raw SMS body
+  senderAddress String?  // Raw SMS sender address (e.g. "bKash", "NAGAD", "16216")
+  status        String   @default("unused") // "unused", "used"
+  orderId       String?  // Optional local WooCommerce order/payment ID
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([userId, sender, amount, status])
+}
+
+model ExpenseTransaction {
+  id            String   @id // Client-generated native ID (e.g. tx-native-...)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount        Float
+  currency      String   @default("BDT")
+  type          String   // "credit" | "debit"
+  merchant      String   // Group/Sender Name (e.g. "bKash", "Bank Asia")
+  category      String   // e.g. "Food", "Transfer", "Utilities"
+  date          DateTime
+  originalSms   String?
+  senderAddress String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
 }
