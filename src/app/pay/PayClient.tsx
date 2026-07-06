@@ -287,12 +287,12 @@ export function PayClient() {
               </div>
 
               {msg && (
-                <div className={`p-4 rounded-xl text-xs font-bold border transition-all duration-300 text-center ${
+                <div className={`p-4 rounded-xl text-xs font-extrabold border transition-all duration-300 text-center shadow-lg leading-relaxed ${
                   msgType === "success" 
-                    ? "bg-emerald-500/25 text-emerald-100 border-emerald-500/30"
+                    ? "bg-emerald-600 text-white border-emerald-700"
                     : msgType === "error"
-                    ? "bg-rose-500/25 text-rose-100 border-rose-500/30"
-                    : "bg-blue-500/25 text-blue-100 border-blue-500/30"
+                    ? "bg-white text-rose-700 border-rose-200"
+                    : "bg-blue-600 text-white border-blue-700"
                 }`}>
                   {msg}
                   {msgType === "success" && callbackUrl && (

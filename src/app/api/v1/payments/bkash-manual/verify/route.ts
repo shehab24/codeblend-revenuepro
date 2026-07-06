@@ -76,7 +76,7 @@ export async function POST(request: Request) {
     if (!transaction) {
       return NextResponse.json({
         success: false,
-        error: "Transaction not found. Please make sure the money was sent to our bKash number and try again in a few moments.",
+        error: "লেনদেনটি পাওয়া যায়নি। অনুগ্রহ করে নিশ্চিত করুন যে টাকাটি আমাদের বিকাশ নম্বরে পাঠানো হয়েছে এবং কিছুক্ষণ পর আবার চেষ্টা করুন।",
       });
     }
 
