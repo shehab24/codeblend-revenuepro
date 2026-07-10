@@ -285,81 +285,80 @@ export default async function Home() {
       <section className="py-16 md:py-24 bg-slate-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12">
-            <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 mb-3">Simple, Transparent Pricing</h2>
-            <p className="text-slate-500 text-sm sm:text-base max-w-xl mx-auto">Choose the perfect plan to grow your business.</p>
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 mb-3">সহজ ও স্বচ্ছ প্রাইসিং প্ল্যান</h2>
+            <p className="text-slate-500 text-sm sm:text-base max-w-xl mx-auto">আপনার ই-কমার্স ব্যবসাকে স্বয়ংক্রিয় এবং ফ্রড-মুক্ত করতে সেরা প্ল্যানটি বেছে নিন।</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {/* Plan 1 — Monthly */}
-            <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-sm flex flex-col">
-              <h3 className="text-slate-500 font-bold mb-3">Monthly</h3>
+            <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-sm flex flex-col hover:shadow-md transition-all duration-300">
+              <h3 className="text-slate-500 font-bold mb-3">Monthly Plan</h3>
               <div className="mb-5">
-                <span className="text-3xl sm:text-4xl font-extrabold text-slate-900">৳ 499</span>
-                <span className="text-slate-400 text-sm"> / mo</span>
+                <span className="text-3xl sm:text-4xl font-extrabold text-slate-900">৳ ২৪৯</span>
+                <span className="text-slate-400 text-sm"> / মাস</span>
               </div>
-              <p className="text-slate-500 text-sm mb-6">Perfect for new businesses just getting started.</p>
+              <p className="text-slate-500 text-xs sm:text-sm mb-6 leading-relaxed">নতুন স্টার্টআপ ও ছোট ই-কমার্স ব্যবসার জন্য সেরা শুরু।</p>
               <ul className="space-y-3 mb-7 flex-1">
-                <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Unlimited API queries</li>
-                <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Basic fraud prevention</li>
-                <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Standard dashboard</li>
-                <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Email support</li>
+                <li className="flex items-start gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> <span>Built-in bKash পেমেন্ট (মার্চেন্ট ছাড়া)</span></li>
+                <li className="flex items-start gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> <span>bKash API-এর মতো সহজ পেমেন্ট ভেরিফিকেশন</span></li>
+                <li className="flex items-start gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> <span>কুরিয়ার অটো ডেসপাচ ও স্ট্যাটাস আপডেট</span></li>
+                <li className="flex items-start gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> <span>COD অর্ডার প্লেসমেন্ট ও উন্নত চেকআউট</span></li>
               </ul>
               {!userId ? (
-                <LeadCTAButton serviceType="Monthly Plan" className="w-full py-3 block text-center bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors text-sm cursor-pointer">Get Started</LeadCTAButton>
+                <LeadCTAButton serviceType="Monthly Plan" className="w-full py-3 block text-center bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors text-sm cursor-pointer">শুরু করুন</LeadCTAButton>
               ) : (
-                <Link href="/dashboard" className="w-full py-3 block text-center bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors text-sm">Subscribe Now</Link>
+                <Link href="/dashboard" className="w-full py-3 block text-center bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors text-sm">সাবস্ক্রাইব করুন</Link>
               )}
             </div>
 
             {/* Plan 2 — Bi-Monthly */}
-            <div className="bg-slate-900 rounded-3xl border border-slate-800 p-6 sm:p-8 shadow-2xl flex flex-col relative md:-translate-y-4">
+            <div className="bg-slate-900 rounded-3xl border border-slate-800 p-6 sm:p-8 shadow-2xl flex flex-col relative md:-translate-y-4 hover:scale-[1.02] transition-all duration-300">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
                 <span className="bg-gradient-to-r from-emerald-400 to-teal-500 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">BEST VALUE</span>
               </div>
-              <h3 className="text-emerald-400 font-bold mb-3">Bi-Monthly</h3>
+              <h3 className="text-emerald-400 font-bold mb-3">6 Months Plan</h3>
               <div className="mb-5">
-                <span className="text-3xl sm:text-4xl font-extrabold text-white">৳ 999</span>
-                <span className="text-slate-400 text-sm"> / 2 mo</span>
+                <span className="text-3xl sm:text-4xl font-extrabold text-white">৳ ১,৪৯৯</span>
+                <span className="text-slate-400 text-sm"> / ৬ মাস</span>
               </div>
-              <p className="text-slate-400 text-sm mb-6">Everything you need to automate your store.</p>
+              <p className="text-slate-400 text-xs sm:text-sm mb-6 leading-relaxed">ব্যবসার প্রয়োজনীয় সকল অ্যাডভান্সড অটোমেশন ও সাপোর্ট।</p>
               <ul className="space-y-3 mb-7 flex-1">
-                <li className="flex items-center gap-3 text-slate-300 text-sm"><span className="text-emerald-500">✓</span> Unlimited API queries</li>
-                <li className="flex items-center gap-3 text-slate-300 text-sm"><span className="text-emerald-500">✓</span> Advanced fraud analytics</li>
-                <li className="flex items-center gap-3 text-slate-300 text-sm"><span className="text-emerald-500">✓</span> Priority email support</li>
-                <li className="flex items-center gap-3 text-slate-300 text-sm"><span className="text-emerald-500">✓</span> Custom integrations</li>
+                <li className="flex items-start gap-3 text-emerald-400 text-sm font-semibold"><span className="text-emerald-400">★</span> <span>Monthly প্ল্যানের সকল সুবিধা</span></li>
+                <li className="flex items-start gap-3 text-slate-300 text-sm"><span className="text-emerald-500">✓</span> <span>আংশিক পেমেন্ট (Partial Payment) সুবিধা</span></li>
+                <li className="flex items-start gap-3 text-slate-300 text-sm"><span className="text-emerald-500">✓</span> <span>OTP দিয়ে মোবাইল নম্বর ভেরিফিকেশন</span></li>
+                <li className="flex items-start gap-3 text-slate-300 text-sm"><span className="text-emerald-500">✓</span> <span>কার্ট রিকভারি ও অটো SMS/ইমেইল এলার্ট</span></li>
               </ul>
               {!userId ? (
-                <LeadCTAButton serviceType="Monthly Plan" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity text-sm cursor-pointer">Get Started</LeadCTAButton>
+                <LeadCTAButton serviceType="6 Months Plan" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity text-sm cursor-pointer">শুরু করুন</LeadCTAButton>
               ) : (
-                <Link href="/dashboard" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity text-sm">Subscribe Now</Link>
+                <Link href="/dashboard" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity text-sm">সাবস্ক্রাইব করুন</Link>
               )}
             </div>
 
-            {/* Plan 3 — Quarterly */}
-            <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-sm flex flex-col">
-              <h3 className="text-slate-500 font-bold mb-3">Quarterly</h3>
+            {/* Plan 3 — 1 Year */}
+            <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-sm flex flex-col hover:shadow-md transition-all duration-300">
+              <h3 className="text-slate-500 font-bold mb-3">1 Year Plan</h3>
               <div className="mb-5">
-                <span className="text-3xl sm:text-4xl font-extrabold text-slate-900">৳ 1,499</span>
-                <span className="text-slate-400 text-sm"> / 3 mo</span>
+                <span className="text-3xl sm:text-4xl font-extrabold text-slate-900">৳ ২,৯৯৯</span>
+                <span className="text-slate-400 text-sm"> / ১ বছর</span>
               </div>
-              <p className="text-slate-500 text-sm mb-6">Premium power for serious e-commerce builders.</p>
+              <p className="text-slate-500 text-xs sm:text-sm mb-6 leading-relaxed">সম্পূর্ণ ফ্রড প্রোটেকশন ও প্রিমিয়াম স্কেলিং ফিচারস।</p>
               <ul className="space-y-3 mb-7 flex-1">
-                <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Unlimited API queries</li>
-                <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Advanced fraud analytics</li>
-                <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Priority email support</li>
-                <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Custom integrations</li>
-                <li className="flex items-center gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> Dedicated onboarding</li>
+                <li className="flex items-start gap-3 text-emerald-600 text-sm font-semibold"><span className="text-emerald-500">★</span> <span>6 Months প্ল্যানের সকল সুবিধা</span></li>
+                <li className="flex items-start gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> <span>অটো ফ্রড ডিটেকশন ও ব্লকিং সিস্টেম</span></li>
+                <li className="flex items-start gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> <span>পেমেন্ট মেথড অটো সুইচ ও ব্রাউজার ব্লকিং</span></li>
+                <li className="flex items-start gap-3 text-slate-600 text-sm"><span className="text-emerald-500">✓</span> <span>VIP অনবোর্ডিং ও লাইফটাইম সকল নতুন আপডেট</span></li>
               </ul>
               {!userId ? (
-                <LeadCTAButton serviceType="Quarterly Plan" className="w-full py-3 block text-center bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors text-sm cursor-pointer">Get Started</LeadCTAButton>
+                <LeadCTAButton serviceType="1 Year Plan" className="w-full py-3 block text-center bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors text-sm cursor-pointer">শুরু করুন</LeadCTAButton>
               ) : (
-                <Link href="/dashboard" className="w-full py-3 block text-center bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors text-sm">Subscribe Now</Link>
+                <Link href="/dashboard" className="w-full py-3 block text-center bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors text-sm">সাবস্ক্রাইব করুন</Link>
               )}
             </div>
           </div>
 
           <div className="text-center mt-10">
-            <Link href="/pricing" className="text-slate-600 text-sm font-bold hover:text-emerald-600">View detailed pricing and FAQs →</Link>
+            <Link href="/pricing" className="text-slate-600 text-sm font-bold hover:text-emerald-600">সবগুলো ফিচার ও বিস্তারিত প্রাইসিং দেখুন →</Link>
           </div>
         </div>
       </section>
