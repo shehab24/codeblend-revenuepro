@@ -50,7 +50,7 @@ export function ShowcaseSlider({ customers }: { customers: Customer[] }) {
       >
         {slides.map((customer, index) => {
           const logoContent = (
-            <div className="bg-white border border-slate-100 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 rounded-3xl p-4 sm:p-5 flex flex-col items-center justify-between gap-3 w-full max-w-[160px] sm:max-w-[200px] h-32 sm:h-38 shadow-xs group select-none overflow-hidden mx-auto bg-gradient-to-b from-white to-slate-50/20">
+            <div className="bg-white border border-slate-100 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 rounded-3xl p-4 sm:p-5 flex flex-col items-center justify-between gap-3 w-full max-w-[240px] sm:max-w-[280px] h-32 sm:h-38 shadow-xs group select-none overflow-hidden mx-auto bg-gradient-to-b from-white to-slate-50/20">
               <div className="h-14 sm:h-18 w-full flex items-center justify-center">
                 <img 
                   src={customer.logoUrl} 
