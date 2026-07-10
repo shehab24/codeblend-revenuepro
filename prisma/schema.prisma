@@ -180,3 +180,13 @@ model ExpenseTransaction {
 
   @@index([userId])
 }
+
+model ShowcaseCustomer {
+  id         String   @id @default(cuid())
+  name       String   // Company name
+  logoUrl    String   // ImageKit hosted URL
+  websiteUrl String?  // Optional customer link
+  order      Int      @default(0) // Order priority for sorting
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

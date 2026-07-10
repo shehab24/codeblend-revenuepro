@@ -19,6 +19,7 @@ const adminLinks: { section: string; links: NavLink[] }[] = [
     links: [
       { href: "/dashboard/admin/fraud-stats", label: "Fraud Statistics", icon: "🛡️" },
       { href: "/dashboard/admin/search", label: "Search Number", icon: "🔍" },
+      { href: "/dashboard/admin/showcase", label: "Showcase", icon: "🏢" },
     ],
   },
   {

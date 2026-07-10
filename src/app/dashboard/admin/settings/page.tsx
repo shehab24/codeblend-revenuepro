@@ -31,7 +31,10 @@ export default async function AdminSettingsPage() {
     reminderEnabled,
     reminderDays,
     reminderSubject,
-    reminderBody
+    reminderBody,
+    imagekitPublicKey,
+    imagekitPrivateKey,
+    imagekitUrlEndpoint
   ] = await Promise.all([
     prisma.setting.findUnique({ where: { key: "BD_COURIER_API_KEY" } }),
     prisma.setting.findUnique({ where: { key: "ADMIN_ALERT_EMAIL" } }),
@@ -55,7 +58,16 @@ export default async function AdminSettingsPage() {
     prisma.setting.findUnique({ where: { key: "INACTIVE_REMINDER_DAYS" } }),
     prisma.setting.findUnique({ where: { key: "INACTIVE_REMINDER_SUBJECT" } }),
     prisma.setting.findUnique({ where: { key: "INACTIVE_REMINDER_BODY" } }),
+    prisma.setting.findUnique({ where: { key: "IMAGEKIT_PUBLIC_KEY" } }),
+    prisma.setting.findUnique({ where: { key: "IMAGEKIT_PRIVATE_KEY" } }),
+    prisma.setting.findUnique({ where: { key: "IMAGEKIT_URL_ENDPOINT" } }),
   ]);
+
+  const imagekitSettings = {
+    publicKey: imagekitPublicKey?.value || "",
+    privateKey: imagekitPrivateKey?.value || "",
+    urlEndpoint: imagekitUrlEndpoint?.value || "",
+  };
 
   let parsedLinks: PluginVersion[] = [];
   if (revenueProLinksSetting?.value) {
@@ -115,6 +127,7 @@ export default async function AdminSettingsPage() {
         tutorialSettings={tutorialSettings}
         currentTimerHours={discountedOfferTimerHours?.value || "62"}
         reminderSettings={reminderSettings}
+        imagekitSettings={imagekitSettings}
       />
     </div>
   );

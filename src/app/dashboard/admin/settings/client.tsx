@@ -18,7 +18,8 @@ export function AdminSettingsClient({
   pixelSettings,
   tutorialSettings,
   currentTimerHours,
-  reminderSettings
+  reminderSettings,
+  imagekitSettings
 }: { 
   currentKey: string, 
   currentAlertEmail: string, 
@@ -27,7 +28,8 @@ export function AdminSettingsClient({
   pixelSettings: { pixelId: string; capiToken: string; testEventCode: string },
   tutorialSettings: { videoUrl: string; playlistUrl: string },
   currentTimerHours: string,
-  reminderSettings: { enabled: string; days: string; subject: string; body: string }
+  reminderSettings: { enabled: string; days: string; subject: string; body: string },
+  imagekitSettings: { publicKey: string; privateKey: string; urlEndpoint: string }
 }) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -546,6 +548,54 @@ export function AdminSettingsClient({
             </div>
           </div>
         )}
+      </div>
+
+      {/* Group 9: ImageKit.io API Keys */}
+      <div className="bg-white rounded-2xl border border-sky-200 p-6 shadow-sm">
+        <div className="mb-5 pb-4 border-b border-sky-100 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-sky-950 flex items-center gap-2">
+              🖼️ ImageKit.io CDN Configurations
+            </h3>
+            <p className="text-sm text-sky-700 mt-1">Provide API credentials to host client logos securely on ImageKit.io.</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-600 mb-1" htmlFor="imagekitPublicKey">Public Key</label>
+            <input 
+              type="text" 
+              id="imagekitPublicKey"
+              name="IMAGEKIT_PUBLIC_KEY" 
+              defaultValue={imagekitSettings.publicKey} 
+              placeholder="e.g. public_xxxxxxx..." 
+              className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 text-sm font-mono focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 transition"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-600 mb-1" htmlFor="imagekitPrivateKey">Private Key</label>
+            <input 
+              type="password" 
+              id="imagekitPrivateKey"
+              name="IMAGEKIT_PRIVATE_KEY" 
+              defaultValue={imagekitSettings.privateKey} 
+              placeholder="e.g. private_xxxxxxx..." 
+              className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 text-sm font-mono focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 transition"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-600 mb-1" htmlFor="imagekitUrlEndpoint">URL Endpoint</label>
+            <input 
+              type="text" 
+              id="imagekitUrlEndpoint"
+              name="IMAGEKIT_URL_ENDPOINT" 
+              defaultValue={imagekitSettings.urlEndpoint} 
+              placeholder="https://ik.imagekit.io/your_id" 
+              className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 text-sm font-mono focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 transition"
+            />
+          </div>
+        </div>
       </div>
 
       <div className="pt-4 sticky bottom-6 z-10 flex justify-end">

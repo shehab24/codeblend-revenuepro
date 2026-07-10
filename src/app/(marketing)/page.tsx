@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { LeadCTAButton } from "@/components/LeadPopup";
+import { prisma } from "@/lib/prisma";
 
 export default async function Home() {
   const { userId } = await auth();
+  const showcaseCustomers = await prisma.showcaseCustomer.findMany({
+    orderBy: { order: "asc" }
+  });
 
   return (
     <div className="overflow-x-hidden w-full">
@@ -66,6 +70,45 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* ═══════════ CUSTOMER SHOWCASE ═══════════ */}
+      {showcaseCustomers.length > 0 && (
+        <section className="py-12 bg-white border-y border-slate-100">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <p className="text-center text-xs font-bold text-slate-400 uppercase tracking-widest mb-8">
+              TRUSTED BY LEADING E-COMMERCE BRANDS & COMPANIES
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12 md:gap-16">
+              {showcaseCustomers.map((customer) => {
+                const logoContent = (
+                  <img 
+                    src={customer.logoUrl} 
+                    alt={customer.name} 
+                    className="h-9 sm:h-12 w-auto object-contain opacity-55 hover:opacity-100 transition-all duration-300 filter grayscale hover:grayscale-0"
+                  />
+                );
+                
+                return customer.websiteUrl ? (
+                  <a 
+                    key={customer.id} 
+                    href={customer.websiteUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    title={customer.name}
+                    className="focus:outline-none transition-transform hover:scale-105"
+                  >
+                    {logoContent}
+                  </a>
+                ) : (
+                  <div key={customer.id} title={customer.name} className="transition-transform hover:scale-105">
+                    {logoContent}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ═══════════ PROBLEMS SECTION ═══════════ */}
       <section className="py-16 md:py-24 bg-gradient-to-b from-slate-50 to-white">
