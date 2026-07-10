@@ -289,101 +289,429 @@ export default async function Home() {
             <p className="text-slate-500 text-sm sm:text-base max-w-xl mx-auto">আপনার ই-কমার্স ব্যবসাকে স্বয়ংক্রিয় এবং ফ্রড-মুক্ত করতে সেরা প্ল্যানটি বেছে নিন।</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto items-stretch">
             {/* Plan 1 — Monthly */}
-            <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-sm flex flex-col hover:shadow-md transition-all duration-300">
-              <h3 className="text-slate-500 font-bold mb-3">Monthly Plan</h3>
-              <div className="mb-5">
-                <span className="text-3xl sm:text-4xl font-extrabold text-slate-900">৳ ২৪৯</span>
-                <span className="text-slate-400 text-sm"> / মাস</span>
+            <div className="bg-white rounded-3xl border border-slate-200/60 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.02)] hover:shadow-[0_20px_50px_rgba(16,185,129,0.04)] hover:border-emerald-500/20 transition-all duration-300 relative overflow-hidden flex flex-col justify-between">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+              
+              <div>
+                <div className="mb-4">
+                  <span className="text-emerald-600 text-xs font-bold uppercase tracking-wider bg-emerald-50 px-2.5 py-1 rounded-md">Start Smart</span>
+                </div>
+                <h3 className="text-slate-900 font-extrabold text-xl mb-2">Monthly Plan</h3>
+                <div className="mb-5 flex items-baseline gap-1">
+                  <span className="text-4xl font-black text-slate-900 tracking-tight">৳ ২৪৯</span>
+                  <span className="text-slate-400 text-sm font-semibold">/মাস</span>
+                </div>
+                <p className="text-slate-500 text-xs sm:text-sm mb-8 leading-relaxed">নতুন স্টার্টআপ ও ছোট ই-কমার্স ব্যবসার জন্য সেরা শুরু।</p>
+                
+                <div className="space-y-4 mb-8">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">Built-in bKash পেমেন্ট (মার্চেন্ট ছাড়া)</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">bKash API-এর মতো সহজ পেমেন্ট ভেরিফিকেশন</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">Partial Payment (আংশিক পেমেন্ট) সুবিধা</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">Automated Fraud Detection & ব্লকিং</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">পেমেন্ট মেথড অটো সুইচ (Switcher)</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">IP, Email & browser ব্লকিং সিস্টেম</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">OTP দিয়ে মোবাইল নম্বর ভেরিফিকেশন</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">কার্ট রিকভারি ও অটো SMS/ইমেইল এলার্ট</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">SMS Integration ও ওটিপি ভেরিফিকেশন</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">কুরিয়ার অটো বুকিং ও স্ট্যাটাস আপডেট</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">পিক্সেল, কনভার্সন API ও UTM ট্র্যাকিং</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">COD অর্ডার প্লেসমেন্ট ও উন্নত চেকআউট</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">সন্দেহজনক অর্ডারে Instant Warning Popup</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">এবং আরও অনেক Premium Features</span>
+                  </div>
+                </div>
               </div>
-              <p className="text-slate-500 text-xs sm:text-sm mb-6 leading-relaxed">নতুন স্টার্টআপ ও ছোট ই-কমার্স ব্যবসার জন্য সেরা শুরু।</p>
-              <ul className="space-y-2.5 mb-7 flex-1">
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Built-in bKash পেমেন্ট (মার্চেন্ট ছাড়া)</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>bKash API-এর মতো সহজ পেমেন্ট ভেরিফিকেশন</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Partial Payment (আংশিক পেমেন্ট) সুবিধা</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Automated Fraud Detection & ব্লকিং</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>পেমেন্ট মেথড অটো সুইচ (Switcher)</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>IP, Email & browser ব্লকিং সিস্টেম</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>OTP দিয়ে মোবাইল নম্বর ভেরিফিকেশন</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>কার্ট রিকভারি ও অটো SMS/ইমেইল এলার্ট</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>SMS Integration ও ওটিপি ভেরিফিকেশন</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>কুরিয়ার অটো বুকিং ও স্ট্যাটাস আপডেট</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>পিক্সেল, কনভার্সন API ও UTM ট্র্যাকিং</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>COD অর্ডার প্লেসমেন্ট ও উন্নত চেকআউট</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>সন্দেহজনক অর্ডারে Instant Warning Popup</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>এবং আরও অনেক Premium Features</span></li>
-              </ul>
-              {!userId ? (
-                <LeadCTAButton serviceType="Monthly Plan" className="w-full py-3 block text-center bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors text-sm cursor-pointer">শুরু করুন</LeadCTAButton>
-              ) : (
-                <Link href="/dashboard" className="w-full py-3 block text-center bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors text-sm">সাবস্ক্রাইব করুন</Link>
-              )}
+
+              <div className="mt-auto pt-4">
+                {!userId ? (
+                  <LeadCTAButton serviceType="Monthly Plan" className="w-full py-4 text-center bg-slate-900 text-white font-extrabold rounded-2xl hover:bg-slate-800 shadow-[0_4px_12px_rgba(15,23,42,0.1)] hover:shadow-[0_8px_20px_rgba(15,23,42,0.2)] hover:scale-[1.01] transition-all cursor-pointer text-sm">শুরু করুন</LeadCTAButton>
+                ) : (
+                  <Link href="/dashboard" className="w-full py-4 block text-center bg-slate-900 text-white font-extrabold rounded-2xl hover:bg-slate-800 shadow-[0_4px_12px_rgba(15,23,42,0.1)] hover:shadow-[0_8px_20px_rgba(15,23,42,0.2)] hover:scale-[1.01] transition-all text-sm">সাবস্ক্রাইব করুন</Link>
+                )}
+              </div>
             </div>
 
             {/* Plan 2 — 6 Months */}
-            <div className="bg-slate-900 rounded-3xl border border-slate-800 p-6 sm:p-8 shadow-2xl flex flex-col relative md:-translate-y-4 hover:scale-[1.02] transition-all duration-300">
+            <div className="bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 rounded-3xl border-2 border-emerald-500/30 p-8 shadow-[0_25px_60px_-15px_rgba(16,185,129,0.15)] flex flex-col justify-between relative md:-translate-y-4 hover:scale-[1.02] transition-all duration-300 overflow-hidden">
+              <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
+              <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-teal-500/10 rounded-full blur-[100px] pointer-events-none" />
+              
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                <span className="bg-gradient-to-r from-emerald-400 to-teal-500 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">BEST VALUE</span>
+                <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white text-[11px] font-black uppercase tracking-wider px-4 py-1 rounded-full shadow-[0_4px_12px_rgba(16,185,129,0.25)] border border-emerald-400/30">
+                  🔥 Best Value
+                </span>
               </div>
-              <h3 className="text-emerald-400 font-bold mb-3">6 Months Plan</h3>
-              <div className="mb-5">
-                <span className="text-3xl sm:text-4xl font-extrabold text-white">৳ ১,৪৯৯</span>
-                <span className="text-slate-400 text-sm"> / ৬ মাস</span>
+              
+              <div>
+                <h3 className="text-emerald-400 font-extrabold text-xl mb-2 mt-2">6 Months Plan</h3>
+                <div className="mb-5 flex items-baseline gap-1">
+                  <span className="text-4xl font-black text-white tracking-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">৳ ১,৪৯৯</span>
+                  <span className="text-slate-400 text-sm font-semibold">/৬ মাস</span>
+                </div>
+                <p className="text-slate-400 text-xs sm:text-sm mb-8 leading-relaxed">ব্যবসার প্রয়োজনীয় সকল অ্যাডভান্সড অটোমেশন ও সাপোর্ট।</p>
+                
+                <div className="space-y-4 mb-8">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-300 font-medium leading-tight">Built-in bKash পেমেন্ট (মার্চেন্ট ছাড়া)</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-300 font-medium leading-tight">bKash API-এর মতো সহজ পেমেন্ট ভেরিফিকেশন</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-300 font-medium leading-tight">Partial Payment (আংশিক পেমেন্ট) সুবিধা</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-300 font-medium leading-tight">Automated Fraud Detection & ব্লকিং</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-300 font-medium leading-tight">পেমেন্ট মেথড অটো সুইচ (Switcher)</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-300 font-medium leading-tight">IP, Email & browser ব্লকিং সিস্টেম</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-300 font-medium leading-tight">OTP দিয়ে মোবাইল নম্বর ভেরিফিকেশন</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-300 font-medium leading-tight">কার্ট রিকভারি ও অটো SMS/ইমেইল এলার্ট</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-300 font-medium leading-tight">SMS Integration ও ওটিপি ভেরিফিকেশন</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-300 font-medium leading-tight">কুরিয়ার অটো বুকিং ও স্ট্যাটাস আপডেট</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-300 font-medium leading-tight">পিক্সেল, কনভার্সন API ও UTM ট্র্যাকিং</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-300 font-medium leading-tight">COD অর্ডার প্লেসমেন্ট ও উন্নত চেকআউট</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-300 font-medium leading-tight">সন্দেহজনক অর্ডারে Instant Warning Popup</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-300 font-medium leading-tight">এবং আরও অনেক ছোট-বড় Premium Features</span>
+                  </div>
+                </div>
               </div>
-              <p className="text-slate-400 text-xs sm:text-sm mb-6 leading-relaxed">ব্যবসার প্রয়োজনীয় সকল অ্যাডভান্সড অটোমেশন ও সাপোর্ট।</p>
-              <ul className="space-y-2.5 mb-7 flex-1">
-                <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Built-in bKash পেমেন্ট (মার্চেন্ট ছাড়া)</span></li>
-                <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>bKash API-এর মতো সহজ পেমেন্ট ভেরিফিকেশন</span></li>
-                <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Partial Payment (আংশিক পেমেন্ট) সুবিধা</span></li>
-                <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Automated Fraud Detection & ব্লকিং</span></li>
-                <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>পেমেন্ট মেথড অটো সুইচ (Switcher)</span></li>
-                <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>IP, Email & browser ব্লকিং সিস্টেম</span></li>
-                <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>OTP দিয়ে মোবাইল নম্বর ভেরিফিকেশন</span></li>
-                <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>কার্ট রিকভারি ও অটো SMS/ইমেইল এলার্ট</span></li>
-                <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>SMS Integration ও ওটিপি ভেরিফিকেশন</span></li>
-                <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>কুরিয়ার অটো বুকিং ও স্ট্যাটাস আপডেট</span></li>
-                <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>পিক্সেল, কনভার্সন API ও UTM ট্র্যাকিং</span></li>
-                <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>COD অর্ডার প্লেসমেন্ট ও উন্নত চেকআউট</span></li>
-                <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>সন্দেহজনক অর্ডারে Instant Warning Popup</span></li>
-                <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>এবং আরও অনেক Premium Features</span></li>
-              </ul>
-              {!userId ? (
-                <LeadCTAButton serviceType="6 Months Plan" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity text-sm cursor-pointer">শুরু করুন</LeadCTAButton>
-              ) : (
-                <Link href="/dashboard" className="w-full py-3 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity text-sm">সাবস্ক্রাইব করুন</Link>
-              )}
+
+              <div className="mt-auto pt-4">
+                {!userId ? (
+                  <LeadCTAButton serviceType="6 Months Plan" className="w-full py-4 text-center bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white font-extrabold rounded-2xl shadow-[0_4px_20px_rgba(16,185,129,0.2)] hover:shadow-[0_8px_30px_rgba(16,185,129,0.4)] hover:scale-[1.01] hover:brightness-105 transition-all cursor-pointer text-sm">শুরু করুন</LeadCTAButton>
+                ) : (
+                  <Link href="/dashboard" className="w-full py-4 block text-center bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white font-extrabold rounded-2xl shadow-[0_4px_20px_rgba(16,185,129,0.2)] hover:shadow-[0_8px_30px_rgba(16,185,129,0.4)] hover:scale-[1.01] hover:brightness-105 transition-all text-sm">সাবস্ক্রাইব করুন</Link>
+                )}
+              </div>
             </div>
 
             {/* Plan 3 — 1 Year */}
-            <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-sm flex flex-col hover:shadow-md transition-all duration-300">
-              <h3 className="text-slate-500 font-bold mb-3">1 Year Plan</h3>
-              <div className="mb-5">
-                <span className="text-3xl sm:text-4xl font-extrabold text-slate-900">৳ ২,৯৯৯</span>
-                <span className="text-slate-400 text-sm"> / ১ বছর</span>
+            <div className="bg-white rounded-3xl border border-slate-200/60 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.02)] hover:shadow-[0_20px_50px_rgba(16,185,129,0.04)] hover:border-emerald-500/20 transition-all duration-300 relative overflow-hidden flex flex-col justify-between">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+              
+              <div>
+                <div className="mb-4">
+                  <span className="text-emerald-600 text-xs font-bold uppercase tracking-wider bg-emerald-50 px-2.5 py-1 rounded-md">Ultimate Protection</span>
+                </div>
+                <h3 className="text-slate-900 font-extrabold text-xl mb-2">1 Year Plan</h3>
+                <div className="mb-5 flex items-baseline gap-1">
+                  <span className="text-4xl font-black text-slate-900 tracking-tight">৳ ২,৯৯৯</span>
+                  <span className="text-slate-400 text-sm font-semibold">/১ বছর</span>
+                </div>
+                <p className="text-slate-500 text-xs sm:text-sm mb-8 leading-relaxed">সম্পূর্ণ ফ্রড প্রোটেকশন ও প্রিমিয়াম স্কেলিং ফিচারস।</p>
+                
+                <div className="space-y-4 mb-8">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">Built-in bKash পেমেন্ট (মার্চেন্ট ছাড়া)</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">bKash API-এর মতো পেমেন্ট ভেরিফিকেশন</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">Partial Payment (আংশিক পেমেন্ট) সুবিধা</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">Automated Fraud Detection & ব্লকিং</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">পেমেন্ট মেথড অটো সুইচ (Switcher)</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">IP, Email & browser ব্লকিং সিস্টেম</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">OTP দিয়ে মোবাইল নম্বর ভেরিফিকেশন</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">কার্ট রিকভারি ও অটো SMS/ইমেইল এলার্ট</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">SMS Integration ও ওটিপি ভেরিফিকেশন</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">কুরিয়ার অটো বুকিং ও স্ট্যাটাস আপডেট</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">পিক্সেল, কনভার্সন API ও UTM ট্র্যাকিং</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">COD অর্ডার প্লেসমেন্ট ও উন্নত চেকআউট</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">সন্দেহজনক অর্ডারে Instant Warning Popup</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-slate-600 font-medium leading-tight">এবং আরও অনেক Premium Features</span>
+                  </div>
+                </div>
               </div>
-              <p className="text-slate-500 text-xs sm:text-sm mb-6 leading-relaxed">সম্পূর্ণ ফ্রড প্রোটেকশন ও প্রিমিয়াম স্কেলিং ফিচারস।</p>
-              <ul className="space-y-2.5 mb-7 flex-1">
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Built-in bKash পেমেন্ট (মার্চেন্ট ছাড়া)</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>bKash API-এর মতো পেমেন্ট ভেরিফিকেশন</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Partial Payment (আংশিক পেমেন্ট) সুবিধা</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Automated Fraud Detection & ব্লকিং</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>পেমেন্ট মেথড অটো সুইচ (Switcher)</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>IP, Email & browser ব্লকিং সিস্টেম</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>OTP দিয়ে মোবাইল নম্বর ভেরিফিকেশন</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>কার্ট রিকভারি ও অটো SMS/ইমেইল</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>SMS Integration ও ওটিপি ভেরিফিকেশন</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>কুরিয়ার অটো বুকিং ও স্ট্যাটাস আপডেট</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>পিক্সেল, কনভার্সন API ও UTM ট্র্যাকিং</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>COD অর্ডার প্লেসমেন্ট ও উন্নত চেকআউট</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>সন্দেহজনক অর্ডারে Instant Warning Popup</span></li>
-                <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>এবং আরও অনেক Premium Features</span></li>
-              </ul>
-              {!userId ? (
-                <LeadCTAButton serviceType="1 Year Plan" className="w-full py-3 block text-center bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors text-sm cursor-pointer">শুরু করুন</LeadCTAButton>
-              ) : (
-                <Link href="/dashboard" className="w-full py-3 block text-center bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors text-sm">সাবস্ক্রাইব করুন</Link>
-              )}
+
+              <div className="mt-auto pt-4">
+                {!userId ? (
+                  <LeadCTAButton serviceType="1 Year Plan" className="w-full py-4 text-center bg-slate-900 text-white font-extrabold rounded-2xl hover:bg-slate-800 shadow-[0_4px_12px_rgba(15,23,42,0.1)] hover:shadow-[0_8px_20px_rgba(15,23,42,0.2)] hover:scale-[1.01] transition-all cursor-pointer text-sm">শুরু করুন</LeadCTAButton>
+                ) : (
+                  <Link href="/dashboard" className="w-full py-4 block text-center bg-slate-900 text-white font-extrabold rounded-2xl hover:bg-slate-800 shadow-[0_4px_12px_rgba(15,23,42,0.1)] hover:shadow-[0_8px_20px_rgba(15,23,42,0.2)] hover:scale-[1.01] transition-all text-sm">সাবস্ক্রাইব করুন</Link>
+                )}
+              </div>
             </div>
           </div>
 
