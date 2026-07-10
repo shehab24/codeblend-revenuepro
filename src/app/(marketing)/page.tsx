@@ -72,43 +72,61 @@ export default async function Home() {
       </section>
 
       {/* ═══════════ CUSTOMER SHOWCASE ═══════════ */}
-      {showcaseCustomers.length > 0 && (
-        <section className="py-12 bg-white border-y border-slate-100">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <p className="text-center text-xs font-bold text-slate-400 uppercase tracking-widest mb-8">
-              TRUSTED BY LEADING E-COMMERCE BRANDS & COMPANIES
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12 md:gap-16">
-              {showcaseCustomers.map((customer) => {
-                const logoContent = (
-                  <img 
-                    src={customer.logoUrl} 
-                    alt={customer.name} 
-                    className="h-9 sm:h-12 w-auto object-contain opacity-55 hover:opacity-100 transition-all duration-300 filter grayscale hover:grayscale-0"
-                  />
-                );
-                
-                return customer.websiteUrl ? (
-                  <a 
-                    key={customer.id} 
-                    href={customer.websiteUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    title={customer.name}
-                    className="focus:outline-none transition-transform hover:scale-105"
-                  >
-                    {logoContent}
-                  </a>
-                ) : (
-                  <div key={customer.id} title={customer.name} className="transition-transform hover:scale-105">
-                    {logoContent}
-                  </div>
-                );
-              })}
+      {showcaseCustomers.length > 0 && (() => {
+        // Repeat items to ensure smooth continuous marquee sliding regardless of count
+        const repeatCount = Math.max(2, Math.ceil(12 / showcaseCustomers.length));
+        const marqueeItems = Array.from({ length: repeatCount }).flatMap(() => showcaseCustomers);
+
+        return (
+          <section className="py-16 bg-white border-y border-slate-100 relative overflow-hidden">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 mb-8 text-center">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                TRUSTED BY LEADING E-COMMERCE BRANDS & COMPANIES
+              </p>
             </div>
-          </div>
-        </section>
-      )}
+
+            <div className="relative w-full overflow-hidden flex items-center">
+              {/* Fade Gradients (Left and Right overlays) */}
+              <div className="absolute left-0 top-0 bottom-0 w-20 md:w-36 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+              <div className="absolute right-0 top-0 bottom-0 w-20 md:w-36 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+
+              {/* Marquee Track */}
+              <div className="animate-marquee flex gap-12 sm:gap-16 items-center py-2">
+                {marqueeItems.map((customer, index) => {
+                  const logoContent = (
+                    <img 
+                      src={customer.logoUrl} 
+                      alt={customer.name} 
+                      className="h-12 sm:h-16 w-auto object-contain opacity-65 hover:opacity-100 transition-all duration-300 filter grayscale hover:grayscale-0"
+                    />
+                  );
+                  
+                  return customer.websiteUrl ? (
+                    <a 
+                      key={`${customer.id}-${index}`} 
+                      href={customer.websiteUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      title={customer.name}
+                      className="focus:outline-none transition-transform hover:scale-105 shrink-0 block"
+                    >
+                      {logoContent}
+                    </a>
+                  ) : (
+                    <div 
+                      key={`${customer.id}-${index}`} 
+                      title={customer.name} 
+                      className="transition-transform hover:scale-105 shrink-0 block"
+                    >
+                      {logoContent}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        );
+      })()}
 
       {/* ═══════════ PROBLEMS SECTION ═══════════ */}
       <section className="py-16 md:py-24 bg-gradient-to-b from-slate-50 to-white">
