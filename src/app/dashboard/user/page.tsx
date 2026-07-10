@@ -72,15 +72,15 @@ export default async function UserDashboard() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {customers.map((customer) => {
               const cardContent = (
-                <div className="border border-slate-100 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300 rounded-2xl p-4 flex flex-col items-center justify-center gap-3 h-28 sm:h-32 group bg-white overflow-hidden w-full max-w-[130px] sm:max-w-[150px] mx-auto shadow-xs select-none">
-                  <div className="w-12 h-12 flex items-center justify-center bg-slate-50 border border-slate-100 rounded-xl p-2 group-hover:bg-emerald-50 group-hover:border-emerald-100 transition-all duration-300">
+                <div className="border border-slate-100 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300 rounded-3xl p-4 sm:p-5 flex flex-col items-center justify-between gap-3 h-32 sm:h-38 group bg-white overflow-hidden w-full max-w-[140px] sm:max-w-[170px] mx-auto shadow-xs select-none bg-gradient-to-b from-white to-slate-50/20">
+                  <div className="h-14 sm:h-18 w-full flex items-center justify-center">
                     <img 
                       src={customer.logoUrl} 
                       alt={customer.name} 
-                      className="max-h-full max-w-full object-contain filter grayscale opacity-75 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300 pointer-events-none"
+                      className="max-h-full max-w-full object-contain filter grayscale opacity-75 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300 pointer-events-none"
                     />
                   </div>
-                  <p className="text-[10px] sm:text-xs font-semibold text-slate-600 truncate w-full text-center group-hover:text-emerald-600 transition-colors">
+                  <p className="text-[10px] sm:text-xs font-bold text-slate-700 truncate w-full text-center group-hover:text-emerald-600 transition-colors">
                     {customer.name}
                   </p>
                 </div>
