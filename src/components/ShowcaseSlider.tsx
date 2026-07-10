@@ -23,7 +23,7 @@ export function ShowcaseSlider({ customers }: { customers: Customer[] }) {
     <div className="w-full relative py-4">
       <Swiper
         modules={[Autoplay]}
-        slidesPerView={3}
+        slidesPerView={2}
         spaceBetween={16}
         loop={true}
         speed={3000}
@@ -34,15 +34,15 @@ export function ShowcaseSlider({ customers }: { customers: Customer[] }) {
         }}
         breakpoints={{
           480: {
-            slidesPerView: 4,
+            slidesPerView: 3,
             spaceBetween: 18,
           },
           768: {
-            slidesPerView: 5,
+            slidesPerView: 4,
             spaceBetween: 20,
           },
           1024: {
-            slidesPerView: 6,
+            slidesPerView: 5,
             spaceBetween: 24,
           },
         }}
@@ -50,7 +50,7 @@ export function ShowcaseSlider({ customers }: { customers: Customer[] }) {
       >
         {slides.map((customer, index) => {
           const logoContent = (
-            <div className="bg-white border border-slate-100 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 rounded-3xl p-4 sm:p-5 flex flex-col items-center justify-between gap-3 w-full max-w-[140px] sm:max-w-[170px] h-32 sm:h-38 shadow-xs group select-none overflow-hidden mx-auto bg-gradient-to-b from-white to-slate-50/20">
+            <div className="bg-white border border-slate-100 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 rounded-3xl p-4 sm:p-5 flex flex-col items-center justify-between gap-3 w-full max-w-[160px] sm:max-w-[200px] h-32 sm:h-38 shadow-xs group select-none overflow-hidden mx-auto bg-gradient-to-b from-white to-slate-50/20">
               <div className="h-14 sm:h-18 w-full flex items-center justify-center">
                 <img 
                   src={customer.logoUrl} 
