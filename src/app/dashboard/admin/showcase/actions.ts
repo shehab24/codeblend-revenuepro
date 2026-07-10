@@ -2,14 +2,12 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { auth } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { uploadToImageKit } from "@/lib/imagekit";
 
 async function verifyAdmin() {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Unauthorized");
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (user?.role !== "admin" && user?.role !== "ADMIN") {
+  const user = await currentUser();
+  if (!user || user.publicMetadata?.role !== "admin") {
     throw new Error("Unauthorized access");
   }
 }
