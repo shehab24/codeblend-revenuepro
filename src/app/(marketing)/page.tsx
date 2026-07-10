@@ -79,6 +79,20 @@ export default async function Home() {
 
         return (
           <section className="py-16 bg-slate-50/60 border-y border-slate-100 relative overflow-hidden">
+            <style dangerouslySetInnerHTML={{__html: `
+              @keyframes marquee {
+                0% { transform: translate3d(0, 0, 0); }
+                100% { transform: translate3d(-50%, 0, 0); }
+              }
+              .marquee-track {
+                display: flex;
+                width: max-content;
+                animation: marquee 25s linear infinite;
+              }
+              .marquee-track:hover {
+                animation-play-state: paused;
+              }
+            `}} />
             <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:20px_20px] opacity-35" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[150px] bg-emerald-100/35 rounded-full blur-3xl pointer-events-none" />
 
@@ -101,7 +115,7 @@ export default async function Home() {
               <div className="absolute right-0 top-0 bottom-0 w-24 md:w-44 bg-gradient-to-l from-slate-50 via-slate-50/80 to-transparent z-10 pointer-events-none" />
 
               {/* Marquee Track */}
-              <div className="animate-marquee flex gap-6 sm:gap-8 items-center py-4">
+              <div className="marquee-track flex gap-6 sm:gap-8 items-center py-4">
                 {marqueeItems.map((customer, index) => {
                   const logoContent = (
                     <div className="bg-white border border-slate-200 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 rounded-2xl p-4 sm:p-5 flex items-center justify-center w-36 sm:w-44 h-20 sm:h-24 shadow-sm group">
