@@ -30,6 +30,7 @@ export function ShowcaseSlider({ customers }: { customers: Customer[] }) {
         autoplay={{
           delay: 0,
           disableOnInteraction: false,
+          pauseOnMouseEnter: true,
         }}
         breakpoints={{
           480: {
