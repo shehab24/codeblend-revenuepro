@@ -11,6 +11,10 @@ export default async function UserDashboard() {
     where: { applicantId: userId }
   });
 
+  const customers = await prisma.showcaseCustomer.findMany({
+    orderBy: { order: "asc" }
+  });
+
   return (
     <div>
       <p className="text-slate-500 mb-8 border-b border-slate-100 pb-4">
@@ -56,6 +60,47 @@ export default async function UserDashboard() {
         </div>
 
       </div>
+
+      {/* ═══════════ CUSTOMER SHOWCASE GRID ═══════════ */}
+      {customers.length > 0 && (
+        <div className="mt-12 bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm">
+          <div className="mb-6">
+            <h3 className="text-lg font-bold text-slate-900">Featured Network Brands</h3>
+            <p className="text-sm text-slate-500 mt-1">Leading businesses powered by CodeBlend integration.</p>
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {customers.map((customer) => {
+              const cardContent = (
+                <div className="border border-slate-200 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300 rounded-2xl p-4 flex items-center justify-center h-20 group bg-slate-50/50">
+                  <img 
+                    src={customer.logoUrl} 
+                    alt={customer.name} 
+                    className="max-h-full max-w-full object-contain filter grayscale opacity-75 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300"
+                  />
+                </div>
+              );
+              
+              return customer.websiteUrl ? (
+                <a 
+                  key={customer.id} 
+                  href={customer.websiteUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  title={customer.name}
+                  className="focus:outline-none"
+                >
+                  {cardContent}
+                </a>
+              ) : (
+                <div key={customer.id} title={customer.name}>
+                  {cardContent}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
