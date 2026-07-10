@@ -32,13 +32,21 @@ export default async function PricingPage() {
               <span className="text-slate-400 text-sm"> / মাস</span>
             </div>
             <p className="text-slate-500 text-xs sm:text-sm mb-8 leading-relaxed">নতুন স্টার্টআপ ও ছোট ই-কমার্স ব্যবসার জন্য সেরা শুরু।</p>
-            <ul className="space-y-4 mb-8 flex-1">
-              <li className="flex items-start gap-3 text-slate-600 text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Built-in bKash পেমেন্ট (মার্চেন্ট অ্যাকাউন্ট ছাড়াই)</span></li>
-              <li className="flex items-start gap-3 text-slate-600 text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>bKash API-এর মতো সহজ পেমেন্ট ভেরিফিকেশন</span></li>
-              <li className="flex items-start gap-3 text-slate-600 text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>অটোমেটেড কুরিয়ার ডেসপাচ ও অর্ডার স্ট্যাটাস আপডেট</span></li>
-              <li className="flex items-start gap-3 text-slate-600 text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>কুইক COD অর্ডার প্লেসমেন্ট ও উন্নত চেকআউট</span></li>
-              <li className="flex items-start gap-3 text-slate-600 text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>পিক্সেল, কনভার্সন API, UTM ট্র্যাকিং ও Google Analytics</span></li>
-              <li className="flex items-start gap-3 text-slate-600 text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>এসএমএস (SMS) ও ইমেইল ইন্টিগ্রেশন সুবিধা</span></li>
+            <ul className="space-y-3 mb-8 flex-1">
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Built-in bKash পেমেন্ট (Merchant Account ছাড়াই)</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>bKash API-এর মতো সহজ পেমেন্ট ভেরিফিকেশন</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Partial Payment (আংশিক পেমেন্ট) নেওয়ার সুবিধা</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Automated Fraud Detection ও অটো ব্লকিং</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Fraud Detect হলেই Payment Method Auto Switch</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Number, IP, Email & Browser Fingerprint Blocking</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>OTP দিয়ে গ্রাহকের মোবাইল নম্বর ভেরিফিকেশন</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Abandoned Cart Recovery ও অটো SMS/ইমেইল এলার্ট</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>SMS Integration ও কাস্টম মেসেজিং</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Automated Courier Dispatch ও অর্ডার স্ট্যাটাস আপডেট</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Pixel, Conversion API, UTM & Google Analytics</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Quick COD Order Placement ও উন্নত চেকআউট</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>সন্দেহজনক অর্ডারে ইনস্ট্যান্ট Warning Popup</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>এবং আরও অনেক ছোট-বড় Premium Features</span></li>
             </ul>
             {!userId ? (
               <LeadCTAButton serviceType="Monthly Plan" className="w-full py-3.5 block text-center bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors cursor-pointer text-sm">শুরু করুন</LeadCTAButton>
@@ -58,13 +66,21 @@ export default async function PricingPage() {
                <span className="text-slate-400 text-sm"> / ৬ মাস</span>
             </div>
             <p className="text-slate-400 text-xs sm:text-sm mb-8 leading-relaxed">দ্রুত বর্ধনশীল ব্যবসার জন্য প্রয়োজনীয় সকল অ্যাডভান্সড ফিচার ও অটোমেশন।</p>
-            <ul className="space-y-4 mb-8 flex-1">
-              <li className="flex items-start gap-3 text-emerald-400 text-sm font-semibold"><span className="text-emerald-400 font-bold">★</span> <span>Monthly প্ল্যানের সকল সুবিধা</span></li>
-              <li className="flex items-start gap-3 text-slate-300 text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>আংশিক পেমেন্ট (Partial Payment Method) সুবিধা</span></li>
-              <li className="flex items-start gap-3 text-slate-300 text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>OTP দিয়ে গ্রাহকের মোবাইল নম্বর ভেরিফিকেশন</span></li>
-              <li className="flex items-start gap-3 text-slate-300 text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>অ্যাবানডনড কার্ট রিকভারি ও অটো SMS/ইমেইল এলার্ট</span></li>
-              <li className="flex items-start gap-3 text-slate-300 text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>সন্দেহজনক অর্ডারে ইনস্ট্যান্ট Warning Popup</span></li>
-              <li className="flex items-start gap-3 text-slate-300 text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>প্রাইওরিটি ইমেইল ও লাইভ চ্যাট সাপোর্ট</span></li>
+            <ul className="space-y-3 mb-8 flex-1">
+              <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Built-in bKash পেমেন্ট (Merchant Account ছাড়াই)</span></li>
+              <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>bKash API-এর মতো সহজ পেমেন্ট ভেরিফিকেশন</span></li>
+              <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Partial Payment (আংশিক পেমেন্ট) নেওয়ার সুবিধা</span></li>
+              <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Automated Fraud Detection ও অটো ব্লকিং</span></li>
+              <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Fraud Detect হলেই Payment Method Auto Switch</span></li>
+              <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Number, IP, Email & Browser Fingerprint Blocking</span></li>
+              <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>OTP দিয়ে গ্রাহকের মোবাইল নম্বর ভেরিফিকেশন</span></li>
+              <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Abandoned Cart Recovery ও অটো SMS/ইমেইল এলার্ট</span></li>
+              <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>SMS Integration ও কাস্টম মেসেজিং</span></li>
+              <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Automated Courier Dispatch ও অর্ডার স্ট্যাটাস আপডেট</span></li>
+              <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Pixel, Conversion API, UTM & Google Analytics</span></li>
+              <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Quick COD Order Placement ও উন্নত চেকআউট</span></li>
+              <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>সন্দেহজনক অর্ডারে ইনস্ট্যান্ট Warning Popup</span></li>
+              <li className="flex items-start gap-2.5 text-slate-300 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>এবং আরও অনেক ছোট-বড় Premium Features</span></li>
             </ul>
             {!userId ? (
               <LeadCTAButton serviceType="6 Months Plan" className="w-full py-3.5 block text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:opacity-95 hover:shadow-lg hover:shadow-emerald-500/10 transition-all cursor-pointer text-sm">শুরু করুন</LeadCTAButton>
@@ -81,13 +97,21 @@ export default async function PricingPage() {
               <span className="text-slate-400 text-sm"> / ১ বছর</span>
             </div>
             <p className="text-slate-500 text-xs sm:text-sm mb-8 leading-relaxed">সম্পূর্ণ ফ্রড প্রোটেকশন ও আনলিমিটেড স্কেলিং সমৃদ্ধ আলটিমেট প্ল্যান।</p>
-            <ul className="space-y-4 mb-8 flex-1">
-              <li className="flex items-start gap-3 text-emerald-600 text-sm font-semibold"><span className="text-emerald-500 font-bold">★</span> <span>6 Months প্ল্যানের সকল সুবিধা</span></li>
-              <li className="flex items-start gap-3 text-slate-600 text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>অটোমেটেড ফ্রড ডিটেকশন ও ব্লকিং সিস্টেম</span></li>
-              <li className="flex items-start gap-3 text-slate-600 text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>ফ্রড ডিটেক্ট হলেই পেমেন্ট মেথড অটো সুইচ</span></li>
-              <li className="flex items-start gap-3 text-slate-600 text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>IP, Email, Phone ও ব্রাউজার ফিঙ্গারপ্রিন্ট ব্লকিং</span></li>
-              <li className="flex items-start gap-3 text-slate-600 text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>ডেডিকেটেড ভিআইপি অনবোর্ডিং ও সাপোর্ট ম্যানেজার</span></li>
-              <li className="flex items-start gap-3 text-slate-600 text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>লাইফটাইম সকল নতুন প্রিমিয়াম আপডেট ফ্রি</span></li>
+            <ul className="space-y-3 mb-8 flex-1">
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Built-in bKash পেমেন্ট (Merchant Account ছাড়াই)</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>bKash API-এর মতো সহজ পেমেন্ট ভেরিফিকেশন</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Partial Payment (আংশিক পেমেন্ট) নেওয়ার সুবিধা</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Automated Fraud Detection ও অটো ব্লকিং</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Fraud Detect হলেই Payment Method Auto Switch</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Number, IP, Email & Browser Fingerprint Blocking</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>OTP দিয়ে গ্রাহকের মোবাইল নম্বর ভেরিফিকেশন</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Abandoned Cart Recovery ও অটো SMS/ইমেইল এলার্ট</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>SMS Integration ও কাস্টম মেসেজিং</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Automated Courier Dispatch ও অর্ডার স্ট্যাটাস আপডেট</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Pixel, Conversion API, UTM & Google Analytics</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>Quick COD Order Placement ও উন্নত চেকআউট</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>সন্দেহজনক অর্ডারে ইনস্ট্যান্ট Warning Popup</span></li>
+              <li className="flex items-start gap-2.5 text-slate-600 text-xs sm:text-sm"><span className="text-emerald-500 font-bold">✓</span> <span>এবং আরও অনেক ছোট-বড় Premium Features</span></li>
             </ul>
             {!userId ? (
               <LeadCTAButton serviceType="1 Year Plan" className="w-full py-3.5 block text-center bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors cursor-pointer text-sm">শুরু করুন</LeadCTAButton>
