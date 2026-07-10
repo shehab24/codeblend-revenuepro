@@ -15,10 +15,9 @@ type Customer = {
 };
 
 export function ShowcaseSlider({ customers }: { customers: Customer[] }) {
-  // If there's only 1 customer, we duplicate it a few times so Swiper loop works smoothly
-  const slides = customers.length === 1 
-    ? [...customers, ...customers, ...customers, ...customers] 
-    : (customers.length < 5 ? [...customers, ...customers] : customers);
+  // Swiper loop requires enough slides to loop properly (needs to be at least 2x the slidesPerView)
+  const repeatCount = Math.max(4, Math.ceil(15 / customers.length));
+  const slides = Array.from({ length: repeatCount }).flatMap(() => customers);
 
   return (
     <div className="w-full relative py-4">
