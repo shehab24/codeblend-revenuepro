@@ -50,12 +50,19 @@ export function ShowcaseSlider({ customers }: { customers: Customer[] }) {
       >
         {slides.map((customer, index) => {
           const logoContent = (
-            <div className="bg-white border border-slate-200 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 rounded-2xl p-4 sm:p-5 flex items-center justify-center w-full h-20 sm:h-24 shadow-sm group select-none">
-              <img 
-                src={customer.logoUrl} 
-                alt={customer.name} 
-                className="max-h-full max-w-full object-contain filter grayscale opacity-75 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300 pointer-events-none"
-              />
+            <div className="bg-white border border-slate-200/80 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 rounded-2xl p-3 flex items-center gap-3 w-full h-18 sm:h-20 shadow-xs group select-none overflow-hidden">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shrink-0 bg-slate-50 rounded-xl p-1 group-hover:bg-emerald-50/50 transition-colors">
+                <img 
+                  src={customer.logoUrl} 
+                  alt={customer.name} 
+                  className="max-h-full max-w-full object-contain filter grayscale opacity-75 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300 pointer-events-none"
+                />
+              </div>
+              <div className="text-left min-w-0 flex-1">
+                <p className="text-xs sm:text-sm font-bold text-slate-800 truncate group-hover:text-emerald-600 transition-colors">
+                  {customer.name}
+                </p>
+              </div>
             </div>
           );
 

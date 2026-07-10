@@ -69,15 +69,22 @@ export default async function UserDashboard() {
             <p className="text-sm text-slate-500 mt-1">Leading businesses powered by CodeBlend integration.</p>
           </div>
           
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {customers.map((customer) => {
               const cardContent = (
-                <div className="border border-slate-200 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300 rounded-2xl p-4 flex items-center justify-center h-20 group bg-slate-50/50">
-                  <img 
-                    src={customer.logoUrl} 
-                    alt={customer.name} 
-                    className="max-h-full max-w-full object-contain filter grayscale opacity-75 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300"
-                  />
+                <div className="border border-slate-200 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300 rounded-2xl p-3 flex items-center gap-3 h-20 group bg-slate-50/50 overflow-hidden">
+                  <div className="w-12 h-12 flex items-center justify-center shrink-0 bg-white border border-slate-100 rounded-xl p-1 group-hover:border-emerald-200 transition-colors">
+                    <img 
+                      src={customer.logoUrl} 
+                      alt={customer.name} 
+                      className="max-h-full max-w-full object-contain filter grayscale opacity-75 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300"
+                    />
+                  </div>
+                  <div className="text-left min-w-0 flex-1">
+                    <p className="text-sm font-bold text-slate-800 truncate group-hover:text-emerald-600 transition-colors">
+                      {customer.name}
+                    </p>
+                  </div>
                 </div>
               );
               
