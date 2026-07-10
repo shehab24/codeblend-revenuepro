@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { LeadCTAButton } from "@/components/LeadPopup";
 import { prisma } from "@/lib/prisma";
+import { ShowcaseSlider } from "@/components/ShowcaseSlider";
 
 export default async function Home() {
   const { userId } = await auth();
@@ -72,87 +73,34 @@ export default async function Home() {
       </section>
 
       {/* ═══════════ CUSTOMER SHOWCASE ═══════════ */}
-      {showcaseCustomers.length > 0 && (() => {
-        // Repeat items to ensure smooth continuous marquee sliding regardless of count
-        const repeatCount = Math.max(2, Math.ceil(12 / showcaseCustomers.length));
-        const marqueeItems = Array.from({ length: repeatCount }).flatMap(() => showcaseCustomers);
+      {showcaseCustomers.length > 0 && (
+        <section className="py-16 bg-slate-50/60 border-y border-slate-100 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:20px_20px] opacity-35" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[150px] bg-emerald-100/35 rounded-full blur-3xl pointer-events-none" />
 
-        return (
-          <section className="py-16 bg-slate-50/60 border-y border-slate-100 relative overflow-hidden">
-            <style dangerouslySetInnerHTML={{__html: `
-              @keyframes marquee {
-                0% { transform: translate3d(0, 0, 0); }
-                100% { transform: translate3d(-50%, 0, 0); }
-              }
-              .marquee-track {
-                display: flex;
-                width: max-content;
-                animation: marquee 25s linear infinite;
-              }
-              .marquee-track:hover {
-                animation-play-state: paused;
-              }
-            `}} />
-            <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:20px_20px] opacity-35" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[150px] bg-emerald-100/35 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="relative max-w-6xl mx-auto px-4 sm:px-6 mb-10 text-center z-10">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/60 mb-3 shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] sm:text-xs font-bold text-emerald-800 tracking-wider uppercase">Our Network</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
-                Trusted by E-commerce Leaders
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500 mt-2 max-w-md mx-auto">
-                Powering operations and secure logistics for fast-growing brands.
-              </p>
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 mb-10 text-center z-10">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/60 mb-3 shadow-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] sm:text-xs font-bold text-emerald-800 tracking-wider uppercase">Our Network</span>
             </div>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+              Trusted by E-commerce Leaders
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 mt-2 max-w-md mx-auto">
+              Powering operations and secure logistics for fast-growing brands.
+            </p>
+          </div>
 
-            <div className="relative w-full overflow-hidden flex items-center z-10">
-              {/* Fade Gradients (Left and Right overlays) */}
-              <div className="absolute left-0 top-0 bottom-0 w-24 md:w-44 bg-gradient-to-r from-slate-50 via-slate-50/80 to-transparent z-10 pointer-events-none" />
-              <div className="absolute right-0 top-0 bottom-0 w-24 md:w-44 bg-gradient-to-l from-slate-50 via-slate-50/80 to-transparent z-10 pointer-events-none" />
+          <div className="relative w-full overflow-hidden flex items-center z-10 px-4 sm:px-8">
+            {/* Fade Gradients (Left and Right overlays) */}
+            <div className="absolute left-0 top-0 bottom-0 w-16 md:w-36 bg-gradient-to-r from-slate-50 via-slate-50/80 to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-16 md:w-36 bg-gradient-to-l from-slate-50 via-slate-50/80 to-transparent z-10 pointer-events-none" />
 
-              {/* Marquee Track */}
-              <div className="marquee-track flex gap-6 sm:gap-8 items-center py-4">
-                {marqueeItems.map((customer, index) => {
-                  const logoContent = (
-                    <div className="bg-white border border-slate-200 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 rounded-2xl p-4 sm:p-5 flex items-center justify-center w-36 sm:w-44 h-20 sm:h-24 shadow-sm group">
-                      <img 
-                        src={customer.logoUrl} 
-                        alt={customer.name} 
-                        className="max-h-full max-w-full object-contain filter grayscale opacity-75 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300"
-                      />
-                    </div>
-                  );
-                  
-                  return customer.websiteUrl ? (
-                    <a 
-                      key={`${customer.id}-${index}`} 
-                      href={customer.websiteUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      title={customer.name}
-                      className="focus:outline-none shrink-0 block"
-                    >
-                      {logoContent}
-                    </a>
-                  ) : (
-                    <div 
-                      key={`${customer.id}-${index}`} 
-                      title={customer.name} 
-                      className="shrink-0 block"
-                    >
-                      {logoContent}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        );
-      })()}
+            {/* Showcase Slider */}
+            <ShowcaseSlider customers={showcaseCustomers} />
+          </div>
+        </section>
+      )}
 
       {/* ═══════════ PROBLEMS SECTION ═══════════ */}
       <section className="py-16 md:py-24 bg-gradient-to-b from-slate-50 to-white">
