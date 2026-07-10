@@ -23,8 +23,8 @@ export function ShowcaseSlider({ customers }: { customers: Customer[] }) {
     <div className="w-full relative py-4">
       <Swiper
         modules={[Autoplay]}
-        slidesPerView={2}
-        spaceBetween={20}
+        slidesPerView={3}
+        spaceBetween={16}
         loop={true}
         speed={3000}
         autoplay={{
@@ -34,35 +34,33 @@ export function ShowcaseSlider({ customers }: { customers: Customer[] }) {
         }}
         breakpoints={{
           480: {
-            slidesPerView: 3,
-            spaceBetween: 24,
+            slidesPerView: 4,
+            spaceBetween: 18,
           },
           768: {
-            slidesPerView: 4,
-            spaceBetween: 32,
+            slidesPerView: 5,
+            spaceBetween: 20,
           },
           1024: {
-            slidesPerView: 5,
-            spaceBetween: 40,
+            slidesPerView: 6,
+            spaceBetween: 24,
           },
         }}
         className="showcase-swiper"
       >
         {slides.map((customer, index) => {
           const logoContent = (
-            <div className="bg-white border border-slate-200/80 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 rounded-2xl p-3 flex items-center gap-3 w-full h-18 sm:h-20 shadow-xs group select-none overflow-hidden">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shrink-0 bg-slate-50 rounded-xl p-1 group-hover:bg-emerald-50/50 transition-colors">
+            <div className="bg-white border border-slate-200/80 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 rounded-2xl p-3 flex flex-col items-center justify-center gap-2 w-full h-28 sm:h-32 shadow-xs group select-none overflow-hidden">
+              <div className="h-10 sm:h-12 w-full flex items-center justify-center bg-slate-50 rounded-xl p-1.5 group-hover:bg-emerald-50/50 transition-colors">
                 <img 
                   src={customer.logoUrl} 
                   alt={customer.name} 
                   className="max-h-full max-w-full object-contain filter grayscale opacity-75 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300 pointer-events-none"
                 />
               </div>
-              <div className="text-left min-w-0 flex-1">
-                <p className="text-xs sm:text-sm font-bold text-slate-800 truncate group-hover:text-emerald-600 transition-colors">
-                  {customer.name}
-                </p>
-              </div>
+              <p className="text-[10px] sm:text-xs font-bold text-slate-800 truncate w-full text-center group-hover:text-emerald-600 transition-colors">
+                {customer.name}
+              </p>
             </div>
           );
 
