@@ -78,27 +78,39 @@ export default async function Home() {
         const marqueeItems = Array.from({ length: repeatCount }).flatMap(() => showcaseCustomers);
 
         return (
-          <section className="py-16 bg-white border-y border-slate-100 relative overflow-hidden">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 mb-8 text-center">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                TRUSTED BY LEADING E-COMMERCE BRANDS & COMPANIES
+          <section className="py-16 bg-slate-50/60 border-y border-slate-100 relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:20px_20px] opacity-35" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[150px] bg-emerald-100/35 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative max-w-6xl mx-auto px-4 sm:px-6 mb-10 text-center z-10">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/60 mb-3 shadow-xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] sm:text-xs font-bold text-emerald-800 tracking-wider uppercase">Our Network</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+                Trusted by E-commerce Leaders
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 mt-2 max-w-md mx-auto">
+                Powering operations and secure logistics for fast-growing brands.
               </p>
             </div>
 
-            <div className="relative w-full overflow-hidden flex items-center">
+            <div className="relative w-full overflow-hidden flex items-center z-10">
               {/* Fade Gradients (Left and Right overlays) */}
-              <div className="absolute left-0 top-0 bottom-0 w-20 md:w-36 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-              <div className="absolute right-0 top-0 bottom-0 w-20 md:w-36 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+              <div className="absolute left-0 top-0 bottom-0 w-24 md:w-44 bg-gradient-to-r from-slate-50 via-slate-50/80 to-transparent z-10 pointer-events-none" />
+              <div className="absolute right-0 top-0 bottom-0 w-24 md:w-44 bg-gradient-to-l from-slate-50 via-slate-50/80 to-transparent z-10 pointer-events-none" />
 
               {/* Marquee Track */}
-              <div className="animate-marquee flex gap-12 sm:gap-16 items-center py-2">
+              <div className="animate-marquee flex gap-6 sm:gap-8 items-center py-4">
                 {marqueeItems.map((customer, index) => {
                   const logoContent = (
-                    <img 
-                      src={customer.logoUrl} 
-                      alt={customer.name} 
-                      className="h-12 sm:h-16 w-auto object-contain opacity-65 hover:opacity-100 transition-all duration-300 filter grayscale hover:grayscale-0"
-                    />
+                    <div className="bg-white border border-slate-200 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 rounded-2xl p-4 sm:p-5 flex items-center justify-center w-36 sm:w-44 h-20 sm:h-24 shadow-sm group">
+                      <img 
+                        src={customer.logoUrl} 
+                        alt={customer.name} 
+                        className="max-h-full max-w-full object-contain filter grayscale opacity-75 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300"
+                      />
+                    </div>
                   );
                   
                   return customer.websiteUrl ? (
@@ -108,7 +120,7 @@ export default async function Home() {
                       target="_blank" 
                       rel="noopener noreferrer" 
                       title={customer.name}
-                      className="focus:outline-none transition-transform hover:scale-105 shrink-0 block"
+                      className="focus:outline-none shrink-0 block"
                     >
                       {logoContent}
                     </a>
@@ -116,7 +128,7 @@ export default async function Home() {
                     <div 
                       key={`${customer.id}-${index}`} 
                       title={customer.name} 
-                      className="transition-transform hover:scale-105 shrink-0 block"
+                      className="shrink-0 block"
                     >
                       {logoContent}
                     </div>
