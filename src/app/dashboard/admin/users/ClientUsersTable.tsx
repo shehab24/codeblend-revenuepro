@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { toggleUserRole, toggleUserDownloadAccess, toggleUserExpenseTrackerAccess } from "./actions";
+import { toggleUserRole, toggleUserDownloadAccess, toggleUserExpenseTrackerAccess, toggleUserBkashTrackerAccess } from "./actions";
 
 type UserWithLicensesCount = {
   id: string;
@@ -11,6 +11,7 @@ type UserWithLicensesCount = {
   role: string;
   downloadAllowed: boolean;
   expenseTrackerAllowed: boolean;
+  bkashTrackerAllowed: boolean;
   createdAt: Date | string;
   _count: {
     licenses: number;
@@ -29,6 +30,7 @@ export function ClientUsersTable({ initialUsers, currentUserId }: Props) {
   const [downloadFilter, setDownloadFilter] = useState("all");
   const [licenseFilter, setLicenseFilter] = useState("all");
   const [expenseTrackerFilter, setExpenseTrackerFilter] = useState("all");
+  const [bkashTrackerFilter, setBkashTrackerFilter] = useState("all");
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -59,6 +61,11 @@ export function ClientUsersTable({ initialUsers, currentUserId }: Props) {
 
   const handleExpenseTrackerFilterChange = (val: string) => {
     setExpenseTrackerFilter(val);
+    setCurrentPage(1);
+  };
+
+  const handleBkashTrackerFilterChange = (val: string) => {
+    setBkashTrackerFilter(val);
     setCurrentPage(1);
   };
 
@@ -95,7 +102,13 @@ export function ClientUsersTable({ initialUsers, currentUserId }: Props) {
       (expenseTrackerFilter === "allowed" && u.expenseTrackerAllowed) ||
       (expenseTrackerFilter === "restricted" && !u.expenseTrackerAllowed);
 
-    return searchMatch && roleMatch && downloadMatch && licenseMatch && expenseTrackerMatch;
+    // bKash Tracker filter match
+    const bkashTrackerMatch =
+      bkashTrackerFilter === "all" ||
+      (bkashTrackerFilter === "allowed" && u.bkashTrackerAllowed) ||
+      (bkashTrackerFilter === "restricted" && !u.bkashTrackerAllowed);
+
+    return searchMatch && roleMatch && downloadMatch && licenseMatch && expenseTrackerMatch && bkashTrackerMatch;
   });
 
   // 2. Pagination math
@@ -172,12 +185,35 @@ export function ClientUsersTable({ initialUsers, currentUserId }: Props) {
     });
   };
 
+  const handleToggleBkashTracker = async (userId: string, currentAllow: boolean) => {
+    const newAllow = !currentAllow;
+
+    // Optimistic UI update
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, bkashTrackerAllowed: newAllow } : u))
+    );
+
+    startTransition(async () => {
+      try {
+        const formData = new FormData();
+        formData.append("userId", userId);
+        formData.append("allow", newAllow ? "true" : "false");
+        await toggleUserBkashTrackerAccess(formData);
+      } catch (err) {
+        console.error("Failed to toggle bkash tracker access:", err);
+        // Rollback on failure
+        setUsers(initialUsers);
+      }
+    });
+  };
+
   const handleResetFilters = () => {
     setSearchQuery("");
     setRoleFilter("all");
     setDownloadFilter("all");
     setLicenseFilter("all");
     setExpenseTrackerFilter("all");
+    setBkashTrackerFilter("all");
     setCurrentPage(1);
   };
 
@@ -186,7 +222,8 @@ export function ClientUsersTable({ initialUsers, currentUserId }: Props) {
     roleFilter !== "all" ||
     downloadFilter !== "all" ||
     licenseFilter !== "all" ||
-    expenseTrackerFilter !== "all";
+    expenseTrackerFilter !== "all" ||
+    bkashTrackerFilter !== "all";
 
   return (
     <div className="space-y-4">
@@ -295,6 +332,20 @@ export function ClientUsersTable({ initialUsers, currentUserId }: Props) {
             </select>
           </div>
 
+          {/* bKash Tracker Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">bKash Tracker:</span>
+            <select
+              value={bkashTrackerFilter}
+              onChange={(e) => handleBkashTrackerFilterChange(e.target.value)}
+              className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-xs focus:outline-none focus:border-emerald-500 transition cursor-pointer font-medium"
+            >
+              <option value="all">All Access</option>
+              <option value="allowed">Enabled Only</option>
+              <option value="restricted">Disabled Only</option>
+            </select>
+          </div>
+
           {/* Reset Filters */}
           {isFilterActive && (
             <button
@@ -322,6 +373,7 @@ export function ClientUsersTable({ initialUsers, currentUserId }: Props) {
               <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider text-center whitespace-nowrap">Licenses</th>
               <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Downloads</th>
               <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Expense Tracker</th>
+              <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">bKash Tracker</th>
               <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Joined</th>
               <th className="p-3 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Actions</th>
             </tr>
@@ -379,6 +431,19 @@ export function ClientUsersTable({ initialUsers, currentUserId }: Props) {
                         }`}
                       >
                         {u.expenseTrackerAllowed ? "✅ Enabled" : "🚫 Disabled"}
+                      </button>
+                    </td>
+                    <td className="p-3 text-sm whitespace-nowrap">
+                      <button
+                        onClick={() => handleToggleBkashTracker(u.id, u.bkashTrackerAllowed)}
+                        disabled={isPending}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all border border-solid cursor-pointer outline-none ${
+                          u.bkashTrackerAllowed
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                            : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
+                        }`}
+                      >
+                        {u.bkashTrackerAllowed ? "✅ Enabled" : "🚫 Disabled"}
                       </button>
                     </td>
                     <td className="p-3 text-sm text-slate-500 whitespace-nowrap">{new Date(u.createdAt).toLocaleDateString()}</td>

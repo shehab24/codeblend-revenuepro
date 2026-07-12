@@ -16,6 +16,7 @@ model User {
   verified              Boolean  @default(false)
   downloadAllowed       Boolean  @default(false)
   expenseTrackerAllowed Boolean  @default(false)
+  bkashTrackerAllowed   Boolean  @default(false)
   whitelistKeywords     String[] @default([])
   expenseBackupUrl      String?
   createdAt             DateTime @default(now())
@@ -25,7 +26,6 @@ model User {
   serviceRequests ServiceRequest[]
   transactions    PaymentTransaction[]
   bkashSmsTransactions BkashSmsTransaction[]
-  expenseTransactions ExpenseTransaction[]
 }
 
 model License {
@@ -164,23 +164,6 @@ model BkashSmsTransaction {
   @@index([userId, sender, amount, status])
 }
 
-model ExpenseTransaction {
-  id            String   @id // Client-generated native ID (e.g. tx-native-...)
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  amount        Float
-  currency      String   @default("BDT")
-  type          String   // "credit" | "debit"
-  merchant      String   // Group/Sender Name (e.g. "bKash", "Bank Asia")
-  category      String   // e.g. "Food", "Transfer", "Utilities"
-  date          DateTime
-  originalSms   String?
-  senderAddress String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@index([userId])
-}
 
 model ShowcaseCustomer {
   id         String   @id @default(cuid())

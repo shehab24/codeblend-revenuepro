@@ -79,3 +79,25 @@ export async function toggleUserExpenseTrackerAccess(formData: FormData) {
 
   revalidatePath("/dashboard/admin/users");
 }
+
+export async function toggleUserBkashTrackerAccess(formData: FormData) {
+  const { userId: callerId } = await auth();
+  if (!callerId) throw new Error("Unauthorized");
+
+  const caller = await prisma.user.findUnique({ where: { id: callerId } });
+  if (caller?.role !== "admin" && caller?.role !== "ADMIN") {
+    throw new Error("Unauthorized: Only admins can manage bkash tracker access.");
+  }
+
+  const targetUserId = formData.get("userId") as string;
+  const allow = formData.get("allow") === "true";
+
+  if (!targetUserId) throw new Error("Missing user ID.");
+
+  await prisma.user.update({
+    where: { id: targetUserId },
+    data: { bkashTrackerAllowed: allow },
+  });
+
+  revalidatePath("/dashboard/admin/users");
+}

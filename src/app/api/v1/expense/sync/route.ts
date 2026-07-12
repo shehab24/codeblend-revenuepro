@@ -94,13 +94,6 @@ export async function POST(request: Request) {
       data: { expenseBackupUrl },
     });
 
-    // 4. Delete legacy individual database rows from ExpenseTransaction to free up DB space!
-    const deleteResult = await prisma.expenseTransaction.deleteMany({
-      where: { userId: decoded.userId },
-    });
-    if (deleteResult.count > 0) {
-      console.log(`[Expense Sync] Cleaned up ${deleteResult.count} legacy DB rows from ExpenseTransaction.`);
-    }
 
     return NextResponse.json({ success: true, count: transactions.length, backupUrl: expenseBackupUrl });
   } catch (error) {

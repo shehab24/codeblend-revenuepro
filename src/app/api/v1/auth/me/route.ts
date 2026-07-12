@@ -60,6 +60,7 @@ export async function GET(request: Request) {
         role: user.role,
         downloadAllowed: user.downloadAllowed,
         expenseTrackerAllowed: user.expenseTrackerAllowed,
+        bkashTrackerAllowed: user.bkashTrackerAllowed,
         verified: user.verified,
         createdAt: user.createdAt,
       },
