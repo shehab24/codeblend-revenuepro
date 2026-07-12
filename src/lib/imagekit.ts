@@ -53,5 +53,12 @@ export async function uploadToImageKit(base64Data: string, fileName: string, use
   }
   
   const data = await res.json();
-  return data.url;
+  // ImageKit CDN caches files by default. Appending ?updatedAt=<timestamp> forces the CDN
+  // to serve the freshest version of the file instead of a stale cached copy.
+  const updatedAtMs = data.updatedAt
+    ? new Date(data.updatedAt).getTime()
+    : Date.now();
+  const urlWithCacheBuster = `${data.url}?updatedAt=${updatedAtMs}`;
+  console.log(`[ImageKit] Uploaded: ${urlWithCacheBuster}`);
+  return urlWithCacheBuster;
 }

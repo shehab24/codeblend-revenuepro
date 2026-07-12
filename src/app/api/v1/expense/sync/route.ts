@@ -44,8 +44,13 @@ export async function GET(request: Request) {
     });
 
     if (user?.expenseBackupUrl) {
-      console.log(`[Expense Sync GET] Fetching backup JSON from: ${user.expenseBackupUrl}`);
-      const res = await fetch(user.expenseBackupUrl);
+      // Append cache-busting timestamp to bypass internal and external caches
+      const urlObject = new URL(user.expenseBackupUrl);
+      urlObject.searchParams.set("t", Date.now().toString());
+      const cacheBustedUrl = urlObject.toString();
+      
+      console.log(`[Expense Sync GET] Fetching backup JSON from: ${cacheBustedUrl}`);
+      const res = await fetch(cacheBustedUrl, { cache: "no-store" });
       if (res.ok) {
         const transactions = await res.json();
         return NextResponse.json({ success: true, transactions });
