@@ -177,9 +177,13 @@ export async function getExpenseTransactions() {
       select: { expenseBackupUrl: true },
     });
 
+    console.log(`[getExpenseTransactions] userId=${userId}, hasBackupUrl=${!!user?.expenseBackupUrl}`);
+
     if (user?.expenseBackupUrl) {
-      console.log(`[getExpenseTransactions] Fetching from: ${user.expenseBackupUrl}`);
-      const res = await fetch(user.expenseBackupUrl);
+      // Add timestamp cache-buster to bypass CDN and Next.js fetch cache
+      const cacheBustedUrl = `${user.expenseBackupUrl}?t=${Date.now()}`;
+      console.log(`[getExpenseTransactions] Fetching from: ${cacheBustedUrl}`);
+      const res = await fetch(cacheBustedUrl, { cache: "no-store" });
       if (res.ok) {
         const transactions = await res.json();
         // Map fields to match exactly what the frontend expects
@@ -197,16 +201,17 @@ export async function getExpenseTransactions() {
         }));
         // Sort descending by date
         normalized.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        return { success: true, transactions: normalized };
+        console.log(`[getExpenseTransactions] Loaded ${normalized.length} transactions for userId=${userId}`);
+        return { success: true, transactions: normalized, userId };
       } else {
         console.error(`[getExpenseTransactions] Failed to fetch. Status: ${res.statusText}`);
       }
     }
 
-    return { success: true, transactions: [] };
+    return { success: true, transactions: [], userId };
   } catch (error: any) {
     console.error("Error fetching expense transactions:", error);
-    return { success: false, error: error.message || "Failed to fetch transactions" };
+    return { success: false, error: error.message || "Failed to fetch transactions", userId };
   }
 }
 

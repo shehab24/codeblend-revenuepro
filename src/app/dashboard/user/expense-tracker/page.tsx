@@ -79,6 +79,8 @@ export default function ExpenseTrackerPage() {
   const loadTransactions = async () => {
     setIsLoading(true);
     const res = await getExpenseTransactions();
+    // Debug: log which user the server is loading data for
+    console.log(`[ExpenseTracker] Web session userId=${(res as any).userId}, txCount=${res.transactions?.length ?? 0}`);
     if (res.success && res.transactions) {
       const mapped = res.transactions.map((tx: any) => ({
         ...tx,
