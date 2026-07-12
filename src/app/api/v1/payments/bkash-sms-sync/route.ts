@@ -72,6 +72,13 @@ export async function POST(request: Request) {
       const { sender, body: messageBody } = sms;
       if (!messageBody) continue;
 
+      // Only allow bKash SMS transactions (case-insensitive)
+      const normalizedSender = (sender || "").trim().toLowerCase();
+      if (normalizedSender !== "bkash") {
+        console.log(`[SMS Sync] Skipping non-bKash sender address: ${sender}`);
+        continue;
+      }
+
       // Parse financial transaction details
       const parsed = parseFinancialSms(messageBody, sender);
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import jwt from "jsonwebtoken";
+import { uploadToImageKit } from "@/lib/imagekit";
 
 const JWT_SECRET = process.env.JWT_SECRET || process.env.CLERK_SECRET_KEY || "codeblend_revenuepro_fallback_secret_123456";
 
@@ -29,7 +30,7 @@ function authenticateRequest(request: Request) {
   }
 }
 
-// GET /api/v1/expense/sync — fetch all saved transactions for the authenticated user
+// GET /api/v1/expense/sync — fetch all saved transactions for the authenticated user (fetched from ImageKit CDN)
 export async function GET(request: Request) {
   const decoded = authenticateRequest(request);
   if (!decoded) {
@@ -37,19 +38,30 @@ export async function GET(request: Request) {
   }
 
   try {
-    const transactions = await prisma.expenseTransaction.findMany({
-      where: { userId: decoded.userId },
-      orderBy: { date: "desc" },
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: { expenseBackupUrl: true },
     });
 
-    return NextResponse.json({ success: true, transactions });
+    if (user?.expenseBackupUrl) {
+      console.log(`[Expense Sync GET] Fetching backup JSON from: ${user.expenseBackupUrl}`);
+      const res = await fetch(user.expenseBackupUrl);
+      if (res.ok) {
+        const transactions = await res.json();
+        return NextResponse.json({ success: true, transactions });
+      } else {
+        console.error(`[Expense Sync GET] Failed to fetch ImageKit backup file. Status: ${res.statusText}`);
+      }
+    }
+
+    return NextResponse.json({ success: true, transactions: [] });
   } catch (error) {
     console.error("[Expense Sync GET] Error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
-// POST /api/v1/expense/sync — batch sync transactions from mobile client (offline-first)
+// POST /api/v1/expense/sync — batch sync transactions from mobile client (uploaded to ImageKit CDN as backup)
 export async function POST(request: Request) {
   const decoded = authenticateRequest(request);
   if (!decoded) {
@@ -66,40 +78,31 @@ export async function POST(request: Request) {
 
     console.log(`[Expense Sync] Received ${transactions.length} transactions from user ${decoded.userId}`);
 
-    // Upsert transactions to avoid duplicate inputs
-    const upsertPromises = transactions.map((tx: SyncTransactionInput) => {
-      if (!tx.id || isNaN(tx.amount)) return Promise.resolve();
+    // 1. Convert transactions to JSON string and base64
+    const jsonString = JSON.stringify(transactions);
+    const base64Data = Buffer.from(jsonString).toString("base64");
+    const fileName = `expense-backup-${decoded.userId}.json`;
 
-      return prisma.expenseTransaction.upsert({
-        where: { id: tx.id },
-        update: {
-          amount: tx.amount,
-          currency: tx.currency || "BDT",
-          type: tx.type,
-          merchant: tx.merchant,
-          category: tx.category,
-          date: new Date(tx.date),
-          originalSms: tx.originalSms || null,
-          senderAddress: tx.senderAddress || null,
-        },
-        create: {
-          id: tx.id,
-          userId: decoded.userId,
-          amount: tx.amount,
-          currency: tx.currency || "BDT",
-          type: tx.type,
-          merchant: tx.merchant,
-          category: tx.category,
-          date: new Date(tx.date),
-          originalSms: tx.originalSms || null,
-          senderAddress: tx.senderAddress || null,
-        },
-      });
+    // 2. Upload to ImageKit (useUniqueFileName = false to overwrite the previous backup file)
+    console.log(`[Expense Sync] Uploading backup JSON file to ImageKit: ${fileName}`);
+    const expenseBackupUrl = await uploadToImageKit(base64Data, fileName, false);
+    console.log(`[Expense Sync] Backup URL successfully created: ${expenseBackupUrl}`);
+
+    // 3. Update user record with the backup URL
+    await prisma.user.update({
+      where: { id: decoded.userId },
+      data: { expenseBackupUrl },
     });
 
-    await Promise.all(upsertPromises);
+    // 4. Delete legacy individual database rows from ExpenseTransaction to free up DB space!
+    const deleteResult = await prisma.expenseTransaction.deleteMany({
+      where: { userId: decoded.userId },
+    });
+    if (deleteResult.count > 0) {
+      console.log(`[Expense Sync] Cleaned up ${deleteResult.count} legacy DB rows from ExpenseTransaction.`);
+    }
 
-    return NextResponse.json({ success: true, count: transactions.length });
+    return NextResponse.json({ success: true, count: transactions.length, backupUrl: expenseBackupUrl });
   } catch (error) {
     console.error("[Expense Sync POST] Error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

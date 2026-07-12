@@ -166,3 +166,47 @@ export async function getBkashSmsTransactions() {
     return { success: false, error: error.message || "Failed to fetch transactions" };
   }
 }
+
+export async function getExpenseTransactions() {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { expenseBackupUrl: true },
+    });
+
+    if (user?.expenseBackupUrl) {
+      console.log(`[getExpenseTransactions] Fetching from: ${user.expenseBackupUrl}`);
+      const res = await fetch(user.expenseBackupUrl);
+      if (res.ok) {
+        const transactions = await res.json();
+        // Map fields to match exactly what the frontend expects
+        const normalized = transactions.map((t: any) => ({
+          id: t.id,
+          amount: t.amount,
+          currency: t.currency || "BDT",
+          type: t.type,
+          merchant: t.merchant,
+          category: t.category,
+          date: t.date,
+          createdAt: t.date, // Map date to createdAt since the frontend reads t.createdAt
+          originalSms: t.originalSms || null,
+          senderAddress: t.senderAddress || null,
+        }));
+        // Sort descending by date
+        normalized.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return { success: true, transactions: normalized };
+      } else {
+        console.error(`[getExpenseTransactions] Failed to fetch. Status: ${res.statusText}`);
+      }
+    }
+
+    return { success: true, transactions: [] };
+  } catch (error: any) {
+    console.error("Error fetching expense transactions:", error);
+    return { success: false, error: error.message || "Failed to fetch transactions" };
+  }
+}
+

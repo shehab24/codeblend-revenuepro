@@ -19,7 +19,7 @@ export async function getImageKitConfig() {
  * @param base64Data The base64 file data string (with or without data:image/... prefix)
  * @param fileName Name of the file (e.g. logo.png)
  */
-export async function uploadToImageKit(base64Data: string, fileName: string): Promise<string> {
+export async function uploadToImageKit(base64Data: string, fileName: string, useUniqueFileName: boolean = true): Promise<string> {
   const config = await getImageKitConfig();
   if (!config.privateKey) {
     throw new Error("ImageKit Private Key is not configured in Admin Settings.");
@@ -34,6 +34,7 @@ export async function uploadToImageKit(base64Data: string, fileName: string): Pr
   const formData = new FormData();
   formData.append("file", cleanBase64);
   formData.append("fileName", fileName);
+  formData.append("useUniqueFileName", useUniqueFileName ? "true" : "false");
   
   const authHeader = "Basic " + Buffer.from(config.privateKey + ":").toString("base64");
   

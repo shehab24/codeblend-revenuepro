@@ -17,6 +17,7 @@ model User {
   downloadAllowed       Boolean  @default(false)
   expenseTrackerAllowed Boolean  @default(false)
   whitelistKeywords     String[] @default([])
+  expenseBackupUrl      String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
