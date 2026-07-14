@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { senderNumber, trxId, amount, merchantId } = body;
+    const { senderNumber, trxId, amount, merchantId, orderId, order_id } = body;
 
     if (!amount || isNaN(parseFloat(amount))) {
       return NextResponse.json(
@@ -28,6 +28,7 @@ export async function POST(request: Request) {
     }
 
     const targetAmount = parseFloat(amount);
+    const matchedOrderId = (orderId || order_id || "").toString().trim();
 
     // Clean phone number (remove country code prefix if present, only match last 11 digits)
     let cleanSender = "";
@@ -89,11 +90,12 @@ export async function POST(request: Request) {
       });
     }
 
-    // 3. Mark transaction as used
+    // 3. Mark transaction as used and associate orderId
     await prisma.bkashSmsTransaction.update({
       where: { id: transaction.id },
       data: {
         status: "used",
+        orderId: matchedOrderId || undefined,
       },
     });
 
@@ -103,6 +105,7 @@ export async function POST(request: Request) {
       trxId: transaction.trxId,
       amount: transaction.amount,
       sender: transaction.sender,
+      orderId: matchedOrderId || null,
     });
 
   } catch (error: any) {
