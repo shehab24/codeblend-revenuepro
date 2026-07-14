@@ -22,6 +22,7 @@ export default clerkMiddleware(async (auth, req) => {
     const amount = req.nextUrl.searchParams.get("amount");
     const merchantId = req.nextUrl.searchParams.get("merchant_id");
     const hasParams = amount && merchantId;
+    const isCodePayPath = pathname.startsWith("/pay/codepay/");
 
     // Redirect direct visitors accessing root or /pay without parameters to main domain
     if (pathname === "/") {
@@ -39,15 +40,28 @@ export default clerkMiddleware(async (auth, req) => {
       return NextResponse.redirect("https://codeblend.co");
     }
 
-    // Only allow /pay and the payment APIs
-    const isPaymentPath = pathname === "/pay" || pathname.startsWith("/api/v1/payments");
+    // Only allow /pay, /pay/codepay/[id], and the payment APIs
+    const isPaymentPath = pathname === "/pay" || isCodePayPath || pathname.startsWith("/api/v1/payments");
     if (!isPaymentPath) {
       // Redirect all other requests on pay.codeblend.co to the main website
       return NextResponse.redirect("https://codeblend.co");
     }
   } else {
-    // 2. Prevent accessing /pay directly from the main domain (codeblend.co)
-    if (pathname === "/pay") {
+    // 2. Prevent accessing /pay directly from the main domain (codeblend.co) and redirect to the pay subdomain in production
+    const isProduction = host.includes("codeblend.co") && !host.includes("pay.codeblend.co");
+
+    if (pathname.startsWith("/pay/codepay/")) {
+      if (isProduction) {
+        return NextResponse.redirect(`https://pay.codeblend.co${pathname}${req.nextUrl.search}`);
+      }
+    } else if (pathname === "/pay") {
+      if (isProduction) {
+        const amount = req.nextUrl.searchParams.get("amount");
+        const merchantId = req.nextUrl.searchParams.get("merchant_id");
+        if (amount && merchantId) {
+          return NextResponse.redirect(`https://pay.codeblend.co/pay${req.nextUrl.search}`);
+        }
+      }
       return NextResponse.redirect(new URL("/", req.url));
     }
   }
