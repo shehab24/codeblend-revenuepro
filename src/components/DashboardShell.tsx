@@ -29,6 +29,7 @@ const Icon = {
   PlayCircle: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" /></svg>,
   ExpenseTracker: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" /><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" /></svg>,
   Showcase: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v16.5m10.5-12a3 3 0 11-6 0 3 3 0 016 0zm-3 7.5A6.75 6.75 0 005.25 15h13.5A6.75 6.75 0 0012 10.5z" /></svg>,
+  PaymentGateway: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v14a2 2 0 01-2 2z" /></svg>,
 };
 
 const adminLinks: { section: string; links: NavLink[] }[] = [
@@ -85,6 +86,7 @@ interface DashboardShellProps {
   userImageUrl?: string;
   hasPhone?: boolean;
   expenseTrackerAllowed?: boolean;
+  bkashTrackerAllowed?: boolean;
 }
 
 export function DashboardShell({ 
@@ -94,7 +96,8 @@ export function DashboardShell({
   userEmail, 
   userImageUrl, 
   hasPhone = true,
-  expenseTrackerAllowed = false
+  expenseTrackerAllowed = false,
+  bkashTrackerAllowed = false
 }: DashboardShellProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -117,6 +120,7 @@ export function DashboardShell({
       links: [
         { href: "/dashboard/user/revenuepro", label: "Revenue Pro", icon: Icon.CloudDownload },
         ...(expenseTrackerAllowed ? [{ href: "/dashboard/user/expense-tracker", label: "Expense Tracker", icon: Icon.ExpenseTracker }] : []),
+        ...(bkashTrackerAllowed ? [{ href: "/dashboard/user/payment-gateway", label: "Payment Gateway", icon: Icon.PaymentGateway }] : []),
         { href: "/dashboard/user/tutorials", label: "Tutorials", icon: Icon.PlayCircle },
       ],
     },
