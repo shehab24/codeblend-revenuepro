@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getExpenseTransactions } from "../actions";
+import { AccessRestricted } from "@/components/AccessRestricted";
 
 type BkashTransaction = {
   id: string;
@@ -20,6 +21,7 @@ type BkashTransaction = {
 };
 
 export default function ExpenseTrackerPage() {
+  const [isAllowed, setIsAllowed] = useState(true);
   const [bkashTransactions, setBkashTransactions] = useState<BkashTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTx, setSelectedTx] = useState<BkashTransaction | null>(null);
@@ -81,14 +83,19 @@ export default function ExpenseTrackerPage() {
     const res = await getExpenseTransactions();
     // Debug: log which user the server is loading data for
     console.log(`[ExpenseTracker] Web session userId=${(res as any).userId}, txCount=${res.transactions?.length ?? 0}`);
-    if (res.success && res.transactions) {
-      const mapped = res.transactions.map((tx: any) => ({
-        ...tx,
-        rawMessage: tx.originalSms || `[Manual Entry] Transaction logged manually.`,
-        senderAddress: tx.senderAddress || tx.merchant || "Unknown",
-        status: "synced",
-      }));
-      setBkashTransactions(mapped);
+    if (res.success) {
+      if ((res as any).allowed === false) {
+        setIsAllowed(false);
+      }
+      if (res.transactions) {
+        const mapped = res.transactions.map((tx: any) => ({
+          ...tx,
+          rawMessage: tx.originalSms || `[Manual Entry] Transaction logged manually.`,
+          senderAddress: tx.senderAddress || tx.merchant || "Unknown",
+          status: "synced",
+        }));
+        setBkashTransactions(mapped);
+      }
     }
     setIsLoading(false);
   };
@@ -282,6 +289,10 @@ export default function ExpenseTrackerPage() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  if (!isAllowed) {
+    return <AccessRestricted featureName="Expense Tracker" />;
+  }
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto w-full pb-16">

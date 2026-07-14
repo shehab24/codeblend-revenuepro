@@ -62,6 +62,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       hasPhone={hasPhone}
       expenseTrackerAllowed={!!dbUser?.expenseTrackerAllowed}
       bkashTrackerAllowed={!!dbUser?.bkashTrackerAllowed}
+      revenueProAllowed={dbUser?.revenueProAllowed ?? true}
     >
       {children}
     </DashboardShell>

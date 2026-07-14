@@ -14,18 +14,33 @@ model User {
   phone                 String?
   role                  String   @default("user")
   verified              Boolean  @default(false)
-  downloadAllowed       Boolean  @default(false)
-  expenseTrackerAllowed Boolean  @default(false)
-  bkashTrackerAllowed   Boolean  @default(false)
+  downloadAllowed       Boolean  @default(true)
+  expenseTrackerAllowed Boolean  @default(true)
+  bkashTrackerAllowed   Boolean  @default(true)
+  revenueProAllowed     Boolean  @default(true)
   whitelistKeywords     String[] @default([])
   expenseBackupUrl      String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
-  licenses        License[]
-  serviceRequests ServiceRequest[]
-  transactions    PaymentTransaction[]
-  bkashSmsTransactions BkashSmsTransaction[]
+  // CodePay Gateway Settings
+  codepayApiKey         String?  @unique
+  codepayApiSecret      String?
+  codepayActive         Boolean  @default(true)
+  codepayBkash          String?
+  codepayNagad          String?
+  codepayRocket         String?
+
+  // CodePay Merchant Branding
+  codepayBrandName      String?
+  codepayBrandLogo      String?
+  codepayBrandColor     String?  @default("#0f172a")
+
+  licenses              License[]
+  serviceRequests       ServiceRequest[]
+  transactions          PaymentTransaction[]
+  bkashSmsTransactions  BkashSmsTransaction[]
+  codepayPayments       CodePayPayment[]
 }
 
 model License {
@@ -173,4 +188,22 @@ model ShowcaseCustomer {
   order      Int      @default(0) // Order priority for sorting
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model CodePayPayment {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount        Float
+  orderId       String
+  customerName  String
+  customerEmail String
+  redirectUrl   String
+  status        String   @default("pending") // pending, completed, expired
+  method        String?  // bkash, nagad, rocket
+  trxId         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId, status])
 }

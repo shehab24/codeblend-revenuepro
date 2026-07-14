@@ -72,10 +72,12 @@ export async function POST(request: Request) {
       const { sender, body: messageBody } = sms;
       if (!messageBody) continue;
 
-      // Only allow bKash SMS transactions (case-insensitive)
+      // Allow bKash, Nagad, and Rocket SMS transactions (case-insensitive, including shortcodes)
       const normalizedSender = (sender || "").trim().toLowerCase();
-      if (normalizedSender !== "bkash") {
-        console.log(`[SMS Sync] Skipping non-bKash sender address: ${sender}`);
+      const allowedSenders = ["bkash", "nagad", "rocket", "16167", "16216", "dbbl"];
+      const isAllowed = allowedSenders.some(allowed => normalizedSender.includes(allowed));
+      if (!isAllowed) {
+        console.log(`[SMS Sync] Skipping non-allowed sender address: ${sender}`);
         continue;
       }
 
@@ -111,6 +113,7 @@ export async function POST(request: Request) {
               rawMessage: messageBody,
               senderAddress: sender,
               status: "unused",
+              createdAt: parsed.dateObj || new Date(),
             },
           });
           savedCount++;
@@ -146,6 +149,53 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+function parseSmsDateTime(message: string): Date | null {
+  // Regex to match dates like DD/MM/YYYY HH:MM(:SS) or YYYY-MM-DD HH:MM(:SS)
+  const match = message.match(/(?:at|Time|on)\s*:?\s*(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([AP]M))?/i);
+  if (match) {
+    const day = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10) - 1; // JS months are 0-11
+    const year = parseInt(match[3], 10);
+    let hour = parseInt(match[4], 10);
+    const minute = parseInt(match[5], 10);
+    const second = match[6] ? parseInt(match[6], 10) : 0;
+    const ampm = match[7];
+
+    if (ampm) {
+      if (ampm.toUpperCase() === "PM" && hour < 12) hour += 12;
+      if (ampm.toUpperCase() === "AM" && hour === 12) hour = 0;
+    }
+
+    const date = new Date(year, month, day, hour, minute, second);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  const matchIso = message.match(/(?:at|Time|on)\s*:?\s*(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([AP]M))?/i);
+  if (matchIso) {
+    const year = parseInt(matchIso[1], 10);
+    const month = parseInt(matchIso[2], 10) - 1;
+    const day = parseInt(matchIso[3], 10);
+    let hour = parseInt(matchIso[4], 10);
+    const minute = parseInt(matchIso[5], 10);
+    const second = matchIso[6] ? parseInt(matchIso[6], 10) : 0;
+    const ampm = matchIso[7];
+
+    if (ampm) {
+      if (ampm.toUpperCase() === "PM" && hour < 12) hour += 12;
+      if (ampm.toUpperCase() === "AM" && hour === 12) hour = 0;
+    }
+
+    const date = new Date(year, month, day, hour, minute, second);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -194,5 +244,7 @@ function parseFinancialSms(message: string, senderName: string) {
     }
   }
 
-  return { trxId, amount, sender };
+  const dateObj = parseSmsDateTime(message);
+
+  return { trxId, amount, sender, dateObj };
 }

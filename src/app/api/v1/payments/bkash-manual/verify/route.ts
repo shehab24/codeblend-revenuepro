@@ -20,64 +20,34 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!senderNumber && !trxId) {
+    if (!trxId) {
       return NextResponse.json(
-        { error: "Sender number or Transaction ID is required" },
+        { error: "Transaction ID (TrxID) is required" },
         { status: 400 }
       );
     }
 
     const targetAmount = parseFloat(amount);
     const matchedOrderId = (orderId || order_id || "").toString().trim();
+    const cleanTrx = trxId.trim().toUpperCase();
 
-    // Clean phone number (remove country code prefix if present, only match last 11 digits)
-    let cleanSender = "";
-    if (senderNumber) {
-      cleanSender = senderNumber.replace(/[^0-9]/g, "");
-      if (cleanSender.length > 11) {
-        cleanSender = cleanSender.substring(cleanSender.length - 11);
-      }
-    }
-
-    let transaction: any = null;
-
-    if (trxId) {
-      // 1. Try matching by Transaction ID first
-      const cleanTrx = trxId.trim().toUpperCase();
-      transaction = await prisma.bkashSmsTransaction.findFirst({
-        where: {
-          userId: merchantId,
-          trxId: cleanTrx,
-          status: "unused",
+    // 1. Try matching by Transaction ID first and enforce correct amount (+/- 1.0 Taka tolerance)
+    const transaction = await prisma.bkashSmsTransaction.findFirst({
+      where: {
+        userId: merchantId,
+        trxId: cleanTrx,
+        amount: {
+          gte: targetAmount - 1.0,
+          lte: targetAmount + 1.0,
         },
-      });
-    }
-
-    if (!transaction && cleanSender) {
-      // 2. Try matching by sender phone number and amount (since customer provided their number)
-      // Allow +/- 1.0 Taka tolerance for rounding differences
-      transaction = await prisma.bkashSmsTransaction.findFirst({
-        where: {
-          userId: merchantId,
-          sender: {
-            endsWith: cleanSender,
-          },
-          amount: {
-            gte: targetAmount - 1.0,
-            lte: targetAmount + 1.0,
-          },
-          status: "unused",
-        },
-        orderBy: {
-          createdAt: "desc", // Match the most recent SMS
-        },
-      });
-    }
+        status: "unused",
+      },
+    });
 
     if (!transaction) {
       return NextResponse.json({
         success: false,
-        error: "লেনদেনটি পাওয়া যায়নি। অনুগ্রহ করে নিশ্চিত করুন যে টাকাটি আমাদের বিকাশ নম্বরে পাঠানো হয়েছে এবং কিছুক্ষণ পর আবার চেষ্টা করুন।",
+        error: "লেনদেনটি পাওয়া যায়নি অথবা টাকার পরিমাণ মেলেনি। অনুগ্রহ করে সঠিক ট্রানজেকশন আইডি দিন এবং নিশ্চিত করুন যে সঠিক পরিমাণ টাকা পাঠানো হয়েছে।",
       });
     }
 

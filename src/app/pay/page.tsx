@@ -2,8 +2,8 @@ import { Suspense } from "react";
 import { PayClient } from "./PayClient";
 
 export const metadata = {
-  title: "Secure bKash Payment Gateway | CodeBlend",
-  description: "Complete your manual bKash payment securely using our automated SMS verification system.",
+  title: "Secure CodePay Payment Checkout | CodeBlend",
+  description: "Complete your manual payment securely using our automated SMS verification system.",
 };
 
 export default function PayPage() {

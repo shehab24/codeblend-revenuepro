@@ -26,12 +26,16 @@ export async function toggleUserRole(formData: FormData) {
   });
 
   // 3. Update Clerk publicMetadata so the role is recognized on next login
-  const client = await clerkClient();
-  await client.users.updateUserMetadata(targetUserId, {
-    publicMetadata: {
-      role: newRole === "ADMIN" ? "admin" : "user",
-    },
-  });
+  try {
+    const client = await clerkClient();
+    await client.users.updateUserMetadata(targetUserId, {
+      publicMetadata: {
+        role: newRole === "ADMIN" ? "admin" : "user",
+      },
+    });
+  } catch (err) {
+    console.error("Warning: Failed to update user metadata in Clerk (user may not exist in Clerk):", err);
+  }
 
   revalidatePath("/dashboard/admin/users");
 }
@@ -97,6 +101,50 @@ export async function toggleUserBkashTrackerAccess(formData: FormData) {
   await prisma.user.update({
     where: { id: targetUserId },
     data: { bkashTrackerAllowed: allow },
+  });
+
+  revalidatePath("/dashboard/admin/users");
+}
+
+export async function toggleUserRevenueProAccess(formData: FormData) {
+  const { userId: callerId } = await auth();
+  if (!callerId) throw new Error("Unauthorized");
+
+  const caller = await prisma.user.findUnique({ where: { id: callerId } });
+  if (caller?.role !== "admin" && caller?.role !== "ADMIN") {
+    throw new Error("Unauthorized: Only admins can manage revenue pro access.");
+  }
+
+  const targetUserId = formData.get("userId") as string;
+  const allow = formData.get("allow") === "true";
+
+  if (!targetUserId) throw new Error("Missing user ID.");
+
+  await prisma.user.update({
+    where: { id: targetUserId },
+    data: { revenueProAllowed: allow },
+  });
+
+  revalidatePath("/dashboard/admin/users");
+}
+
+export async function toggleUserCodePayActive(formData: FormData) {
+  const { userId: callerId } = await auth();
+  if (!callerId) throw new Error("Unauthorized");
+
+  const caller = await prisma.user.findUnique({ where: { id: callerId } });
+  if (caller?.role !== "admin" && caller?.role !== "ADMIN") {
+    throw new Error("Unauthorized: Only admins can manage CodePay API status.");
+  }
+
+  const targetUserId = formData.get("userId") as string;
+  const active = formData.get("active") === "true";
+
+  if (!targetUserId) throw new Error("Missing user ID.");
+
+  await prisma.user.update({
+    where: { id: targetUserId },
+    data: { codepayActive: active },
   });
 
   revalidatePath("/dashboard/admin/users");

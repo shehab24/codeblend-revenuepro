@@ -174,8 +174,12 @@ export async function getExpenseTransactions() {
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { expenseBackupUrl: true },
+      select: { expenseBackupUrl: true, expenseTrackerAllowed: true },
     });
+
+    if (user && user.expenseTrackerAllowed === false) {
+      return { success: true, allowed: false, transactions: [], userId };
+    }
 
     console.log(`[getExpenseTransactions] userId=${userId}, hasBackupUrl=${!!user?.expenseBackupUrl}`);
 
@@ -202,16 +206,16 @@ export async function getExpenseTransactions() {
         // Sort descending by date
         normalized.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
         console.log(`[getExpenseTransactions] Loaded ${normalized.length} transactions for userId=${userId}`);
-        return { success: true, transactions: normalized, userId };
+        return { success: true, allowed: true, transactions: normalized, userId };
       } else {
         console.error(`[getExpenseTransactions] Failed to fetch. Status: ${res.statusText}`);
       }
     }
 
-    return { success: true, transactions: [], userId };
+    return { success: true, allowed: true, transactions: [], userId };
   } catch (error: any) {
     console.error("Error fetching expense transactions:", error);
-    return { success: false, error: error.message || "Failed to fetch transactions", userId };
+    return { success: false, allowed: true, error: error.message || "Failed to fetch transactions", userId };
   }
 }
 

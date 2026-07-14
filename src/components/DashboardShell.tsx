@@ -87,6 +87,7 @@ interface DashboardShellProps {
   hasPhone?: boolean;
   expenseTrackerAllowed?: boolean;
   bkashTrackerAllowed?: boolean;
+  revenueProAllowed?: boolean;
 }
 
 export function DashboardShell({ 
@@ -97,7 +98,8 @@ export function DashboardShell({
   userImageUrl, 
   hasPhone = true,
   expenseTrackerAllowed = false,
-  bkashTrackerAllowed = false
+  bkashTrackerAllowed = false,
+  revenueProAllowed = true
 }: DashboardShellProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -119,8 +121,8 @@ export function DashboardShell({
       section: "PRODUCTS",
       links: [
         { href: "/dashboard/user/revenuepro", label: "Revenue Pro", icon: Icon.CloudDownload },
-        ...(expenseTrackerAllowed ? [{ href: "/dashboard/user/expense-tracker", label: "Expense Tracker", icon: Icon.ExpenseTracker }] : []),
-        ...(bkashTrackerAllowed ? [{ href: "/dashboard/user/payment-gateway", label: "Payment Gateway", icon: Icon.PaymentGateway }] : []),
+        { href: "/dashboard/user/expense-tracker", label: "Expense Tracker", icon: Icon.ExpenseTracker },
+        { href: "/dashboard/user/payment-gateway", label: "CodePay", icon: Icon.PaymentGateway },
         { href: "/dashboard/user/tutorials", label: "Tutorials", icon: Icon.PlayCircle },
       ],
     },

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { RevenueProClient } from "@/components/RevenueProClient";
 import { PluginVersion } from "../../admin/settings/client";
+import { AccessRestricted } from "@/components/AccessRestricted";
 
 export const metadata = {
   title: "Revenue Pro | CodeBlend",
@@ -49,8 +50,12 @@ export default async function RevenueProPage() {
   // Fetch the user's email for customerEmail matching and download status
   const dbUser = await prisma.user.findUnique({ 
     where: { id: userId }, 
-    select: { email: true, downloadAllowed: true } 
+    select: { email: true, downloadAllowed: true, revenueProAllowed: true } 
   });
+
+  if (dbUser && dbUser.revenueProAllowed === false) {
+    return <AccessRestricted featureName="Revenue Pro" />;
+  }
 
   // Fetch ALL licenses: ones they created OR ones admin assigned to their email
   const licenses = await prisma.license.findMany({

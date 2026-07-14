@@ -2,23 +2,35 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import PaymentGatewayClient from "./PaymentGatewayClient";
+import { AccessRestricted } from "@/components/AccessRestricted";
 
 export const metadata = {
-  title: "Payment Gateway - bKash SMS Tracker | CodeBlend",
+  title: "CodePay - SMS Tracker | CodeBlend",
 };
 
 export default async function PaymentGatewayPage() {
   const { userId } = await auth();
   if (!userId) redirect("/");
 
-  // Check if bkashTrackerAllowed is true
+  // Check if bkashTrackerAllowed is true and fetch CodePay credentials
   const dbUser = await prisma.user.findUnique({
     where: { id: userId },
-    select: { bkashTrackerAllowed: true },
+    select: {
+      bkashTrackerAllowed: true,
+      codepayApiKey: true,
+      codepayApiSecret: true,
+      codepayBkash: true,
+      codepayNagad: true,
+      codepayRocket: true,
+      codepayActive: true,
+      codepayBrandName: true,
+      codepayBrandLogo: true,
+      codepayBrandColor: true,
+    },
   });
 
   if (!dbUser?.bkashTrackerAllowed) {
-    redirect("/dashboard/user");
+    return <AccessRestricted featureName="CodePay" />;
   }
 
   // Fetch initial transactions
@@ -55,6 +67,17 @@ export default async function PaymentGatewayPage() {
           unusedCount,
           usedCount,
           totalAmount,
+        }}
+        gatewaySettings={{
+          apiKey: dbUser.codepayApiKey || null,
+          apiSecret: dbUser.codepayApiSecret || null,
+          bkash: dbUser.codepayBkash || "",
+          nagad: dbUser.codepayNagad || "",
+          rocket: dbUser.codepayRocket || "",
+          active: dbUser.codepayActive,
+          brandName: dbUser.codepayBrandName || "",
+          brandLogo: dbUser.codepayBrandLogo || "",
+          brandColor: dbUser.codepayBrandColor || "#0f172a",
         }}
       />
     </div>
