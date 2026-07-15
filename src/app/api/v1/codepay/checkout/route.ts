@@ -84,7 +84,10 @@ export async function POST(request: Request) {
 
     const protocol = request.headers.get("x-forwarded-proto") || "http";
     const host = request.headers.get("host") || "localhost:3000";
-    const paymentUrl = `${protocol}://${host}/pay/codepay/${payment.id}`;
+    const isProduction = host.includes("codeblend.co");
+    const paymentUrl = isProduction 
+      ? `https://pay.codeblend.co/pay/codepay/${payment.id}`
+      : `${protocol}://${host}/pay/codepay/${payment.id}`;
 
     return NextResponse.json({
       success: true,
