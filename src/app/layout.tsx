@@ -33,6 +33,9 @@ export default function RootLayout({
         lang="en"
         className={`${geistSans.variable} ${geistMono.variable}`}
       >
+        <head>
+          <meta name="impact-site-verification" {...({ value: "343dfa79-398e-41ad-9428-3b30cb0c9a55" } as any)} />
+        </head>
         <body>
           <FacebookPixel />
           {children}
