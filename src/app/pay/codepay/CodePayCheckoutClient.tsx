@@ -246,25 +246,27 @@ export default function CodePayCheckoutClient({ payment, merchant }: CodePayChec
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setStep(2)}
-                    style={{ backgroundColor: headerBg }}
-                    className="w-full py-3.5 text-white rounded-xl text-xs font-extrabold uppercase tracking-wider hover:opacity-90 transition cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    Verify Payment
-                  </button>
-
-                  <div className="pt-2 border-t border-slate-100 flex justify-center">
+                  <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={handleCancel}
-                      className="text-[10px] font-black text-slate-400 hover:text-slate-600 tracking-wider uppercase transition cursor-pointer flex items-center gap-1.5"
+                      className="w-full py-3.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-500 rounded-xl text-xs font-extrabold uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                       </svg>
-                      Cancel & Go Back
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStep(2)}
+                      style={{ backgroundColor: headerBg }}
+                      className="w-full py-3.5 text-white rounded-xl text-xs font-extrabold uppercase tracking-wider hover:opacity-90 transition cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      Next
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
                     </button>
                   </div>
                 </div>
@@ -280,14 +282,27 @@ export default function CodePayCheckoutClient({ payment, merchant }: CodePayChec
 
           {step === 2 && cfg && number && (
             <div className="space-y-4">
-              {/* Compact transaction summary */}
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs text-slate-600 space-y-2">
-                <div className="flex items-center gap-2">
-                  <img src={cfg.logo} alt={cfg.label} className="h-5 object-contain" />
-                  <span className="font-bold text-slate-800">{cfg.label} Send Money</span>
+              {/* Redesigned compact transaction summary card */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
+                  <div className="flex items-center gap-2">
+                    <img src={cfg.logo} alt={cfg.label} className="h-5 object-contain" />
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider">{cfg.label} Send Money</span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 text-[9px] font-black uppercase tracking-wider">Sent?</span>
                 </div>
-                <p>
-                  Please enter the 8-10 character Transaction ID (TrxID) after sending exactly <strong className="text-slate-800">৳{payment.amount.toFixed(2)}</strong> to <strong className="text-slate-800">{number}</strong>.
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="bg-white border border-slate-100 rounded-xl p-2.5 shadow-2xs">
+                    <span className="text-[9px] text-slate-400 font-bold uppercase block">Sent Amount</span>
+                    <strong className="text-slate-800 font-mono text-[13px]">৳{payment.amount.toFixed(2)}</strong>
+                  </div>
+                  <div className="bg-white border border-slate-100 rounded-xl p-2.5 shadow-2xs">
+                    <span className="text-[9px] text-slate-400 font-bold uppercase block">Sent To</span>
+                    <strong className="text-slate-800 font-mono text-[13px]">{number}</strong>
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-400 leading-normal text-center pt-0.5">
+                  Enter the 8-10 character Transaction ID (TrxID) from your SMS receipt below to verify payment.
                 </p>
               </div>
 
@@ -328,36 +343,40 @@ export default function CodePayCheckoutClient({ payment, merchant }: CodePayChec
                 </div>
 
                 <div className="space-y-3">
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    style={{ backgroundColor: headerBg }}
-                    className="w-full py-3.5 text-white rounded-xl text-xs font-extrabold uppercase tracking-wider hover:opacity-90 disabled:opacity-50 transition cursor-pointer flex flex-col items-center justify-center gap-1"
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="flex items-center gap-2">
-                          <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          Verifying…
-                        </div>
-                        <span className="text-[9px] font-medium text-white/70 normal-case mt-0.5">{loadingMessage}</span>
-                      </>
-                    ) : "Verify Payment"}
-                  </button>
-
-                  <div className="pt-2 border-t border-slate-100 flex justify-center">
+                  <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => !isLoading && setStep(1)}
                       disabled={isLoading}
-                      className="text-[10px] font-black text-slate-400 hover:text-slate-600 tracking-wider uppercase transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                      className="w-full py-3.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-500 rounded-xl text-xs font-extrabold uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                       </svg>
-                      Back to Instructions
+                      Back
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      style={{ backgroundColor: headerBg }}
+                      className="w-full py-3.5 text-white rounded-xl text-xs font-extrabold uppercase tracking-wider hover:opacity-90 disabled:opacity-50 transition cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      {isLoading ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>Checking…</span>
+                        </div>
+                      ) : (
+                        "Verify"
+                      )}
                     </button>
                   </div>
+
+                  {isLoading && (
+                    <p className="text-[10px] font-semibold text-slate-500 text-center animate-pulse pt-1">
+                      {loadingMessage}
+                    </p>
+                  )}
                 </div>
               </form>
             </div>
