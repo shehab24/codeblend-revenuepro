@@ -75,6 +75,7 @@ export default async function CodePayCheckoutPage({ params }: PageProps) {
         customerName: payment.customerName,
         customerEmail: payment.customerEmail,
         status: payment.status,
+        redirectUrl: payment.redirectUrl,
       }}
       merchant={{
         name: payment.user.name || payment.user.email.split("@")[0],
