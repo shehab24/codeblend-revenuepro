@@ -66,3 +66,34 @@ export async function adminSaveSettings(formData: FormData) {
   revalidatePath("/discounted-offer");
   return { success: true };
 }
+
+export async function adminTriggerCleanup() {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (user?.role !== "admin" && user?.role !== "ADMIN") throw new Error("Unauthorized access");
+
+  const threeDaysAgo = new Date();
+  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+  const deletedSandbox = await prisma.codePayPayment.deleteMany({
+    where: {
+      orderId: { startsWith: "SANDBOX_" },
+      createdAt: { lt: threeDaysAgo },
+    },
+  });
+
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const deletedSms = await prisma.bkashSmsTransaction.deleteMany({
+    where: {
+      createdAt: { lt: sevenDaysAgo },
+    },
+  });
+
+  return {
+    success: true,
+    deletedSandbox: deletedSandbox.count,
+    deletedSms: deletedSms.count,
+  };
+}
+

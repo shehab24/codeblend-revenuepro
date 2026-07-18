@@ -12,6 +12,33 @@ export default async function PaymentGatewayPage() {
   const { userId } = await auth();
   if (!userId) redirect("/");
 
+  // Auto-cleanup old sandbox payments (older than 3 days)
+  try {
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+    await prisma.codePayPayment.deleteMany({
+      where: {
+        userId,
+        orderId: { startsWith: "SANDBOX_" },
+        createdAt: { lt: threeDaysAgo },
+      },
+    });
+  } catch (err) {
+    console.error("Failed to auto-cleanup old sandbox payments:", err);
+  }
+
+  // Auto-cleanup old synced MFS transactions (older than 7 days)
+  try {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    await prisma.bkashSmsTransaction.deleteMany({
+      where: {
+        userId,
+        createdAt: { lt: sevenDaysAgo },
+      },
+    });
+  } catch (err) {
+    console.error("Failed to auto-cleanup old MFS transactions:", err);
+  }
+
   // Check if bkashTrackerAllowed is true and fetch CodePay credentials
   const dbUser = await prisma.user.findUnique({
     where: { id: userId },

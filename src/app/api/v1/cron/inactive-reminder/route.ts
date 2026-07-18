@@ -14,6 +14,33 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
+    // Global auto-cleanup of old sandbox payments (older than 3 days)
+    try {
+      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+      const deletedSandbox = await prisma.codePayPayment.deleteMany({
+        where: {
+          orderId: { startsWith: "SANDBOX_" },
+          createdAt: { lt: threeDaysAgo },
+        },
+      });
+      console.log(`[Cron Cleanup] Automatically deleted ${deletedSandbox.count} old sandbox payments.`);
+    } catch (err) {
+      console.error("[Cron Cleanup] Failed to delete old sandbox payments:", err);
+    }
+
+    // Global auto-cleanup of old synced MFS transactions (older than 7 days)
+    try {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const deletedSms = await prisma.bkashSmsTransaction.deleteMany({
+        where: {
+          createdAt: { lt: sevenDaysAgo },
+        },
+      });
+      console.log(`[Cron Cleanup] Automatically deleted ${deletedSms.count} old MFS SMS transactions.`);
+    } catch (err) {
+      console.error("[Cron Cleanup] Failed to delete old SMS transactions:", err);
+    }
+
     // 1. Fetch settings
     const [enabledSetting, daysSetting, subjectSetting, bodySetting] = await Promise.all([
       prisma.setting.findUnique({ where: { key: "INACTIVE_REMINDER_ENABLED" } }),

@@ -168,7 +168,10 @@ function parseSmsDateTime(message: string): Date | null {
       if (ampm.toUpperCase() === "AM" && hour === 12) hour = 0;
     }
 
-    const date = new Date(year, month, day, hour, minute, second);
+    // bKash, Nagad, and Rocket SMS times are always in Bangladesh Standard Time (BST = UTC+6).
+    // To store this correctly in UTC, we calculate the UTC timestamp and subtract 6 hours.
+    const utcTimestamp = Date.UTC(year, month, day, hour, minute, second);
+    const date = new Date(utcTimestamp - 6 * 60 * 60 * 1000);
     if (!isNaN(date.getTime())) {
       return date;
     }
@@ -189,7 +192,31 @@ function parseSmsDateTime(message: string): Date | null {
       if (ampm.toUpperCase() === "AM" && hour === 12) hour = 0;
     }
 
-    const date = new Date(year, month, day, hour, minute, second);
+    const utcTimestamp = Date.UTC(year, month, day, hour, minute, second);
+    const date = new Date(utcTimestamp - 6 * 60 * 60 * 1000);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // Fallback for dates without at/Time/on prefix (common in Nagad block format: "18/07/2026 01:05")
+  const matchNoPrefix = message.match(/\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([AP]M))?\b/i);
+  if (matchNoPrefix) {
+    const day = parseInt(matchNoPrefix[1], 10);
+    const month = parseInt(matchNoPrefix[2], 10) - 1;
+    const year = parseInt(matchNoPrefix[3], 10);
+    let hour = parseInt(matchNoPrefix[4], 10);
+    const minute = parseInt(matchNoPrefix[5], 10);
+    const second = matchNoPrefix[6] ? parseInt(matchNoPrefix[6], 10) : 0;
+    const ampm = matchNoPrefix[7];
+
+    if (ampm) {
+      if (ampm.toUpperCase() === "PM" && hour < 12) hour += 12;
+      if (ampm.toUpperCase() === "AM" && hour === 12) hour = 0;
+    }
+
+    const utcTimestamp = Date.UTC(year, month, day, hour, minute, second);
+    const date = new Date(utcTimestamp - 6 * 60 * 60 * 1000);
     if (!isNaN(date.getTime())) {
       return date;
     }
@@ -207,7 +234,7 @@ function parseFinancialSms(message: string, senderName: string) {
   let sender = "";
 
   // 1. Find TrxID (alphanumeric, typically 6-20 characters, e.g. 8N34KJL98S or Ref id)
-  const trxMatch = message.match(/(?:TrxID|TxnID|TxID|TnxID|Tnx\s*ID|Transaction\s*ID|Ref\s*ID|Ref|Txn|Trx)\s*:?\s*([A-Z0-9]{6,20})/i);
+  const trxMatch = message.match(/(?:TrxID|TxnID|TxID|TnxID|Txn\s*ID|Tx\s*ID|Tnx\s*ID|Transaction\s*ID|Ref\s*ID|Ref|Txn|Trx)\s*:?\s*([A-Z0-9]{6,20})/i);
   if (trxMatch) {
     trxId = trxMatch[1].toUpperCase().trim();
   }
@@ -230,17 +257,30 @@ function parseFinancialSms(message: string, senderName: string) {
     }
   }
 
-  // 3. Find sender phone number (typically 11 digits starting with 01)
-  const senderMatch = message.match(/(?:from|sender|by|to)\s+(01[3-9]\d{8})/i);
+  // 3. Find sender phone number (typically 11 characters starting with 01, allowing masked digits like 0197****486)
+  // First try: phone number directly after from/sender/by/to (bKash format)
+  const senderMatch = message.match(/(?:from|sender|by|to)\s+(01[3-9][\d\*]{8})/i);
   if (senderMatch) {
     sender = senderMatch[1].trim();
   } else {
-    // If not matching "from phone", check if senderName itself is a phone number
-    const cleanSenderName = senderName.replace(/[^0-9]/g, "");
-    if (cleanSenderName.length >= 11) {
-      sender = cleanSenderName.substring(cleanSenderName.length - 11);
+    // Second try: phone number anywhere in the message after from/Ac./A/C (Nagad NPSB format: "from other MFS Ac. 0197****486")
+    const broadMatch = message.match(/(?:from|Ac\.|A\/C)\s+(?:[\w\s.]*?)(01[3-9][\d\*]{8})/i);
+    if (broadMatch) {
+      sender = broadMatch[1].trim();
     } else {
-      sender = senderName || "unknown";
+      // Third try: any 01X phone number pattern anywhere in the message body
+      const anyPhoneMatch = message.match(/(01[3-9][\d\*]{8})/i);
+      if (anyPhoneMatch) {
+        sender = anyPhoneMatch[1].trim();
+      } else {
+        // Final fallback: use senderName (e.g. "NAGAD")
+        const cleanSenderName = senderName.replace(/[^0-9]/g, "");
+        if (cleanSenderName.length >= 11) {
+          sender = cleanSenderName.substring(cleanSenderName.length - 11);
+        } else {
+          sender = senderName || "unknown";
+        }
+      }
     }
   }
 

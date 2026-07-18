@@ -1,6 +1,6 @@
 "use client";
 import { useTransition, useRef, useState } from "react";
-import { adminSaveSettings } from "./actions";
+import { adminSaveSettings, adminTriggerCleanup } from "./actions";
 
 export type PluginVersion = {
   id: string; // for React keys
@@ -33,6 +33,23 @@ export function AdminSettingsClient({
 }) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
+  
+  const [isCleaning, setIsCleaning] = useState(false);
+  const [cleanupResult, setCleanupResult] = useState<{ deletedSandbox: number, deletedSms: number } | null>(null);
+
+  const handleManualCleanup = async () => {
+    if (!confirm("Are you sure you want to trigger database cleanup? This will permanently delete old logs.")) return;
+    setIsCleaning(true);
+    setCleanupResult(null);
+    try {
+      const res = await adminTriggerCleanup();
+      setCleanupResult({ deletedSandbox: res.deletedSandbox, deletedSms: res.deletedSms });
+    } catch (err: any) {
+      alert("Error: " + (err.message || "Failed to trigger cleanup"));
+    } finally {
+      setIsCleaning(false);
+    }
+  };
   
   const initialMode = paymentSettings.bkashApiEnabled === "true" ? "api" 
                     : paymentSettings.bkashManualEnabled === "true" ? "manual" 
@@ -596,6 +613,45 @@ export function AdminSettingsClient({
             />
           </div>
         </div>
+      </div>
+
+      {/* Group 10: Database Hygiene & Maintenance */}
+      <div className="bg-white rounded-2xl border border-red-250 p-6 shadow-sm">
+        <div className="mb-5 pb-4 border-b border-red-100 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-red-950 flex items-center gap-2">
+              🧹 Database Hygiene & Maintenance
+            </h3>
+            <p className="text-sm text-red-600 mt-1">Manually clear expired temporary logs and sandbox payments from the database.</p>
+          </div>
+        </div>
+        
+        <div className="bg-slate-50 border border-slate-205 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h4 className="text-sm font-bold text-slate-800">Trigger Cleanup Policy</h4>
+            <p className="text-xs text-slate-500 leading-relaxed max-w-xl">
+              This will immediately delete sandbox payment records older than 3 days and MFS transaction SMS logs older than 7 days.
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={isCleaning}
+            onClick={handleManualCleanup}
+            className="px-5 py-2.5 bg-red-50 text-red-600 border border-red-200 rounded-xl font-bold text-xs hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition shrink-0"
+          >
+            {isCleaning ? "Purging Old Data..." : "Run Cleanup Now"}
+          </button>
+        </div>
+
+        {cleanupResult && (
+          <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl font-semibold flex flex-col gap-1">
+            <span>✨ Database cleanup ran successfully!</span>
+            <ul className="list-disc pl-5 mt-1 space-y-0.5">
+              <li>Purged {cleanupResult.deletedSandbox} sandbox payment records (older than 3 days)</li>
+              <li>Purged {cleanupResult.deletedSms} MFS SMS log records (older than 7 days)</li>
+            </ul>
+          </div>
+        )}
       </div>
 
       <div className="pt-4 sticky bottom-6 z-10 flex justify-end">

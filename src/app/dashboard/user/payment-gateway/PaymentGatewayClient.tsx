@@ -509,6 +509,7 @@ export default function PaymentGatewayClient({
                               {new Date(tx.createdAt).toLocaleString("en-US", {
                                 dateStyle: "medium",
                                 timeStyle: "short",
+                                timeZone: "Asia/Dhaka",
                               })}
                             </td>
                             <td className="py-4 px-6 font-mono font-bold text-slate-700">
@@ -560,7 +561,7 @@ export default function PaymentGatewayClient({
                                   <div className="flex items-center gap-4 text-xs text-slate-400">
                                     <span>Sender Address: <strong className="text-slate-600">{tx.senderAddress}</strong></span>
                                     <span>•</span>
-                                    <span>Received at: <strong className="text-slate-600">{new Date(tx.createdAt).toLocaleString()}</strong></span>
+                                    <span>Received at: <strong className="text-slate-600">{new Date(tx.createdAt).toLocaleString("en-US", { timeZone: "Asia/Dhaka" })}</strong></span>
                                   </div>
                                 </div>
                               </td>
