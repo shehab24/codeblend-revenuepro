@@ -34,7 +34,9 @@ export default async function AdminSettingsPage() {
     reminderBody,
     imagekitPublicKey,
     imagekitPrivateKey,
-    imagekitUrlEndpoint
+    imagekitUrlEndpoint,
+    steadfastApiKeySetting,
+    steadfastApiSecretSetting
   ] = await Promise.all([
     prisma.setting.findUnique({ where: { key: "BD_COURIER_API_KEY" } }),
     prisma.setting.findUnique({ where: { key: "ADMIN_ALERT_EMAIL" } }),
@@ -61,12 +63,19 @@ export default async function AdminSettingsPage() {
     prisma.setting.findUnique({ where: { key: "IMAGEKIT_PUBLIC_KEY" } }),
     prisma.setting.findUnique({ where: { key: "IMAGEKIT_PRIVATE_KEY" } }),
     prisma.setting.findUnique({ where: { key: "IMAGEKIT_URL_ENDPOINT" } }),
+    prisma.setting.findUnique({ where: { key: "STEADFAST_API_KEY" } }),
+    prisma.setting.findUnique({ where: { key: "STEADFAST_API_SECRET" } }),
   ]);
 
   const imagekitSettings = {
     publicKey: imagekitPublicKey?.value || "",
     privateKey: imagekitPrivateKey?.value || "",
     urlEndpoint: imagekitUrlEndpoint?.value || "",
+  };
+
+  const steadfastSettings = {
+    apiKey: steadfastApiKeySetting?.value || "",
+    apiSecret: steadfastApiSecretSetting?.value || "",
   };
 
   let parsedLinks: PluginVersion[] = [];
@@ -128,6 +137,7 @@ export default async function AdminSettingsPage() {
         currentTimerHours={discountedOfferTimerHours?.value || "62"}
         reminderSettings={reminderSettings}
         imagekitSettings={imagekitSettings}
+        steadfastSettings={steadfastSettings}
       />
     </div>
   );

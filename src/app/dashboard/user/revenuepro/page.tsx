@@ -123,30 +123,50 @@ export default async function RevenueProPage() {
           <div className="flex flex-col md:flex-row gap-8">
             {/* Pricing */}
             <div className="md:w-1/3">
-              <h3 className="text-sm font-bold text-emerald-600 uppercase tracking-wider mb-2">সাবস্ক্রিপশন</h3>
-              <div className="flex items-baseline gap-2 mb-4">
-                <span className="text-3xl font-bold text-slate-800">৳৪৯৯</span>
-                <span className="text-slate-500 font-medium">/ মাস থেকে</span>
+              <h3 className="text-sm font-bold text-emerald-600 uppercase tracking-wider mb-3">সাবস্ক্রিপশন প্ল্যান</h3>
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between bg-white rounded-xl px-3.5 py-2.5 border border-slate-200">
+                  <span className="text-xs font-semibold text-slate-500">মাসিক</span>
+                  <span className="text-base font-bold text-slate-800">৳২৪৯<span className="text-xs font-medium text-slate-400">/মাস</span></span>
+                </div>
+                <div className="flex items-center justify-between bg-emerald-50 rounded-xl px-3.5 py-2.5 border border-emerald-200 relative">
+                  <span className="absolute -top-2 right-2 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">Best Value</span>
+                  <span className="text-xs font-semibold text-emerald-700">৬ মাস</span>
+                  <span className="text-base font-bold text-emerald-800">৳১,৪৯৯<span className="text-xs font-medium text-emerald-500">/৬ মাস</span></span>
+                </div>
+                <div className="flex items-center justify-between bg-white rounded-xl px-3.5 py-2.5 border border-slate-200">
+                  <span className="text-xs font-semibold text-slate-500">১ বছর</span>
+                  <span className="text-base font-bold text-slate-800">৳২,৯৯৯<span className="text-xs font-medium text-slate-400">/বছর</span></span>
+                </div>
               </div>
-              <p className="text-slate-500 text-sm leading-relaxed">
+              <p className="text-slate-400 text-xs mt-3 leading-relaxed">
                 প্রতিটি ওয়েবসাইটের জন্য আলাদা লাইসেন্স। একাধিক সাইটে ব্যবহার করুন।
               </p>
             </div>
 
             {/* Features */}
             <div className="md:w-2/3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {[
-                  "স্মার্ট ফ্রড ডিটেকশন এবং ডেলিভারি রেশিও পরীক্ষক",
-                  "স্ট্যাডফাস্ট, পাঠাও এবং রেডএক্স মাল্টি-কুরিয়ার এপিআই",
-                  "অটোমেটেড অর্ডার কনফার্মেশন এসএমএস ও হোয়াটসঅ্যাপ ইঞ্জিন",
-                  "পরিত্যক্ত কার্ট (Abandoned Cart) এ স্বয়ংক্রিয় মেসেজ প্রেরণ",
+                  "Built-in bKash পেমেন্ট (Merchant ছাড়াই)",
+                  "bKash API-এর মতো সহজ পেমেন্ট ভেরিফিকেশন",
+                  "Partial Payment (আংশিক পেমেন্ট) সুবিধা",
+                  "Automated Fraud Detection ও অটো ব্লকিং",
+                  "Payment Method Auto Switch সুবিধা",
+                  "IP, Email & Browser ব্লকিং সিস্টেম",
+                  "OTP দিয়ে মোবাইল নম্বর ভেরিফিকেশন",
+                  "Abandoned Cart Recovery ও অটো SMS",
+                  "কুরিয়ার অটো বুকিং ও স্ট্যাটাস আপডেট",
+                  "পিক্সেল, কনভার্সন API ও UTM ট্র্যাকিং",
+                  "COD অর্ডার প্লেসমেন্ট ও উন্নত চেকআউট",
+                  "সন্দেহজনক অর্ডারে Instant Warning Popup",
+                  "SMS Integration ও ওটিপি সুবিধা",
                 ].map((feature, i) => (
-                  <div key={i} className="flex items-start gap-2.5 text-slate-700">
+                  <div key={i} className="flex items-start gap-2 text-slate-700">
                     <div className="mt-0.5 bg-emerald-100 text-emerald-600 rounded-full p-1 shrink-0">
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                     </div>
-                    <span className="text-sm font-medium">{feature}</span>
+                    <span className="text-[13px] font-medium leading-tight">{feature}</span>
                   </div>
                 ))}
               </div>

@@ -71,6 +71,7 @@ export async function POST(request: Request) {
 
     let externalData = null;
     let fetchError = "";
+    let source = "bdcourier_live_fetch";
 
     for (let i = 0; i < keys.length; i++) {
       const keyToUse = keys[i];
@@ -102,7 +103,56 @@ export async function POST(request: Request) {
     }
 
     if (!externalData) {
-      return NextResponse.json({ success: false, error: `All BD Courier API keys failed. Last error: ${fetchError}` }, { status: 502 });
+      // Fallback to Steadfast API when BD Courier API limit is expired or key fails
+      const steadfastApiKeySetting = await prisma.setting.findUnique({ where: { key: "STEADFAST_API_KEY" } });
+      const steadfastApiSecretSetting = await prisma.setting.findUnique({ where: { key: "STEADFAST_API_SECRET" } });
+
+      if (steadfastApiKeySetting?.value && steadfastApiSecretSetting?.value) {
+        try {
+          const sfRes = await fetch(`https://portal.packzy.com/api/v1/fraud_check/${phone}`, {
+            method: "GET",
+            headers: {
+              "content-type": "application/json",
+              "api-key": steadfastApiKeySetting.value.trim(),
+              "secret-key": steadfastApiSecretSetting.value.trim(),
+            }
+          });
+
+          if (sfRes.ok) {
+            const sfData = await sfRes.json();
+            if (sfData && (sfData.status === 401 || sfData.status === "401" || sfData.authorization === "401")) {
+              fetchError += ` | Steadfast API returned 401 unauthorized: ${JSON.stringify(sfData)}`;
+            } else if (sfData && typeof sfData.total_parcels !== "undefined") {
+              const total_parcels = parseInt(sfData.total_parcels) || 0;
+              const total_delivered = parseInt(sfData.total_delivered) || 0;
+              const cancelled = total_parcels - total_delivered;
+
+              externalData = {
+                success: true,
+                steadfast: {
+                  total_parcel: total_parcels,
+                  success_parcel: total_delivered,
+                  cancelled_parcel: cancelled >= 0 ? cancelled : 0
+                }
+              };
+              source = "steadfast_fallback";
+            } else {
+              fetchError += ` | Steadfast returned unexpected structure: ${JSON.stringify(sfData)}`;
+            }
+          } else {
+            const sfErrText = await sfRes.text().catch(() => "");
+            fetchError += ` | Steadfast API HTTP error (${sfRes.status}): ${sfErrText || sfRes.statusText}`;
+          }
+        } catch (err: any) {
+          fetchError += ` | Steadfast API connection error: ${err?.message || err}`;
+        }
+      } else {
+        fetchError += ` | Steadfast credentials not configured for fallback.`;
+      }
+    }
+
+    if (!externalData) {
+      return NextResponse.json({ success: false, error: `All BD Courier API keys failed, and Steadfast fallback failed. Last error: ${fetchError}` }, { status: 502 });
     }
 
     // Unwrap the nested 'data' object from BD Courier API payload
@@ -186,7 +236,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      source: "bdcourier_live_fetch",
+      source,
       data: updatedStat
     });
 

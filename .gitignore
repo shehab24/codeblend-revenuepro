@@ -47,3 +47,7 @@ set-password.js
 test-clerk.js
 test-live-login.js
 test-local-login.js
+
+# project plan file
+FEATURES.md
+.antigravityrules

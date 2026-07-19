@@ -19,7 +19,8 @@ export function AdminSettingsClient({
   tutorialSettings,
   currentTimerHours,
   reminderSettings,
-  imagekitSettings
+  imagekitSettings,
+  steadfastSettings
 }: { 
   currentKey: string, 
   currentAlertEmail: string, 
@@ -29,7 +30,8 @@ export function AdminSettingsClient({
   tutorialSettings: { videoUrl: string; playlistUrl: string },
   currentTimerHours: string,
   reminderSettings: { enabled: string; days: string; subject: string; body: string },
-  imagekitSettings: { publicKey: string; privateKey: string; urlEndpoint: string }
+  imagekitSettings: { publicKey: string; privateKey: string; urlEndpoint: string },
+  steadfastSettings: { apiKey: string; apiSecret: string }
 }) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -107,7 +109,7 @@ export function AdminSettingsClient({
       } else {
         // Unset latest on others if this one is latest
         if (field === "isLatest" && value === true) {
-          return { ...l, isLatest: false };
+           return { ...l, isLatest: false };
         }
         return l;
       }
@@ -168,6 +170,38 @@ export function AdminSettingsClient({
                 If a token reaches its query limit (e.g. 50/day), gets blocked, or fails, the system automatically falls back to the next key.
               </p>
             </div>
+
+            <div className="mt-6 pt-5 border-t border-slate-200 space-y-4">
+              <div>
+                <h4 className="text-sm font-bold text-slate-800">Steadfast Backup API Credentials</h4>
+                <p className="text-xs text-slate-400 mt-1">If all BD Courier API limits are exhausted, the system automatically queries Steadfast directly.</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1" htmlFor="steadfastApiKey">Steadfast API Key</label>
+                  <input 
+                    type="text" 
+                    id="steadfastApiKey"
+                    name="STEADFAST_API_KEY" 
+                    defaultValue={steadfastSettings.apiKey}
+                    placeholder="Enter Steadfast API Key" 
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1" htmlFor="steadfastApiSecret">Steadfast Secret Key</label>
+                  <input 
+                    type="password" 
+                    id="steadfastApiSecret"
+                    name="STEADFAST_API_SECRET" 
+                    defaultValue={steadfastSettings.apiSecret}
+                    placeholder="Enter Steadfast Secret Key" 
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
