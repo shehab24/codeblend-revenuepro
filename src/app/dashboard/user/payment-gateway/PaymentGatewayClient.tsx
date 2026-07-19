@@ -125,9 +125,9 @@ export default function PaymentGatewayClient({
 
   // Dynamic Gateway Form States
   const [showAddForm, setShowAddForm] = useState(false);
-  const [formProvider, setFormProvider] = useState<"bkash" | "nagad" | "rocket">("bkash");
+  const [formProvider, setFormProvider] = useState<"bkash" | "nagad">("bkash");
   const [formNumber, setFormNumber] = useState("");
-  const [editingProvider, setEditingProvider] = useState<"bkash" | "nagad" | "rocket" | null>(null);
+  const [editingProvider, setEditingProvider] = useState<"bkash" | "nagad" | null>(null);
 
   // API credentials states
   const [apiKey, setApiKey] = useState(gatewaySettings.apiKey);
@@ -138,7 +138,7 @@ export default function PaymentGatewayClient({
   const [selectedLang, setSelectedLang] = useState<"php" | "node" | "curl">("php");
 
   // Sandbox simulation states
-  const [sandboxMethod, setSandboxMethod] = useState<"bkash" | "nagad" | "rocket">("bkash");
+  const [sandboxMethod, setSandboxMethod] = useState<"bkash" | "nagad">("bkash");
   const [sandboxAmount, setSandboxAmount] = useState("1200");
   const [sandboxSender, setSandboxSender] = useState("01712345678");
   const [sandboxTrxId, setSandboxTrxId] = useState(() => `TXN${Math.floor(100000 + Math.random() * 900000)}CP`);
@@ -661,17 +661,15 @@ export default function PaymentGatewayClient({
         const GATEWAY_META: Record<string, { label: string; currency: string; desc: string; placeholder: string; bg: string; border: string; textColor: string; logoUrl: string; }> = {
           bkash:  { label: "bKash Personal",  currency: "BDT", desc: "Send Money SMS trigger matching",  placeholder: "017XXXXXXXX", bg: "bg-pink-50",   border: "border-pink-200",   textColor: "text-pink-700",   logoUrl: "/logos/bkash.png" },
           nagad:  { label: "Nagad Personal",   currency: "BDT", desc: "Personal Nagad wallet matching",   placeholder: "019XXXXXXXX", bg: "bg-orange-50", border: "border-orange-200", textColor: "text-orange-700", logoUrl: "/logos/nagad.png" },
-          rocket: { label: "Rocket Personal",  currency: "BDT", desc: "DBBL Rocket TrxID matching",       placeholder: "018XXXXXXXXX", bg: "bg-purple-50", border: "border-purple-200", textColor: "text-purple-700", logoUrl: "/logos/rocket.png" },
         };
 
         const configuredGateways = [
           ...(bkashActive  ? [{ provider: "bkash"  as const, number: bkash  }] : []),
           ...(nagadActive  ? [{ provider: "nagad"  as const, number: nagad  }] : []),
-          ...(rocketActive ? [{ provider: "rocket" as const, number: rocket }] : []),
         ];
 
-        const availableToAdd = (["bkash", "nagad", "rocket"] as const).filter(
-          (p) => !(p === "bkash" ? bkashActive : p === "nagad" ? nagadActive : rocketActive)
+        const availableToAdd = (["bkash", "nagad"] as const).filter(
+          (p) => !(p === "bkash" ? bkashActive : nagadActive)
         );
 
         return (
@@ -811,7 +809,7 @@ export default function PaymentGatewayClient({
                 </div>
                 <div>
                   <h4 className="text-sm font-extrabold text-slate-700">No Payment Gateways Yet</h4>
-                  <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto leading-relaxed">Click <strong>Add Gateway</strong> to configure your first bKash, Nagad, or Rocket receiving number.</p>
+                  <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto leading-relaxed">Click <strong>Add Gateway</strong> to configure your first bKash or Nagad receiving number.</p>
                 </div>
               </div>
             ) : (

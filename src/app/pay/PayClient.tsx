@@ -14,8 +14,8 @@ export function PayClient() {
   const merchantId = searchParams.get("merchant_id") || "";
   const displayMode = searchParams.get("display_mode") || "both";
 
-  // Selected Method (bkash, nagad, rocket)
-  const [selectedMethod, setSelectedMethod] = useState<"bkash" | "nagad" | "rocket">("bkash");
+  // Selected Method (bkash, nagad)
+  const [selectedMethod, setSelectedMethod] = useState<"bkash" | "nagad">("bkash");
 
   // Numbers & QRs configuration
   const bkashNumber = searchParams.get("bkash_number") || searchParams.get("number") || "01784450219";
@@ -222,16 +222,6 @@ export function PayClient() {
             }`}
           >
             Nagad
-          </button>
-          <button
-            onClick={() => { setSelectedMethod("rocket"); setStep(1); setMsg(""); }}
-            className={`flex-1 py-3 text-xs font-black text-center transition-all uppercase tracking-wider ${
-              selectedMethod === "rocket"
-                ? "text-[#8c3494] border-b-2 border-[#8c3494] bg-white"
-                : "text-slate-400 hover:text-slate-600"
-            }`}
-          >
-            Rocket
           </button>
         </div>
 

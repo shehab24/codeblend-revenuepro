@@ -27,12 +27,11 @@ interface CodePayCheckoutClientProps {
 const METHOD_CONFIG = {
   bkash:  { label: "bKash",  logo: "/logos/bkash.png",  ring: "ring-pink-400",   bg: "bg-pink-50",   border: "border-pink-400",   text: "text-pink-700"   },
   nagad:  { label: "Nagad",  logo: "/logos/nagad.png",  ring: "ring-orange-400", bg: "bg-orange-50", border: "border-orange-400", text: "text-orange-700" },
-  rocket: { label: "Rocket", logo: "/logos/rocket.png", ring: "ring-purple-400", bg: "bg-purple-50", border: "border-purple-400", text: "text-purple-700" },
 };
 
 export default function CodePayCheckoutClient({ payment, merchant }: CodePayCheckoutClientProps) {
-  const [selectedMethod, setSelectedMethod] = useState<"bkash" | "nagad" | "rocket" | null>(
-    merchant.bkash ? "bkash" : merchant.nagad ? "nagad" : merchant.rocket ? "rocket" : null
+  const [selectedMethod, setSelectedMethod] = useState<"bkash" | "nagad" | null>(
+    merchant.bkash ? "bkash" : merchant.nagad ? "nagad" : null
   );
   const [trxId, setTrxId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -48,7 +47,6 @@ export default function CodePayCheckoutClient({ payment, merchant }: CodePayChec
   const getNumber = () => {
     if (selectedMethod === "bkash") return merchant.bkash;
     if (selectedMethod === "nagad") return merchant.nagad;
-    if (selectedMethod === "rocket") return merchant.rocket;
     return null;
   };
 
@@ -172,8 +170,8 @@ export default function CodePayCheckoutClient({ payment, merchant }: CodePayChec
               {/* ── Method selector ── */}
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5">Select Payment Method</p>
-                <div className="grid grid-cols-3 gap-2.5">
-                  {(["bkash", "nagad", "rocket"] as const).map((m) => {
+                <div className="grid grid-cols-2 gap-2.5">
+                  {(["bkash", "nagad"] as const).map((m) => {
                     const c = METHOD_CONFIG[m];
                     const hasNumber = !!merchant[m];
                     const isActive = selectedMethod === m;
