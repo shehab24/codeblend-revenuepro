@@ -35,6 +35,8 @@ export default async function AdminSettingsPage() {
     imagekitPublicKey,
     imagekitPrivateKey,
     imagekitUrlEndpoint,
+    pathaoClientIdSetting,
+    pathaoClientSecretSetting,
     steadfastApiKeySetting,
     steadfastApiSecretSetting
   ] = await Promise.all([
@@ -63,6 +65,8 @@ export default async function AdminSettingsPage() {
     prisma.setting.findUnique({ where: { key: "IMAGEKIT_PUBLIC_KEY" } }),
     prisma.setting.findUnique({ where: { key: "IMAGEKIT_PRIVATE_KEY" } }),
     prisma.setting.findUnique({ where: { key: "IMAGEKIT_URL_ENDPOINT" } }),
+    prisma.setting.findUnique({ where: { key: "PATHAO_CLIENT_ID" } }),
+    prisma.setting.findUnique({ where: { key: "PATHAO_CLIENT_SECRET" } }),
     prisma.setting.findUnique({ where: { key: "STEADFAST_API_KEY" } }),
     prisma.setting.findUnique({ where: { key: "STEADFAST_API_SECRET" } }),
   ]);
@@ -71,6 +75,11 @@ export default async function AdminSettingsPage() {
     publicKey: imagekitPublicKey?.value || "",
     privateKey: imagekitPrivateKey?.value || "",
     urlEndpoint: imagekitUrlEndpoint?.value || "",
+  };
+
+  const pathaoSettings = {
+    clientId: pathaoClientIdSetting?.value || "",
+    clientSecret: pathaoClientSecretSetting?.value || "",
   };
 
   const steadfastSettings = {
@@ -137,6 +146,7 @@ export default async function AdminSettingsPage() {
         currentTimerHours={discountedOfferTimerHours?.value || "62"}
         reminderSettings={reminderSettings}
         imagekitSettings={imagekitSettings}
+        pathaoSettings={pathaoSettings}
         steadfastSettings={steadfastSettings}
       />
     </div>

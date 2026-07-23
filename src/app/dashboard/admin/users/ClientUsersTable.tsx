@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useTransition, useMemo } from "react";
+import Link from "next/link";
 import { 
   toggleUserRole, 
   toggleUserDownloadAccess, 
@@ -578,30 +579,32 @@ export function ClientUsersTable({ initialUsers, currentUserId }: Props) {
                       {/* Name & Avatar */}
                       <td className="py-4 px-5 whitespace-nowrap">
                         <div className="flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarColor} text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0`}>
-                            {initials}
-                          </div>
-                          <div className="flex flex-col text-left">
-                            <span className="font-extrabold text-slate-800 leading-tight">
-                              {u.name || "User"}
-                            </span>
-                            <span className="text-[11px] text-slate-400 mt-0.5">
-                              {isUserAdmin ? (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[9px] font-black tracking-wide border border-emerald-100">
-                                  ADMINISTRATOR
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[9px] font-bold tracking-wide">
-                                  STANDARD USER
-                                </span>
-                              )}
-                              {isCurrentUser && (
-                                <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-md bg-sky-50 text-sky-700 text-[9px] font-black tracking-wide border border-sky-100">
-                                  YOU
-                                </span>
-                              )}
-                            </span>
-                          </div>
+                          <Link href={`/dashboard/admin/users/${u.id}`} className="group flex items-center gap-3 no-underline">
+                            <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarColor} text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0 group-hover:scale-105 transition-transform`}>
+                              {initials}
+                            </div>
+                            <div className="flex flex-col text-left">
+                              <span className="font-extrabold text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors">
+                                {u.name || "User"}
+                              </span>
+                              <span className="text-[11px] text-slate-400 mt-0.5">
+                                {isUserAdmin ? (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[9px] font-black tracking-wide border border-emerald-100">
+                                    ADMINISTRATOR
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[9px] font-bold tracking-wide">
+                                    STANDARD USER
+                                  </span>
+                                )}
+                                {isCurrentUser && (
+                                  <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-md bg-sky-50 text-sky-700 text-[9px] font-black tracking-wide border border-sky-100">
+                                    YOU
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          </Link>
                         </div>
                       </td>
 
@@ -696,6 +699,18 @@ export function ClientUsersTable({ initialUsers, currentUserId }: Props) {
                                 ? "bottom-full mb-1.5 origin-bottom slide-in-from-bottom-2"
                                 : "top-full mt-1.5 origin-top slide-in-from-top-2"
                             }`}>
+                              <Link
+                                href={`/dashboard/admin/users/${u.id}`}
+                                className="w-full mb-3 flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-slate-900 text-white hover:bg-indigo-600 font-extrabold text-xs transition-all shadow-xs no-underline"
+                              >
+                                <span>View Account & Invoices</span>
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                </svg>
+                              </Link>
+
+                              <div className="my-2.5 border-t border-slate-100" />
+
                               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Feature Access</h4>
                               
                               <div className="space-y-3.5">

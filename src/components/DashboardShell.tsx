@@ -64,7 +64,7 @@ const userSections: { section: string; links: NavLink[] }[] = [
     section: "YOUR WORKSPACE",
     links: [
       { href: "/dashboard/user", label: "Dashboard", icon: Icon.Dashboard },
-      { href: "/dashboard/user/requests", label: "My Requests", icon: Icon.ClipboardList },
+      { href: "/dashboard/user/requests", label: "My Services", icon: Icon.ClipboardList },
       { href: "/dashboard/user/services", label: "Get Service", icon: Icon.PlusCircle },
       { href: "/dashboard/user/transactions", label: "Billing & Payments", icon: Icon.CreditCard },
     ],
@@ -112,7 +112,7 @@ export function DashboardShell({
       section: "YOUR WORKSPACE",
       links: [
         { href: "/dashboard/user", label: "Dashboard", icon: Icon.Dashboard },
-        { href: "/dashboard/user/requests", label: "My Requests", icon: Icon.ClipboardList },
+        { href: "/dashboard/user/requests", label: "My Services", icon: Icon.ClipboardList },
         { href: "/dashboard/user/services", label: "Get Service", icon: Icon.PlusCircle },
         { href: "/dashboard/user/transactions", label: "Billing & Payments", icon: Icon.CreditCard },
       ],

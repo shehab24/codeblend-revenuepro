@@ -70,8 +70,8 @@ export async function GET(req: Request) {
     const siteUrl = domain.startsWith('http') ? domain : `https://${domain}`;
     const params = new URLSearchParams({ token: authToken });
     
-    // Pass through optional filter params
-    const limit = searchParams.get("limit");
+    // Pass through optional filter params (default limit=0 to prevent heavy order history queries)
+    const limit = searchParams.get("limit") ?? "0";
     const page = searchParams.get("page");
     const status = searchParams.get("status");
     const payment = searchParams.get("payment");

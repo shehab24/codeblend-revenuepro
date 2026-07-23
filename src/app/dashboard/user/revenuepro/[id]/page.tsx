@@ -22,8 +22,8 @@ export default async function UserLicenseDetailsPage({ params }: { params: Promi
     redirect("/sign-in");
   }
 
-  // Ensure user owns this license either by clerk ID or email
-  const license = await prisma.license.findFirst({
+  // Ensure user owns this license either by clerk ID or email, or is an admin
+  let license = await prisma.license.findFirst({
     where: { 
       id,
       OR: [
@@ -38,6 +38,16 @@ export default async function UserLicenseDetailsPage({ params }: { params: Promi
     }
   });
 
+  if (!license && user.publicMetadata?.role === "admin") {
+    license = await prisma.license.findUnique({
+      where: { id },
+      include: {
+        logs: { orderBy: { timestamp: "desc" }, take: 20 },
+        fraudStats: { orderBy: { createdAt: "desc" }, take: 10 },
+        transactions: { orderBy: { createdAt: "desc" } }
+      }
+    });
+  }
 
   if (!license) return notFound();
 

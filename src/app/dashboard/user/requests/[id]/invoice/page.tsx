@@ -77,7 +77,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
               </div>
             </div>
             <p className="text-slate-500 text-sm">
-              info@codeblend.co<br />
+              contact@codeblend.co<br />
               Dhaka, Bangladesh
             </p>
           </div>
@@ -138,7 +138,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
 
         <div className="mt-16 pt-8 border-t border-slate-200">
           <p className="text-xs text-center text-slate-400">
-            Thank you for trusting CodeBlend. If you have any questions about this invoice, please contact info@codeblend.co.
+            Thank you for trusting CodeBlend. If you have any questions about this invoice, please contact contact@codeblend.co.
           </p>
         </div>
 

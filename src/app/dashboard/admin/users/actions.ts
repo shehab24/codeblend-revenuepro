@@ -149,3 +149,109 @@ export async function toggleUserCodePayActive(formData: FormData) {
 
   revalidatePath("/dashboard/admin/users");
 }
+
+export async function toggleLicensePaymentStatusFromAdmin(formData: FormData) {
+  const { userId: callerId } = await auth();
+  if (!callerId) throw new Error("Unauthorized");
+
+  const caller = await prisma.user.findUnique({ where: { id: callerId } });
+  if (caller?.role !== "admin" && caller?.role !== "ADMIN") {
+    throw new Error("Unauthorized: Only admins can manage license payments.");
+  }
+
+  const licenseId = formData.get("licenseId") as string;
+  const paymentStatus = formData.get("paymentStatus") as string; // "paid" or "unpaid"
+  const targetUserId = formData.get("targetUserId") as string;
+
+  if (!licenseId || !paymentStatus) throw new Error("Missing required fields.");
+
+  await prisma.license.update({
+    where: { id: licenseId },
+    data: { paymentStatus },
+  });
+
+  if (targetUserId) {
+    revalidatePath(`/dashboard/admin/users/${targetUserId}`);
+  }
+  revalidatePath("/dashboard/admin/licenses");
+}
+
+export async function updateServiceRequestBillingFromAdmin(formData: FormData) {
+  const { userId: callerId } = await auth();
+  if (!callerId) throw new Error("Unauthorized");
+
+  const caller = await prisma.user.findUnique({ where: { id: callerId } });
+  if (caller?.role !== "admin" && caller?.role !== "ADMIN") {
+    throw new Error("Unauthorized: Only admins can manage service request billing.");
+  }
+
+  const serviceRequestId = formData.get("serviceRequestId") as string;
+  const totalAmount = parseFloat(formData.get("totalAmount") as string) || 0;
+  const paidAmount = parseFloat(formData.get("paidAmount") as string) || 0;
+  const status = (formData.get("status") as string) || "pending";
+  const targetUserId = formData.get("targetUserId") as string;
+
+  if (!serviceRequestId) throw new Error("Missing service request ID.");
+
+  await prisma.serviceRequest.update({
+    where: { id: serviceRequestId },
+    data: {
+      totalAmount,
+      paidAmount,
+      status,
+    },
+  });
+
+  if (targetUserId) {
+    revalidatePath(`/dashboard/admin/users/${targetUserId}`);
+  }
+  revalidatePath("/dashboard/admin/requests");
+}
+
+export async function deleteServiceRequestFromAdmin(formData: FormData) {
+  const { userId: callerId } = await auth();
+  if (!callerId) throw new Error("Unauthorized");
+
+  const caller = await prisma.user.findUnique({ where: { id: callerId } });
+  if (caller?.role !== "admin" && caller?.role !== "ADMIN") {
+    throw new Error("Unauthorized: Only admins can delete service requests.");
+  }
+
+  const serviceRequestId = formData.get("serviceRequestId") as string;
+  const targetUserId = formData.get("targetUserId") as string;
+
+  if (!serviceRequestId) throw new Error("Missing service request ID.");
+
+  await prisma.serviceRequest.delete({
+    where: { id: serviceRequestId },
+  });
+
+  if (targetUserId) {
+    revalidatePath(`/dashboard/admin/users/${targetUserId}`);
+  }
+  revalidatePath("/dashboard/admin/requests");
+}
+
+export async function deleteLicenseFromAdmin(formData: FormData) {
+  const { userId: callerId } = await auth();
+  if (!callerId) throw new Error("Unauthorized");
+
+  const caller = await prisma.user.findUnique({ where: { id: callerId } });
+  if (caller?.role !== "admin" && caller?.role !== "ADMIN") {
+    throw new Error("Unauthorized: Only admins can delete server licenses.");
+  }
+
+  const licenseId = formData.get("licenseId") as string;
+  const targetUserId = formData.get("targetUserId") as string;
+
+  if (!licenseId) throw new Error("Missing license ID.");
+
+  await prisma.license.delete({
+    where: { id: licenseId },
+  });
+
+  if (targetUserId) {
+    revalidatePath(`/dashboard/admin/users/${targetUserId}`);
+  }
+  revalidatePath("/dashboard/admin/licenses");
+}

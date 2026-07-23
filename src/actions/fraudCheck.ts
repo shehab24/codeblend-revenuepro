@@ -84,8 +84,122 @@ export async function checkFraudData(rawPhone: string) {
       }
     }
 
+    let source = "bdcourier_live_fetch";
+
     if (!externalData) {
-      return { success: false, error: `All configured BD Courier API tokens failed. Last error: ${fetchError}` };
+      // 1. Fallback to Pathao Backup API
+      const pathaoClientIdSetting = await prisma.setting.findUnique({ where: { key: "PATHAO_CLIENT_ID" } });
+      const pathaoClientSecretSetting = await prisma.setting.findUnique({ where: { key: "PATHAO_CLIENT_SECRET" } });
+
+      if (pathaoClientIdSetting?.value && pathaoClientSecretSetting?.value) {
+        try {
+          const tokenRes = await fetch("https://api-hermes.pathao.com/aladdin/api/v1/external/login", {
+            method: "POST",
+            headers: {
+              "Accept": "application/json",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              client_id: pathaoClientIdSetting.value.trim(),
+              client_secret: pathaoClientSecretSetting.value.trim(),
+            }),
+          });
+
+          if (tokenRes.ok) {
+            const tokenData = await tokenRes.json();
+            const accessToken = tokenData.access_token;
+
+            if (accessToken) {
+              const pRes = await fetch(`https://api-hermes.pathao.com/aladdin/api/v1/user/fraud-check?phone=${phone}`, {
+                method: "GET",
+                headers: {
+                  "Authorization": `Bearer ${accessToken}`,
+                  "Content-Type": "application/json",
+                  "Accept": "application/json",
+                },
+              });
+
+              if (pRes.ok) {
+                const pData = await pRes.json();
+                const rootObj = pData.data || pData;
+
+                const total_orders = parseInt(rootObj.total_orders || rootObj.total_parcel) || 0;
+                const successful_orders = parseInt(rootObj.successful_orders || rootObj.success_parcel) || 0;
+                const cancelled_orders = parseInt(rootObj.cancelled_orders || rootObj.cancelled_parcel) || 0;
+
+                externalData = {
+                  success: true,
+                  pathao: {
+                    total_parcel: total_orders,
+                    success_parcel: successful_orders,
+                    cancelled_parcel: cancelled_orders,
+                  },
+                };
+                source = "pathao_fallback";
+              } else {
+                const pErrText = await pRes.text().catch(() => "");
+                fetchError += ` | Pathao API HTTP error (${pRes.status}): ${pErrText || pRes.statusText}`;
+              }
+            } else {
+              fetchError += ` | Pathao login failed to return access token: ${JSON.stringify(tokenData)}`;
+            }
+          } else {
+            const tokenErrText = await tokenRes.text().catch(() => "");
+            fetchError += ` | Pathao login HTTP error (${tokenRes.status}): ${tokenErrText || tokenRes.statusText}`;
+          }
+        } catch (err: any) {
+          fetchError += ` | Pathao API connection error: ${err?.message || err}`;
+        }
+      }
+    }
+
+    if (!externalData) {
+      // 2. Fallback to Steadfast Backup API
+      const steadfastApiKeySetting = await prisma.setting.findUnique({ where: { key: "STEADFAST_API_KEY" } });
+      const steadfastApiSecretSetting = await prisma.setting.findUnique({ where: { key: "STEADFAST_API_SECRET" } });
+
+      if (steadfastApiKeySetting?.value && steadfastApiSecretSetting?.value) {
+        try {
+          const sfRes = await fetch(`https://portal.packzy.com/api/v1/fraud_check/${phone}`, {
+            method: "GET",
+            headers: {
+              "content-type": "application/json",
+              "api-key": steadfastApiKeySetting.value.trim(),
+              "secret-key": steadfastApiSecretSetting.value.trim(),
+            }
+          });
+
+          if (sfRes.ok) {
+            const sfData = await sfRes.json();
+            if (sfData && typeof sfData.total_parcels !== "undefined") {
+              const total_parcels = parseInt(sfData.total_parcels) || 0;
+              const total_delivered = parseInt(sfData.total_delivered) || 0;
+              const cancelled = total_parcels - total_delivered;
+
+              externalData = {
+                success: true,
+                steadfast: {
+                  total_parcel: total_parcels,
+                  success_parcel: total_delivered,
+                  cancelled_parcel: cancelled >= 0 ? cancelled : 0
+                }
+              };
+              source = "steadfast_fallback";
+            } else {
+              fetchError += ` | Steadfast returned unexpected structure: ${JSON.stringify(sfData)}`;
+            }
+          } else {
+            const sfErrText = await sfRes.text().catch(() => "");
+            fetchError += ` | Steadfast API HTTP error (${sfRes.status}): ${sfErrText || sfRes.statusText}`;
+          }
+        } catch (err: any) {
+          fetchError += ` | Steadfast API connection error: ${err?.message || err}`;
+        }
+      }
+    }
+
+    if (!externalData) {
+      return { success: false, error: `All configured BD Courier API tokens, Pathao fallback, and Steadfast fallback failed. Last error: ${fetchError}` };
     }
 
     const payloadData = externalData.data || externalData;
