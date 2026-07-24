@@ -16,6 +16,10 @@ export default async function AdminUserInvoicePage({
     amount?: string;
     paid?: string;
     notes?: string;
+    name?: string;
+    email?: string;
+    phone?: string;
+    invoiceId?: string;
   }>;
 }) {
   const user = await currentUser();
@@ -24,7 +28,33 @@ export default async function AdminUserInvoicePage({
   if (!user || (user.id !== id && user.publicMetadata?.role !== "admin")) {
     redirect("/dashboard/user");
   }
-  const { type = "statement", itemId, title: customTitle, amount: customAmountStr, paid: customPaidStr, notes: customNotes } = await searchParams;
+  const {
+    type = "statement",
+    itemId,
+    title: customTitle,
+    amount: customAmountStr,
+    paid: customPaidStr,
+    notes: customNotes,
+    name: customName,
+    email: customEmail,
+    phone: customPhone,
+    invoiceId,
+  } = await searchParams;
+
+  let dbInvoice = null;
+  if (invoiceId) {
+    dbInvoice = await prisma.invoice.findUnique({
+      where: { id: invoiceId },
+    });
+  } else if (type !== "statement" && itemId) {
+    dbInvoice = await prisma.invoice.findFirst({
+      where: {
+        userId: id,
+        type,
+        itemId,
+      },
+    });
+  }
 
   const targetUser = await prisma.user.findUnique({
     where: { id },
@@ -48,7 +78,27 @@ export default async function AdminUserInvoicePage({
   let totalPaid = 0;
   let balanceDue = 0;
 
-  if (customTitle && customAmountStr !== undefined) {
+  const billingName = dbInvoice?.name || customName || targetUser.name || "Valued Merchant";
+  const billingEmail = dbInvoice?.email || customEmail || targetUser.email;
+  const billingPhone = dbInvoice?.phone || customPhone || targetUser.phone;
+
+  if (dbInvoice) {
+    invoiceTitle = dbInvoice.title;
+    invoiceNumber = `INV-${dbInvoice.id.slice(-8).toUpperCase()}`;
+    if (dbInvoice.createdAt) invoiceDate = new Date(dbInvoice.createdAt);
+
+    subtotal = dbInvoice.amount;
+    totalPaid = dbInvoice.paid;
+    balanceDue = Math.max(0, subtotal - totalPaid);
+
+    lineItems.push({
+      title: dbInvoice.title,
+      details: dbInvoice.notes ? `Notes: ${dbInvoice.notes}` : undefined,
+      amount: subtotal,
+      paid: totalPaid,
+      status: balanceDue === 0 ? "Paid" : totalPaid > 0 ? "Partial Paid" : "Unpaid",
+    });
+  } else if (customTitle && customAmountStr !== undefined) {
     // Custom Generated Invoice
     invoiceTitle = "Official Custom Invoice";
     subtotal = parseFloat(customAmountStr) || 0;
@@ -263,9 +313,9 @@ export default async function AdminUserInvoicePage({
         {/* Billed To Customer Info */}
         <div className="mb-8 p-4 bg-slate-50 rounded-xl border border-slate-100">
           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Billed To:</h3>
-          <p className="font-extrabold text-slate-900 text-sm">{targetUser.name || "Valued Merchant"}</p>
-          <p className="text-xs text-slate-600 font-medium">✉️ {targetUser.email}</p>
-          {targetUser.phone && <p className="text-xs text-slate-600 font-medium">📞 {targetUser.phone}</p>}
+          <p className="font-extrabold text-slate-900 text-sm">{billingName}</p>
+          <p className="text-xs text-slate-600 font-medium">✉️ {billingEmail}</p>
+          {billingPhone && <p className="text-xs text-slate-600 font-medium">📞 {billingPhone}</p>}
         </div>
 
         {/* Line Items Table */}

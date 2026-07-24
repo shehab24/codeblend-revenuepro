@@ -1,11 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { upsertInvoice } from "../actions";
 
 type Props = {
   userId: string;
   userName?: string | null;
-  userEmail: string;
+  userEmail?: string | null;
+  userPhone?: string | null;
   initialTitle: string;
   initialAmount: number;
   initialPaid: number;
@@ -18,6 +21,9 @@ type Props = {
 
 export function AdminInvoiceModal({
   userId,
+  userName,
+  userEmail = "",
+  userPhone = "",
   initialTitle,
   initialAmount,
   initialPaid,
@@ -27,16 +33,42 @@ export function AdminInvoiceModal({
   triggerButtonText = "Invoice",
   triggerButtonClass = "px-3 py-1 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs font-medium border border-slate-200 transition cursor-pointer shrink-0",
 }: Props) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState(initialTitle);
   const [amount, setAmount] = useState<number>(initialAmount);
   const [paid, setPaid] = useState<number>(initialPaid);
   const [notes, setNotes] = useState(initialNotes);
+  const [name, setName] = useState(userName || "");
+  const [email, setEmail] = useState(userEmail || "");
+  const [phone, setPhone] = useState(userPhone || "");
 
   const due = Math.max(0, (amount || 0) - (paid || 0));
 
-  const handleGenerateInvoice = (e: React.FormEvent) => {
+  const handleGenerateInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const formData = new FormData();
+    formData.append("userId", userId);
+    formData.append("type", type);
+    formData.append("itemId", itemId);
+    formData.append("title", title || initialTitle);
+    formData.append("amount", (amount || 0).toString());
+    formData.append("paid", (paid || 0).toString());
+    formData.append("notes", notes || "");
+    formData.append("name", name || "");
+    formData.append("email", email || "");
+    formData.append("phone", phone || "");
+
+    let invoiceId = "";
+    try {
+      const res = await upsertInvoice(formData);
+      if (res && res.id) {
+        invoiceId = res.id;
+      }
+    } catch (err) {
+      console.error("Failed to save invoice to DB:", err);
+    }
 
     const queryParams = new URLSearchParams({
       type,
@@ -45,18 +77,34 @@ export function AdminInvoiceModal({
       amount: (amount || 0).toString(),
       paid: (paid || 0).toString(),
       notes: notes || "",
+      name: name || "",
+      email: email || "",
+      phone: phone || "",
     });
+    if (invoiceId) {
+      queryParams.append("invoiceId", invoiceId);
+    }
 
     const invoiceUrl = `/dashboard/admin/users/${userId}/invoice?${queryParams.toString()}`;
     setIsOpen(false);
-    window.open(invoiceUrl, "_blank");
+    router.push(invoiceUrl);
   };
+
 
   return (
     <>
       <button
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={() => {
+          setName(userName || "");
+          setEmail(userEmail || "");
+          setPhone(userPhone || "");
+          setTitle(initialTitle);
+          setAmount(initialAmount);
+          setPaid(initialPaid);
+          setNotes(initialNotes);
+          setIsOpen(true);
+        }}
         className={triggerButtonClass}
       >
         {triggerButtonText}
@@ -76,7 +124,7 @@ export function AdminInvoiceModal({
                   Generate Custom Invoice
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Adjust payable amount and paid balance for invoice generation.
+                  Adjust payable amount, recipient info and paid balance.
                 </p>
               </div>
               <button
@@ -100,6 +148,52 @@ export function AdminInvoiceModal({
                   className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-800 focus:outline-none focus:border-slate-400 transition"
                   required
                 />
+              </div>
+
+              <div className="border-t border-b border-slate-100 py-3 my-2 space-y-3">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Billed To (Recipient Details)</span>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Customer Name
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Valued Merchant"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-800 focus:outline-none focus:border-slate-400 transition"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Customer Email
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="email@example.com"
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-800 focus:outline-none focus:border-slate-400 transition"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Customer Phone
+                    </label>
+                    <input
+                      type="text"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="01xxxxxxxxx"
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-800 focus:outline-none focus:border-slate-400 transition"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -174,3 +268,4 @@ export function AdminInvoiceModal({
     </>
   );
 }
+

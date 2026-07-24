@@ -39,8 +39,6 @@ export async function createShowcaseCustomer(data: {
     } catch (err: any) {
       throw new Error(`Failed to upload logo to ImageKit: ${err.message || err}`);
     }
-  } else {
-    throw new Error("Logo image is required.");
   }
   
   const customer = await prisma.showcaseCustomer.create({

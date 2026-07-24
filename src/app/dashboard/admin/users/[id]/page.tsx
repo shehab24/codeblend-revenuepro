@@ -107,6 +107,9 @@ export default async function AdminUserDetailsPage({
           },
         },
       },
+      invoices: {
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
 
@@ -332,51 +335,50 @@ export default async function AdminUserDetailsPage({
               <tbody className="divide-y divide-slate-50 text-xs">
                 {targetUser.licenses.map((license) => {
                   const fin = getLicenseFinancials(license, license.transactions);
+                  const licenseInvoice = targetUser.invoices.find(
+                    (inv) => inv.type === "license" && inv.itemId === license.id
+                  );
 
                   return (
                     <tr key={license.id} className="hover:bg-slate-50/50 transition">
-                      <td className="p-3">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-slate-800 text-sm">{license.domain}</span>
-                          <span className="text-[11px] text-slate-400">Created: {new Date(license.createdAt).toLocaleDateString()}</span>
-                        </div>
+                      <td className="p-3 font-semibold text-slate-900">
+                        {license.domain}
                       </td>
-
                       <td className="p-3">
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
                               {license.tier || "Standard"}
                             </span>
-
-                            <span className={`px-2 py-0.5 rounded text-[0.65rem] font-bold uppercase tracking-wider ${
+                            <span className={`px-2.5 py-0.5 rounded text-[0.65rem] font-bold uppercase tracking-wider ${
                               license.status === "active"
                                 ? "bg-emerald-100 text-emerald-700"
-                                : "bg-red-100 text-red-600"
+                                : "bg-slate-100 text-slate-600"
                             }`}>
                               {license.status}
                             </span>
-
-                            {!fin.isFreeOrTrial && (
-                              <span className={`px-2 py-0.5 rounded text-[0.65rem] font-bold uppercase tracking-wider ${
-                                license.paymentStatus === "paid"
-                                  ? "bg-emerald-100 text-emerald-700"
-                                  : "bg-red-100 text-red-600"
-                              }`}>
-                                {license.paymentStatus}
-                              </span>
-                            )}
                           </div>
+                          {license.expirationDate && (
+                            <span className="text-[11px] text-slate-400">
+                              Expires: {new Date(license.expirationDate).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                      </td>
 
-                          {!fin.isFreeOrTrial && (
+                      <td className="p-3">
+                        <div className="flex flex-col gap-1">
+                          <span className={`px-2 py-0.5 rounded text-[0.65rem] font-bold uppercase tracking-wider w-fit ${
+                            license.paymentStatus === "paid" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+                          }`}>
+                            {license.paymentStatus}
+                          </span>
+                          
+                          {license.paymentStatus !== "paid" && (
                             <form action={toggleLicensePaymentStatusFromAdmin}>
                               <input type="hidden" name="licenseId" value={license.id} />
+                              <input type="hidden" name="paymentStatus" value="paid" />
                               <input type="hidden" name="targetUserId" value={targetUser.id} />
-                              <input
-                                type="hidden"
-                                name="paymentStatus"
-                                value={license.paymentStatus === "paid" ? "unpaid" : "paid"}
-                              />
                               <button
                                 type="submit"
                                 className="text-[10px] text-slate-400 hover:text-emerald-600 underline cursor-pointer"
@@ -405,18 +407,46 @@ export default async function AdminUserDetailsPage({
                       </td>
 
                       <td className="p-3 text-center">
-                        <AdminInvoiceModal
-                          userId={targetUser.id}
-                          userName={targetUser.name}
-                          userEmail={targetUser.email}
-                          initialTitle={`RevenuePro WooCommerce Plugin (${license.domain})`}
-                          initialAmount={fin.payableAmount}
-                          initialPaid={fin.totalPaid}
-                          type="license"
-                          itemId={license.id}
-                          triggerButtonText="Invoice"
-                          triggerButtonClass="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-xs"
-                        />
+                        <div className="flex items-center justify-center gap-1.5">
+                          {licenseInvoice ? (
+                            <>
+                              <Link
+                                href={`/dashboard/admin/users/${targetUser.id}/invoice?type=license&itemId=${license.id}`}
+                                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold transition-all no-underline inline-flex items-center shadow-xs cursor-pointer"
+                              >
+                                View
+                              </Link>
+                              <AdminInvoiceModal
+                                userId={targetUser.id}
+                                userName={licenseInvoice.name}
+                                userEmail={licenseInvoice.email}
+                                userPhone={licenseInvoice.phone}
+                                initialTitle={licenseInvoice.title}
+                                initialAmount={licenseInvoice.amount}
+                                initialPaid={licenseInvoice.paid}
+                                initialNotes={licenseInvoice.notes || ""}
+                                type="license"
+                                itemId={license.id}
+                                triggerButtonText="Edit"
+                                triggerButtonClass="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 transition cursor-pointer"
+                              />
+                            </>
+                          ) : (
+                            <AdminInvoiceModal
+                              userId={targetUser.id}
+                              userName={targetUser.name}
+                              userEmail={targetUser.email}
+                              userPhone={targetUser.phone}
+                              initialTitle={`RevenuePro WooCommerce Plugin (${license.domain})`}
+                              initialAmount={fin.payableAmount}
+                              initialPaid={fin.totalPaid}
+                              type="license"
+                              itemId={license.id}
+                              triggerButtonText="Invoice"
+                              triggerButtonClass="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-xs"
+                            />
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -459,6 +489,9 @@ export default async function AdminUserDetailsPage({
               <tbody className="divide-y divide-slate-50 text-xs">
                 {targetUser.serviceRequests.map((sr) => {
                   const due = Math.max(0, (sr.totalAmount || 0) - (sr.paidAmount || 0));
+                  const serviceInvoice = targetUser.invoices.find(
+                    (inv) => inv.type === "service" && inv.itemId === sr.id
+                  );
 
                   return (
                     <tr key={sr.id} className="hover:bg-slate-50/50 transition">
@@ -533,18 +566,44 @@ export default async function AdminUserDetailsPage({
                       {/* Actions */}
                       <td className="p-3 text-center">
                         <div className="flex items-center justify-center gap-2">
-                          <AdminInvoiceModal
-                            userId={targetUser.id}
-                            userName={targetUser.name}
-                            userEmail={targetUser.email}
-                            initialTitle={`Custom Service Order: ${sr.serviceType}`}
-                            initialAmount={sr.totalAmount || 0}
-                            initialPaid={sr.paidAmount || 0}
-                            type="service"
-                            itemId={sr.id}
-                            triggerButtonText="Invoice"
-                            triggerButtonClass="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-xs"
-                          />
+                          {serviceInvoice ? (
+                            <>
+                              <Link
+                                href={`/dashboard/admin/users/${targetUser.id}/invoice?type=service&itemId=${sr.id}`}
+                                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold transition-all no-underline inline-flex items-center shadow-xs cursor-pointer"
+                              >
+                                View
+                              </Link>
+                              <AdminInvoiceModal
+                                userId={targetUser.id}
+                                userName={serviceInvoice.name}
+                                userEmail={serviceInvoice.email}
+                                userPhone={serviceInvoice.phone}
+                                initialTitle={serviceInvoice.title}
+                                initialAmount={serviceInvoice.amount}
+                                initialPaid={serviceInvoice.paid}
+                                initialNotes={serviceInvoice.notes || ""}
+                                type="service"
+                                itemId={sr.id}
+                                triggerButtonText="Edit"
+                                triggerButtonClass="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 transition cursor-pointer"
+                              />
+                            </>
+                          ) : (
+                            <AdminInvoiceModal
+                              userId={targetUser.id}
+                              userName={targetUser.name}
+                              userEmail={targetUser.email}
+                              userPhone={targetUser.phone}
+                              initialTitle={`Custom Service Order: ${sr.serviceType}`}
+                              initialAmount={sr.totalAmount || 0}
+                              initialPaid={sr.paidAmount || 0}
+                              type="service"
+                              itemId={sr.id}
+                              triggerButtonText="Invoice"
+                              triggerButtonClass="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-xs"
+                            />
+                          )}
 
                           <DeleteConfirmButton
                             action={deleteServiceRequestFromAdmin}
@@ -596,74 +655,89 @@ export default async function AdminUserDetailsPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 text-xs">
-                {userTransactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-slate-50/50 transition">
-                    <td className="p-3">
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-slate-800">
-                          {new Date(tx.createdAt).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })}
+                {userTransactions.map((tx) => {
+                  const transactionInvoice = targetUser.invoices.find(
+                    (inv) => inv.type === "transaction" && inv.itemId === tx.id
+                  );
+
+                  return (
+                    <tr key={tx.id} className="hover:bg-slate-50/50 transition">
+                      <td className="p-3">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-slate-800">
+                            {new Date(tx.createdAt).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            {new Date(tx.createdAt).toLocaleTimeString()}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className="p-3">
+                        <div className="flex flex-col">
+                          <span className="font-extrabold text-slate-900 uppercase">
+                            {tx.transactionId || tx.id}
+                          </span>
+                          <span className="text-[10px] text-slate-400 uppercase font-medium">
+                            {tx.paymentMethod} {tx.senderNumber && `(${tx.senderNumber})`}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className="p-3">
+                        {tx.license ? (
+                          <span className="text-slate-700 font-semibold">Server: {tx.license.domain}</span>
+                        ) : tx.serviceRequest ? (
+                          <span className="text-slate-700 font-semibold">Service: {tx.serviceRequest.serviceType}</span>
+                        ) : (
+                          <span className="text-slate-400 italic">General Payment</span>
+                        )}
+                      </td>
+
+                      <td className="p-3 text-right font-extrabold text-slate-900">
+                        ৳{tx.amount.toFixed(2)}
+                      </td>
+
+                      <td className="p-3">
+                        <span className={`px-2.5 py-0.5 rounded text-[0.65rem] font-bold uppercase tracking-wider ${
+                          tx.status === "verified" || tx.status === "completed"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}>
+                          {tx.status}
                         </span>
-                        <span className="text-[10px] text-slate-400">
-                          {new Date(tx.createdAt).toLocaleTimeString()}
-                        </span>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td className="p-3">
-                      <div className="flex flex-col">
-                        <span className="font-mono font-bold text-slate-800">
-                          {tx.transactionId || tx.id.slice(0, 10)}
-                        </span>
-                        <span className="text-[10px] text-slate-400 uppercase font-medium">
-                          {tx.paymentMethod} {tx.senderNumber && `(${tx.senderNumber})`}
-                        </span>
-                      </div>
-                    </td>
-
-                    <td className="p-3">
-                      {tx.license ? (
-                        <span className="text-slate-700 font-semibold">Server: {tx.license.domain}</span>
-                      ) : tx.serviceRequest ? (
-                        <span className="text-slate-700 font-semibold">Service: {tx.serviceRequest.serviceType}</span>
-                      ) : (
-                        <span className="text-slate-400 italic">General Payment</span>
-                      )}
-                    </td>
-
-                    <td className="p-3 text-right font-extrabold text-slate-900">
-                      ৳{tx.amount.toFixed(2)}
-                    </td>
-
-                    <td className="p-3">
-                      <span className={`px-2.5 py-0.5 rounded text-[0.65rem] font-bold uppercase tracking-wider ${
-                        tx.status === "verified" || tx.status === "completed"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-amber-100 text-amber-700"
-                      }`}>
-                        {tx.status}
-                      </span>
-                    </td>
-
-                    <td className="p-3 text-center">
-                      <AdminInvoiceModal
-                        userId={targetUser.id}
-                        userName={targetUser.name}
-                        userEmail={targetUser.email}
-                        initialTitle={`Payment Receipt (${tx.paymentMethod.toUpperCase()})`}
-                        initialAmount={tx.amount}
-                        initialPaid={tx.status === "verified" || tx.status === "completed" ? tx.amount : 0}
-                        type="transaction"
-                        itemId={tx.id}
-                        triggerButtonText="Invoice"
-                        triggerButtonClass="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-xs"
-                      />
-                    </td>
-                  </tr>
-                ))}
+                      <td className="p-3 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <Link
+                            href={`/dashboard/admin/users/${targetUser.id}/invoice?type=transaction&itemId=${tx.id}`}
+                            className="px-2.5 py-1 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold transition-all no-underline inline-flex items-center shadow-xs cursor-pointer"
+                          >
+                            View
+                          </Link>
+                          <AdminInvoiceModal
+                            userId={targetUser.id}
+                            userName={transactionInvoice?.name || targetUser.name}
+                            userEmail={transactionInvoice?.email || targetUser.email}
+                            userPhone={transactionInvoice?.phone || targetUser.phone}
+                            initialTitle={transactionInvoice?.title || `Payment Receipt (${tx.paymentMethod.toUpperCase()})`}
+                            initialAmount={transactionInvoice?.amount ?? tx.amount}
+                            initialPaid={transactionInvoice?.paid ?? (tx.status === "verified" || tx.status === "completed" ? tx.amount : 0)}
+                            initialNotes={transactionInvoice?.notes || ""}
+                            type="transaction"
+                            itemId={tx.id}
+                            triggerButtonText="Edit"
+                            triggerButtonClass="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 transition cursor-pointer"
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  )})}
               </tbody>
             </table>
           </div>

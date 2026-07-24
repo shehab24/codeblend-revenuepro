@@ -20,9 +20,24 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
     redirect("/dashboard/user/requests");
   }
 
-  const totalAmount = request.totalAmount || 0;
-  const paidAmount = request.paidAmount || 0;
-  const dueAmount = totalAmount - paidAmount;
+  // Fetch the saved database invoice for this service request if it exists
+  const dbInvoice = await prisma.invoice.findFirst({
+    where: {
+      type: "service",
+      itemId: id,
+    },
+  });
+
+  const billingName = dbInvoice?.name || request.applicant?.name || "Customer";
+  const billingEmail = dbInvoice?.email || request.applicant?.email || request.contactEmail || "N/A";
+  const billingPhone = dbInvoice?.phone || request.applicant?.phone || null;
+
+  const invoiceTitle = dbInvoice?.title || request.serviceType;
+  const invoiceNotes = dbInvoice?.notes || "";
+
+  const totalAmount = dbInvoice ? dbInvoice.amount : (request.totalAmount || 0);
+  const paidAmount = dbInvoice ? dbInvoice.paid : (request.paidAmount || 0);
+  const dueAmount = Math.max(0, totalAmount - paidAmount);
 
   return (
     <div className="min-h-screen bg-slate-50 p-8 font-sans print:p-0 print:bg-white text-slate-800">
@@ -91,8 +106,9 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
         {/* Bill To */}
         <div className="mb-10">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Billed To:</h3>
-          <p className="font-semibold text-slate-800">{request.applicant?.name || "Customer"}</p>
-          <p className="text-sm text-slate-500">{request.applicant?.email || request.contactEmail || "N/A"}</p>
+          <p className="font-semibold text-slate-800">{billingName}</p>
+          <p className="text-sm text-slate-500">{billingEmail}</p>
+          {billingPhone && <p className="text-sm text-slate-500">📞 {billingPhone}</p>}
         </div>
 
         {/* Items Table */}
@@ -106,9 +122,13 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
           <tbody>
             <tr className="border-b border-slate-100">
               <td className="py-4 text-sm align-top">
-                <div className="font-bold text-slate-800 mb-1">{request.serviceType}</div>
-                {request.message && (
-                  <div className="text-slate-500 whitespace-pre-wrap">{request.message}</div>
+                <div className="font-bold text-slate-800 mb-1">{invoiceTitle}</div>
+                {invoiceNotes ? (
+                  <div className="text-slate-500 whitespace-pre-wrap">{invoiceNotes}</div>
+                ) : (
+                  request.message && (
+                    <div className="text-slate-500 whitespace-pre-wrap">{request.message}</div>
+                  )
                 )}
               </td>
               <td className="py-4 text-sm font-semibold text-slate-800 text-right align-top">

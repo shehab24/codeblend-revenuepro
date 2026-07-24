@@ -88,11 +88,6 @@ export function ShowcaseAdminClient({ initialCustomers }: { initialCustomers: Cu
       return;
     }
 
-    if (!editingId && !logoBase64) {
-      setError("Please upload a logo image.");
-      return;
-    }
-
     startTransition(async () => {
       try {
         if (editingId) {
@@ -118,8 +113,8 @@ export function ShowcaseAdminClient({ initialCustomers }: { initialCustomers: Cu
             name,
             websiteUrl,
             order,
-            logoBase64,
-            logoFileName
+            logoBase64: logoBase64 || undefined,
+            logoFileName: logoFileName || undefined
           });
 
           if (res.success && res.customer) {
@@ -206,11 +201,17 @@ export function ShowcaseAdminClient({ initialCustomers }: { initialCustomers: Cu
 
               {/* Logo Preview */}
               <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex items-center justify-center h-32 mb-4 group-hover:bg-white transition-colors">
-                <img 
-                  src={customer.logoUrl} 
-                  alt={customer.name} 
-                  className="max-h-full max-w-full object-contain filter drop-shadow-sm transition-transform group-hover:scale-105"
-                />
+                {customer.logoUrl ? (
+                  <img 
+                    src={customer.logoUrl} 
+                    alt={customer.name} 
+                    className="max-h-full max-w-full object-contain filter drop-shadow-sm transition-transform group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center font-extrabold text-2xl shadow-md transition-transform group-hover:scale-105 select-none">
+                    {customer.name ? customer.name.charAt(0).toUpperCase() : ""}
+                  </div>
+                )}
               </div>
 
               {/* Content */}

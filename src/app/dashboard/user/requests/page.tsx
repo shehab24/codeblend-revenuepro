@@ -79,6 +79,11 @@ export default async function UserRequestsPage() {
     },
   });
 
+  const invoices = await prisma.invoice.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+  });
+
   // Calculate License Financials
   let totalLicenseInvoiced = 0;
   let totalLicensePaid = 0;
@@ -247,15 +252,21 @@ export default async function UserRequestsPage() {
                       </td>
 
                       <td className="p-3 text-center">
-                        <Link
-                          href={`/dashboard/admin/users/${userId}/invoice?type=license&itemId=${lic.id}`}
-                          className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold transition-all shadow-xs no-underline inline-flex items-center gap-1.5"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          <span>Invoice</span>
-                        </Link>
+                        {invoices.some(
+                          (inv) => inv.type === "license" && inv.itemId === lic.id
+                        ) ? (
+                          <Link
+                            href={`/dashboard/admin/users/${userId}/invoice?type=license&itemId=${lic.id}`}
+                            className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold transition-all shadow-xs no-underline inline-flex items-center gap-1.5"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>Invoice</span>
+                          </Link>
+                        ) : (
+                          <span className="text-slate-400 italic text-[11px]">Not Generated</span>
+                        )}
                       </td>
                     </tr>
                   );
@@ -364,15 +375,21 @@ export default async function UserRequestsPage() {
                       </td>
 
                       <td className="p-3 text-center">
-                        <Link
-                          href={`/dashboard/user/requests/${req.id}/invoice`}
-                          className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold transition-all shadow-xs no-underline inline-flex items-center gap-1.5"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          <span>Invoice</span>
-                        </Link>
+                        {invoices.some(
+                          (inv) => inv.type === "service" && inv.itemId === req.id
+                        ) ? (
+                          <Link
+                            href={`/dashboard/user/requests/${req.id}/invoice`}
+                            className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold transition-all shadow-xs no-underline inline-flex items-center gap-1.5"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>Invoice</span>
+                          </Link>
+                        ) : (
+                          <span className="text-slate-400 italic text-[11px]">Not Generated</span>
+                        )}
                       </td>
                     </tr>
                   );
@@ -386,6 +403,70 @@ export default async function UserRequestsPage() {
           </div>
         )}
       </div>
+
+      {/* 5. Custom / Additional Invoices */}
+      {invoices.filter((inv) => inv.type === "custom").length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+          <div className="mb-4 pb-4 border-b border-slate-100 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Custom & Additional Invoices</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Additional invoiced items and receipts.</p>
+            </div>
+            <span className="px-2.5 py-1 bg-slate-100 text-slate-600 font-bold text-xs rounded-full">
+              {invoices.filter((inv) => inv.type === "custom").length} Total
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/50">
+                  <th className="p-3 text-xs font-semibold text-slate-400 uppercase">Item / Description</th>
+                  <th className="p-3 text-xs font-semibold text-slate-400 uppercase text-right">Invoiced / Paid / Due</th>
+                  <th className="p-3 text-xs font-semibold text-slate-400 uppercase text-center">Invoice</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50 text-xs">
+                {invoices
+                  .filter((inv) => inv.type === "custom")
+                  .map((inv) => {
+                    const due = Math.max(0, inv.amount - inv.paid);
+                    return (
+                      <tr key={inv.id} className="hover:bg-slate-50/50 transition">
+                        <td className="p-3 font-semibold text-slate-800 text-sm">
+                          <div>{inv.title}</div>
+                          {inv.notes && <div className="text-[11px] text-slate-400 font-normal mt-0.5">Notes: {inv.notes}</div>}
+                        </td>
+                        <td className="p-3 text-right font-semibold">
+                          <div className="flex flex-col items-end text-xs">
+                            <span className="text-slate-800">Invoiced: ৳{inv.amount.toFixed(2)}</span>
+                            <span className="text-emerald-600 text-[11px]">Paid: ৳{inv.paid.toFixed(2)}</span>
+                            {due > 0 ? (
+                              <span className="text-red-500 font-bold text-[11px]">Due: ৳{due.toFixed(2)}</span>
+                            ) : (
+                              <span className="text-slate-400 text-[11px]">Due: ৳0.00</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-3 text-center">
+                          <Link
+                            href={`/dashboard/admin/users/${userId}/invoice?type=custom&invoiceId=${inv.id}`}
+                            className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold transition-all shadow-xs no-underline inline-flex items-center gap-1.5"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>Invoice</span>
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

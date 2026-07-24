@@ -255,3 +255,73 @@ export async function deleteLicenseFromAdmin(formData: FormData) {
   }
   revalidatePath("/dashboard/admin/licenses");
 }
+
+export async function upsertInvoice(formData: FormData) {
+  const { userId: callerId } = await auth();
+  if (!callerId) throw new Error("Unauthorized");
+
+  const caller = await prisma.user.findUnique({ where: { id: callerId } });
+  if (caller?.role !== "admin" && caller?.role !== "ADMIN") {
+    throw new Error("Unauthorized: Only admins can manage invoices.");
+  }
+
+  const userId = formData.get("userId") as string;
+  const type = formData.get("type") as string;
+  const itemId = (formData.get("itemId") as string) || null;
+  const title = formData.get("title") as string;
+  const amount = parseFloat(formData.get("amount") as string) || 0;
+  const paid = parseFloat(formData.get("paid") as string) || 0;
+  const notes = (formData.get("notes") as string) || "";
+  const name = (formData.get("name") as string) || "";
+  const email = (formData.get("email") as string) || "";
+  const phone = (formData.get("phone") as string) || "";
+
+  if (!userId || !type || !title) throw new Error("Missing required fields.");
+
+  let existingInvoice = null;
+  if (type !== "custom" && itemId) {
+    existingInvoice = await prisma.invoice.findFirst({
+      where: {
+        userId,
+        type,
+        itemId,
+      },
+    });
+  }
+
+  let invoice;
+  if (existingInvoice) {
+    invoice = await prisma.invoice.update({
+      where: { id: existingInvoice.id },
+      data: {
+        title,
+        amount,
+        paid,
+        notes,
+        name,
+        email,
+        phone,
+      },
+    });
+  } else {
+    invoice = await prisma.invoice.create({
+      data: {
+        userId,
+        type,
+        itemId,
+        title,
+        amount,
+        paid,
+        notes,
+        name,
+        email,
+        phone,
+      },
+    });
+  }
+
+  revalidatePath(`/dashboard/admin/users/${userId}`);
+  revalidatePath(`/dashboard/user/requests`);
+  return { id: invoice.id };
+}
+

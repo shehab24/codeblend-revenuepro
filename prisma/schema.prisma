@@ -41,6 +41,7 @@ model User {
   transactions          PaymentTransaction[]
   bkashSmsTransactions  BkashSmsTransaction[]
   codepayPayments       CodePayPayment[]
+  invoices              Invoice[]
 }
 
 model License {
@@ -206,4 +207,23 @@ model CodePayPayment {
   updatedAt     DateTime @updatedAt
 
   @@index([userId, status])
+}
+
+model Invoice {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String   // "custom" | "license" | "service" | "transaction"
+  itemId      String?  // ID of the target License, ServiceRequest, or PaymentTransaction
+  title       String
+  amount      Float
+  paid        Float
+  notes       String?
+  name        String?
+  email       String?
+  phone       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, type])
 }

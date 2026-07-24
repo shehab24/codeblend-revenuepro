@@ -74,11 +74,17 @@ export default async function UserDashboard() {
               const cardContent = (
                 <div className="border border-slate-100 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300 rounded-3xl p-4 sm:p-5 flex flex-col items-center justify-between gap-3 h-32 sm:h-38 group bg-white overflow-hidden w-full max-w-[140px] sm:max-w-[170px] mx-auto shadow-xs select-none bg-gradient-to-b from-white to-slate-50/20">
                   <div className="h-14 sm:h-18 w-full flex items-center justify-center">
-                    <img 
-                      src={customer.logoUrl} 
-                      alt={customer.name} 
-                      className="max-h-full max-w-full object-contain filter grayscale opacity-75 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300 pointer-events-none"
-                    />
+                    {customer.logoUrl ? (
+                      <img 
+                        src={customer.logoUrl} 
+                        alt={customer.name} 
+                        className="max-h-full max-w-full object-contain filter grayscale opacity-75 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300 pointer-events-none"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center font-bold text-lg sm:text-xl shadow-sm transition-transform group-hover:scale-105 select-none">
+                        {customer.name ? customer.name.charAt(0).toUpperCase() : ""}
+                      </div>
+                    )}
                   </div>
                   <p className="text-[10px] sm:text-xs font-bold text-slate-700 truncate w-full text-center group-hover:text-emerald-600 transition-colors">
                     {customer.name}
