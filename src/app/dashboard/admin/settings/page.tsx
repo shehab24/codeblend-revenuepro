@@ -38,7 +38,8 @@ export default async function AdminSettingsPage() {
     pathaoClientIdSetting,
     pathaoClientSecretSetting,
     steadfastApiKeySetting,
-    steadfastApiSecretSetting
+    steadfastApiSecretSetting,
+    codePayApkLinksSetting
   ] = await Promise.all([
     prisma.setting.findUnique({ where: { key: "BD_COURIER_API_KEY" } }),
     prisma.setting.findUnique({ where: { key: "ADMIN_ALERT_EMAIL" } }),
@@ -69,6 +70,7 @@ export default async function AdminSettingsPage() {
     prisma.setting.findUnique({ where: { key: "PATHAO_CLIENT_SECRET" } }),
     prisma.setting.findUnique({ where: { key: "STEADFAST_API_KEY" } }),
     prisma.setting.findUnique({ where: { key: "STEADFAST_API_SECRET" } }),
+    prisma.setting.findUnique({ where: { key: "CODEPAY_APK_LINKS" } }),
   ]);
 
   const imagekitSettings = {
@@ -103,6 +105,15 @@ export default async function AdminSettingsPage() {
       link: legacyLinkSetting.value,
       isLatest: true
     }];
+  }
+
+  let parsedApkLinks: PluginVersion[] = [];
+  if (codePayApkLinksSetting?.value) {
+    try {
+      parsedApkLinks = JSON.parse(codePayApkLinksSetting.value);
+    } catch {
+      parsedApkLinks = [];
+    }
   }
   
   const paymentSettings = {
@@ -140,6 +151,7 @@ export default async function AdminSettingsPage() {
         currentKey={bdCourierKeySetting?.value || ""} 
         currentAlertEmail={adminAlertEmailSetting?.value || ""} 
         currentRevenueProLinks={parsedLinks}
+        currentApkLinks={parsedApkLinks}
         paymentSettings={paymentSettings}
         pixelSettings={pixelSettings}
         tutorialSettings={tutorialSettings}

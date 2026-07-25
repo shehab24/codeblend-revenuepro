@@ -12,6 +12,7 @@ export async function adminSaveSettings(formData: FormData) {
   const bdCourierApiKey = formData.get("bdCourierApiKey") as string;
   const adminAlertEmail = formData.get("adminAlertEmail") as string;
   const revenueProPluginLinks = formData.get("revenueProPluginLinks") as string;
+  const codePayApkLinks = formData.get("codePayApkLinks") as string;
   
   if (bdCourierApiKey) {
     await prisma.setting.upsert({
@@ -26,6 +27,14 @@ export async function adminSaveSettings(formData: FormData) {
       where: { key: "REVENUEPRO_PLUGIN_LINKS" },
       create: { key: "REVENUEPRO_PLUGIN_LINKS", value: revenueProPluginLinks },
       update: { value: revenueProPluginLinks }
+    });
+  }
+
+  if (codePayApkLinks) {
+    await prisma.setting.upsert({
+      where: { key: "CODEPAY_APK_LINKS" },
+      create: { key: "CODEPAY_APK_LINKS", value: codePayApkLinks },
+      update: { value: codePayApkLinks }
     });
   }
 
@@ -65,6 +74,8 @@ export async function adminSaveSettings(formData: FormData) {
 
   revalidatePath("/dashboard/admin/settings");
   revalidatePath("/dashboard/user/revenuepro"); // also revalidate the user side where links show up
+  revalidatePath("/dashboard/user/payment-gateway");
+  revalidatePath("/dashboard/user");
   revalidatePath("/discounted-offer");
   return { success: true };
 }

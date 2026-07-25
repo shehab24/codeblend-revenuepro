@@ -17,6 +17,7 @@ export function AdminSettingsClient({
   currentKey, 
   currentAlertEmail, 
   currentRevenueProLinks,
+  currentApkLinks,
   paymentSettings,
   pixelSettings,
   tutorialSettings,
@@ -29,6 +30,7 @@ export function AdminSettingsClient({
   currentKey: string, 
   currentAlertEmail: string, 
   currentRevenueProLinks: PluginVersion[],
+  currentApkLinks: PluginVersion[],
   paymentSettings: any,
   pixelSettings: { pixelId: string; capiToken: string; testEventCode: string },
   tutorialSettings: { videoUrl: string; playlistUrl: string },
@@ -75,6 +77,16 @@ export function AdminSettingsClient({
     }]
   );
 
+  const [apkLinks, setApkLinks] = useState<PluginVersion[]>(
+    currentApkLinks && currentApkLinks.length > 0 ? currentApkLinks : [{
+      id: "default-apk",
+      version: "1.0.0",
+      name: "CodePay SMS Tracker - Latest Build",
+      link: "",
+      isLatest: true
+    }]
+  );
+
   const [tokens, setTokens] = useState<string[]>(
     currentKey ? currentKey.split(/[\n,;]+/).map(k => k.trim()).filter(Boolean) : [""]
   );
@@ -83,6 +95,7 @@ export function AdminSettingsClient({
 
   const handleSubmit = (formData: FormData) => {
     formData.append("revenueProPluginLinks", JSON.stringify(links));
+    formData.append("codePayApkLinks", JSON.stringify(apkLinks));
     const activeTokens = tokens.map(t => t.trim()).filter(Boolean);
     formData.append("bdCourierApiKey", activeTokens.join("\n"));
     formData.append("INACTIVE_REMINDER_ENABLED", reminderEnabled ? "true" : "false");
@@ -124,10 +137,40 @@ export function AdminSettingsClient({
     }));
   };
 
+  const addApkLink = () => {
+    setApkLinks([...apkLinks, {
+      id: Math.random().toString(36).substring(7),
+      version: "",
+      name: "CodePay SMS Tracker - Older Build",
+      link: "",
+      isLatest: false
+    }]);
+  };
+
+  const removeApkLink = (id: string) => {
+    setApkLinks(apkLinks.filter(l => l.id !== id));
+  };
+
+  const updateApkLink = (id: string, field: keyof PluginVersion, value: any) => {
+    setApkLinks(apkLinks.map(l => {
+      if (l.id === id) {
+        if (field === "isLatest" && value === true) {
+           return { ...l, [field]: value };
+        }
+        return { ...l, [field]: value };
+      } else {
+        if (field === "isLatest" && value === true) {
+           return { ...l, isLatest: false };
+        }
+        return l;
+      }
+    }));
+  };
+
   const tabs = [
     { id: "couriers", label: "Courier APIs" },
     { id: "payments", label: "Payment Gateway" },
-    { id: "plugins", label: "Plugin Downloads" },
+    { id: "plugins", label: "Resource Downloads" },
     { id: "analytics", label: "Facebook Pixel" },
     { id: "notifications", label: "Alerts & Emails" },
     { id: "media", label: "ImageKit CDN" },
@@ -456,86 +499,171 @@ export function AdminSettingsClient({
           </div>
         )}
 
-        {/* TAB: PLUGIN DOWNLOADS */}
+        {/* TAB: RESOURCE DOWNLOADS */}
         {activeTab === "plugins" && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-6 shadow-xs animate-fade-in">
-            <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-extrabold text-slate-900">
-                  Plugin Version Releases
-                </h3>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Manage active builds available for merchant user downloads.
-                </p>
+          <div className="space-y-6">
+            {/* Plugins Card */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-6 shadow-xs animate-fade-in">
+              <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-900">
+                    Plugin Version Releases (WordPress)
+                  </h3>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Manage active builds available for merchant user downloads.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={addLink}
+                  className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-bold hover:bg-emerald-100 transition cursor-pointer"
+                >
+                  + Add Release Build
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={addLink}
-                className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-bold hover:bg-emerald-100 transition cursor-pointer"
-              >
-                + Add Release Build
-              </button>
+
+              <div className="space-y-3">
+                {links.map((link) => (
+                  <div key={link.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase">Version</label>
+                        <input
+                          type="text"
+                          value={link.version}
+                          onChange={(e) => updateLink(link.id, "version", e.target.value)}
+                          placeholder="e.g. 2.1.0"
+                          className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-bold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase">Release Title</label>
+                        <input
+                          type="text"
+                          value={link.name}
+                          onChange={(e) => updateLink(link.id, "name", e.target.value)}
+                          placeholder="RevenuePro Stable"
+                          className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase">Zip URL</label>
+                        <input
+                          type="text"
+                          value={link.link}
+                          onChange={(e) => updateLink(link.id, "link", e.target.value)}
+                          placeholder="https://..."
+                          className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between border-t border-slate-200/60 pt-2">
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="latest_version_radio"
+                          checked={link.isLatest}
+                          onChange={() => updateLink(link.id, "isLatest", true)}
+                          className="accent-emerald-600"
+                        />
+                        <span>Active Latest Stable Build</span>
+                      </label>
+                      {links.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeLink(link.id)}
+                          className="text-slate-400 hover:text-rose-600 text-xs font-bold cursor-pointer"
+                        >
+                          Delete Build
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="space-y-3">
-              {links.map((link) => (
-                <div key={link.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col gap-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase">Version</label>
-                      <input
-                        type="text"
-                        value={link.version}
-                        onChange={(e) => updateLink(link.id, "version", e.target.value)}
-                        placeholder="e.g. 2.1.0"
-                        className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-bold"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase">Release Title</label>
-                      <input
-                        type="text"
-                        value={link.name}
-                        onChange={(e) => updateLink(link.id, "name", e.target.value)}
-                        placeholder="RevenuePro Stable"
-                        className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase">Zip URL</label>
-                      <input
-                        type="text"
-                        value={link.link}
-                        onChange={(e) => updateLink(link.id, "link", e.target.value)}
-                        placeholder="https://..."
-                        className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between border-t border-slate-200/60 pt-2">
-                    <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="latest_version_radio"
-                        checked={link.isLatest}
-                        onChange={() => updateLink(link.id, "isLatest", true)}
-                        className="accent-emerald-600"
-                      />
-                      <span>Active Latest Stable Build</span>
-                    </label>
-                    {links.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeLink(link.id)}
-                        className="text-slate-400 hover:text-rose-600 text-xs font-bold cursor-pointer"
-                      >
-                        Delete Build
-                      </button>
-                    )}
-                  </div>
+            {/* APK Releases Card */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-6 shadow-xs animate-fade-in">
+              <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-900">
+                    APK Version Releases (Android App)
+                  </h3>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Manage active Android tracker builds (Google Drive/direct links) available for merchant app downloads.
+                  </p>
                 </div>
-              ))}
+                <button
+                  type="button"
+                  onClick={addApkLink}
+                  className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-bold hover:bg-emerald-100 transition cursor-pointer"
+                >
+                  + Add APK Release
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {apkLinks.map((link) => (
+                  <div key={link.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase">Version</label>
+                        <input
+                          type="text"
+                          value={link.version}
+                          onChange={(e) => updateApkLink(link.id, "version", e.target.value)}
+                          placeholder="e.g. 1.0.0"
+                          className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-bold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase">Release Title</label>
+                        <input
+                          type="text"
+                          value={link.name}
+                          onChange={(e) => updateApkLink(link.id, "name", e.target.value)}
+                          placeholder="CodePay SMS Tracker Stable"
+                          className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase">Drive / Download URL</label>
+                        <input
+                          type="text"
+                          value={link.link}
+                          onChange={(e) => updateApkLink(link.id, "link", e.target.value)}
+                          placeholder="https://drive.google.com/..."
+                          className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between border-t border-slate-200/60 pt-2">
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="latest_apk_version_radio"
+                          checked={link.isLatest}
+                          onChange={() => updateApkLink(link.id, "isLatest", true)}
+                          className="accent-emerald-600"
+                        />
+                        <span>Active Latest Stable Build</span>
+                      </label>
+                      {apkLinks.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeApkLink(link.id)}
+                          className="text-slate-400 hover:text-rose-600 text-xs font-bold cursor-pointer"
+                        >
+                          Delete Build
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}

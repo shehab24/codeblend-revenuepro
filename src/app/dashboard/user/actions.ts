@@ -219,3 +219,42 @@ export async function getExpenseTransactions() {
   }
 }
 
+export async function requestFeatureUpgrade(featureName: string) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+  
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error("User not found");
+
+  try {
+    const alertEmailSetting = await prisma.setting.findUnique({ where: { key: "ADMIN_ALERT_EMAIL" } });
+    const alertEmail = alertEmailSetting?.value || "mdshehab204@gmail.com";
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_SERVER_USER,
+        pass: process.env.EMAIL_SERVER_PASSWORD,
+      },
+    });
+
+    await transporter.sendMail({
+      from: '"CodeBlend System" <hello@codeblend.co>',
+      to: alertEmail,
+      subject: `⭐ Feature Upgrade Requested: ${featureName}`,
+      html: `
+        <h3>Feature Upgrade Request</h3>
+        <p><strong>Customer Email:</strong> ${user.email}</p>
+        <p><strong>Customer Name:</strong> ${user.name || "N/A"}</p>
+        <p><strong>Requested Feature:</strong> ${featureName}</p>
+        <hr/>
+        <p>Login to the admin dashboard settings/users panel to enable this feature for the user.</p>
+      `,
+    });
+    return { success: true };
+  } catch (emailError: any) {
+    console.error("Failed to send feature upgrade request email:", emailError);
+    return { success: false, error: emailError.message || "Failed to send email" };
+  }
+}
+

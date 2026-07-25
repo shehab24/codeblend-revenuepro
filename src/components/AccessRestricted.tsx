@@ -1,5 +1,8 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
+import { requestFeatureUpgrade } from "@/app/dashboard/user/actions";
 
 interface AccessRestrictedProps {
   featureName: string;
@@ -10,6 +13,35 @@ export function AccessRestricted({
   featureName,
   description = "Access to this feature has been restricted by the administrator. Please upgrade your plan or contact support to enable this service.",
 }: AccessRestrictedProps) {
+  const [isPending, startTransition] = useTransition();
+  const [requestStatus, setRequestStatus] = useState<"idle" | "success" | "error" | "already_sent">("idle");
+
+  useEffect(() => {
+    const lastSent = localStorage.getItem(`upgrade_request_${featureName}`);
+    if (lastSent) {
+      const timestamp = parseInt(lastSent, 10);
+      if (!isNaN(timestamp) && Date.now() - timestamp < 24 * 60 * 60 * 1000) {
+        setRequestStatus("already_sent");
+      }
+    }
+  }, [featureName]);
+
+  const handleRequestUpgrade = () => {
+    startTransition(async () => {
+      try {
+        const res = await requestFeatureUpgrade(featureName);
+        if (res.success) {
+          localStorage.setItem(`upgrade_request_${featureName}`, Date.now().toString());
+          setRequestStatus("success");
+        } else {
+          setRequestStatus("error");
+        }
+      } catch (err) {
+        setRequestStatus("error");
+      }
+    });
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
       <div className="relative mb-6">
@@ -37,15 +69,25 @@ export function AccessRestricted({
       </p>
 
       <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs sm:max-w-none justify-center">
-        <Link
-          href="/dashboard/user/requests"
-          className="px-5 py-2.5 rounded-xl bg-slate-900 text-white font-extrabold text-xs tracking-wider uppercase hover:bg-slate-800 transition text-center shadow-sm cursor-pointer"
-        >
-          Contact Support to Upgrade
-        </Link>
+        {requestStatus === "success" || requestStatus === "already_sent" ? (
+          <div 
+            className="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-500 font-extrabold text-xs tracking-wider uppercase border border-slate-200 flex items-center justify-center cursor-not-allowed"
+            title="You have already requested an upgrade within the last 24 hours. Support will review it shortly."
+          >
+            ✓ Request In Progress
+          </div>
+        ) : (
+          <button
+            onClick={handleRequestUpgrade}
+            disabled={isPending}
+            className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-extrabold text-xs tracking-wider uppercase transition text-center shadow-sm cursor-pointer border-none"
+          >
+            {isPending ? "Sending Request..." : requestStatus === "error" ? "Failed - Try Again" : "Contact Support to Upgrade"}
+          </button>
+        )}
         <Link
           href="/dashboard/user"
-          className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 font-extrabold text-xs tracking-wider uppercase hover:bg-slate-50 transition text-center cursor-pointer"
+          className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 font-extrabold text-xs tracking-wider uppercase hover:bg-slate-50 transition text-center cursor-pointer no-underline flex items-center justify-center"
         >
           Back to Dashboard
         </Link>

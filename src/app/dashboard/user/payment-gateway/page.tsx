@@ -40,24 +40,37 @@ export default async function PaymentGatewayPage() {
   }
 
   // Check if bkashTrackerAllowed is true and fetch CodePay credentials
-  const dbUser = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      bkashTrackerAllowed: true,
-      codepayApiKey: true,
-      codepayApiSecret: true,
-      codepayBkash: true,
-      codepayNagad: true,
-      codepayRocket: true,
-      codepayActive: true,
-      codepayBrandName: true,
-      codepayBrandLogo: true,
-      codepayBrandColor: true,
-    },
-  });
+  const [dbUser, apkLinksSetting] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        bkashTrackerAllowed: true,
+        downloadAllowed: true,
+        codepayApiKey: true,
+        codepayApiSecret: true,
+        codepayBkash: true,
+        codepayNagad: true,
+        codepayRocket: true,
+        codepayActive: true,
+        codepayBrandName: true,
+        codepayBrandLogo: true,
+        codepayBrandColor: true,
+      },
+    }),
+    prisma.setting.findUnique({ where: { key: "CODEPAY_APK_LINKS" } }),
+  ]);
 
   if (!dbUser?.bkashTrackerAllowed) {
     return <AccessRestricted featureName="CodePay" />;
+  }
+
+  let apkLinks = [];
+  if (apkLinksSetting?.value) {
+    try {
+      apkLinks = JSON.parse(apkLinksSetting.value);
+    } catch {
+      apkLinks = [];
+    }
   }
 
   // Fetch initial transactions
@@ -106,6 +119,8 @@ export default async function PaymentGatewayPage() {
           brandLogo: dbUser.codepayBrandLogo || "",
           brandColor: dbUser.codepayBrandColor || "#0f172a",
         }}
+        apkLinks={apkLinks}
+        downloadAllowed={dbUser.downloadAllowed}
       />
     </div>
   );

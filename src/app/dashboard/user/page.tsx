@@ -7,6 +7,17 @@ export default async function UserDashboard() {
   
   if (!userId) return null;
 
+  const dbUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      revenueProAllowed: true,
+      bkashTrackerAllowed: true,
+    }
+  });
+
+  const revenueProAllowed = dbUser?.revenueProAllowed ?? true;
+  const bkashTrackerAllowed = dbUser?.bkashTrackerAllowed ?? false;
+
   const totalRequests = await prisma.serviceRequest.count({
     where: { applicantId: userId }
   });
@@ -21,7 +32,7 @@ export default async function UserDashboard() {
         Welcome to your CodeBlend Client Portal. Select an action below to get started.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
         
         {/* Request Service Card */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:border-emerald-200 transition-all">
@@ -48,16 +59,32 @@ export default async function UserDashboard() {
         </div>
 
         {/* Revenue Pro Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:border-indigo-200 transition-all">
-          <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 mb-4 shrink-0">
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" /></svg>
+        {revenueProAllowed && (
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:border-indigo-200 transition-all">
+            <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 mb-4 shrink-0">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" /></svg>
+            </div>
+            <h3 className="text-lg font-bold text-slate-800 mb-2">Downloads</h3>
+            <p className="text-sm text-slate-500 mb-6">Access and download your purchased Revenue Pro plugins.</p>
+            <Link href="/dashboard/user/revenuepro" className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold px-6 py-2.5 rounded-xl transition w-full mt-auto">
+              View Downloads
+            </Link>
           </div>
-          <h3 className="text-lg font-bold text-slate-800 mb-2">Downloads</h3>
-          <p className="text-sm text-slate-500 mb-6">Access and download your purchased Revenue Pro plugins.</p>
-          <Link href="/dashboard/user/revenuepro" className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold px-6 py-2.5 rounded-xl transition w-full mt-auto">
-            View Downloads
-          </Link>
-        </div>
+        )}
+
+        {/* CodePay Gateway Card */}
+        {bkashTrackerAllowed && (
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:border-violet-200 transition-all">
+            <div className="w-12 h-12 bg-violet-50 rounded-full flex items-center justify-center text-violet-600 mb-4 shrink-0">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+            </div>
+            <h3 className="text-lg font-bold text-slate-800 mb-2">CodePay Gateway</h3>
+            <p className="text-sm text-slate-500 mb-6">Configure automated payments and download tracker companion APK.</p>
+            <Link href="/dashboard/user/payment-gateway?tab=app" className="bg-violet-50 hover:bg-violet-100 text-violet-700 font-semibold px-6 py-2.5 rounded-xl transition w-full mt-auto">
+              Open CodePay
+            </Link>
+          </div>
+        )}
 
       </div>
 

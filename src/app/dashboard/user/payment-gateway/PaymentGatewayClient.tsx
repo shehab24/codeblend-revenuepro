@@ -35,23 +35,33 @@ interface PaymentGatewayClientProps {
     brandLogo: string;
     brandColor: string;
   };
+  apkLinks?: {
+    id: string;
+    version: string;
+    name: string;
+    link: string;
+    isLatest: boolean;
+  }[];
+  downloadAllowed?: boolean;
 }
 
-type TabType = "transactions" | "settings" | "api";
+type TabType = "transactions" | "settings" | "api" | "app";
 
 export default function PaymentGatewayClient({
   initialTransactions,
   stats,
   gatewaySettings,
+  apkLinks = [],
+  downloadAllowed = true,
 }: PaymentGatewayClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Derive active tab from URL (?tab=transactions|settings|api)
+  // Derive active tab from URL (?tab=transactions|settings|api|app)
   const activeTab: TabType = useMemo(() => {
     const t = searchParams.get("tab");
-    if (t === "settings") return t;
+    if (t === "settings" || t === "app") return t;
     if (t === "api" && gatewaySettings.active) return t;
     return "transactions";
   }, [searchParams, gatewaySettings.active]);
@@ -61,6 +71,10 @@ export default function PaymentGatewayClient({
     params.set("tab", tab);
     router.push(`${pathname}?${params.toString()}`);
   }, [router, pathname, searchParams]);
+
+  const latestApkLink = useMemo(() => {
+    return apkLinks.find((l) => l.isLatest) || apkLinks[0] || null;
+  }, [apkLinks]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -356,23 +370,56 @@ export default function PaymentGatewayClient({
             Setup merchant configurations, obtain API keys, and track live transactions like UddoktaPay.
           </p>
         </div>
-        {gatewaySettings.active && (
-          <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-2xl border border-emerald-100 text-sm font-semibold shadow-xs">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            Gateway Active
-          </div>
-        )}
+        
+        <div className="flex items-center gap-3 shrink-0 flex-wrap">
+          {latestApkLink && (
+            downloadAllowed !== false ? (
+              latestApkLink.link ? (
+                <a
+                  href={latestApkLink.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-2xl text-xs font-bold shadow-xs transition cursor-pointer no-underline"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>Download App ({latestApkLink.version || "Latest"})</span>
+                </a>
+              ) : null
+            ) : (
+              <button
+                disabled
+                className="flex items-center gap-2 bg-slate-100 text-slate-400 px-4 py-2.5 rounded-2xl text-xs font-bold cursor-not-allowed border border-slate-200"
+                title="Download access restricted by Administrator"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <span>Download Restricted</span>
+              </button>
+            )
+          )}
+          
+          {gatewaySettings.active && (
+            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2.5 rounded-2xl border border-emerald-100 text-xs font-semibold shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Gateway Active
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Tabs Switcher — URL-driven */}
       <div className="flex border-b border-slate-200">
-        {(["transactions", "settings", "api"] as const)
+        {(["transactions", "settings", "api", "app"] as const)
           .filter((tab) => tab !== "api" || gatewaySettings.active)
           .map((tab) => {
             const labels: Record<TabType, string> = {
               transactions: "Transactions & Logs",
               settings: "Gateway Settings",
               api: "Developer Keys & API",
+              app: "Android App",
             };
             return (
               <button
@@ -392,6 +439,47 @@ export default function PaymentGatewayClient({
 
       {activeTab === "transactions" && (
         <div className="space-y-6">
+          {latestApkLink && (
+            <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-3xl p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in duration-300">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded text-[9px] font-bold uppercase tracking-wider">SMS Listener</span>
+                  <h3 className="font-extrabold text-sm text-slate-800">
+                    Android Companion App {latestApkLink.version ? `v${latestApkLink.version}` : ""}
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-500 max-w-2xl leading-relaxed">
+                  ইনকামিং পেমেন্ট SMS স্বয়ংক্রিয়ভাবে ভেরিফাই করার জন্য আমাদের অফিশিয়াল অ্যান্ড্রয়েড অ্যাপটি আপনার পেমেন্ট গ্রহণকারী ফোনে ইনস্টল করুন। অ্যাপটি ব্যাকগ্রাউন্ডে রান হয়ে ইনস্ট্যান্ট পেমেন্ট ভেরিফিকেশন সম্পন্ন করবে।
+                </p>
+              </div>
+              
+              {downloadAllowed !== false ? (
+                latestApkLink.link ? (
+                  <a 
+                    href={latestApkLink.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shrink-0 shadow-xs cursor-pointer no-underline"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    ডাউনলোড করুন (Download APK)
+                  </a>
+                ) : (
+                  <span className="text-xs text-slate-400 font-semibold">No active download link available.</span>
+                )
+              ) : (
+                <div className="flex items-center gap-1.5 text-xs text-slate-400 bg-slate-100 border border-slate-200 px-4 py-2.5 rounded-xl cursor-not-allowed">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  ডাউনলোড অ্যাক্সেস সীমাবদ্ধ
+                </div>
+              )}
+            </div>
+          )}
+
           {/* KPI Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex items-center gap-4">
@@ -1434,6 +1522,84 @@ if (data.payment_url) {
                   Upon manual payment completion on the checkout screen, the customer submits their <strong>TrxID</strong>. CodePay immediately matches it with the sync log of incoming financial SMS parsed on your merchant's smartphone.
                   Once matched, the customer is redirected to your <code>redirect_url</code> with query params <code>?payment_id=[id]&status=completed&order_id=[order_id]</code>.
                 </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "app" && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-xs">
+            <div className="border-b border-slate-100 pb-6 mb-6">
+              <h2 className="text-lg font-bold text-slate-800">অ্যান্ড্রয়েড ট্র্যাকার অ্যাপ ডাউনলোড (Companion App Download)</h2>
+              <p className="text-sm text-slate-500 mt-1">
+                পেমেন্ট ভেরিফিকেশন অটোমেশন সফলভাবে সচল রাখতে আমাদের অফিশিয়াল অ্যান্ড্রয়েড অ্যাপটি আপনার পেমেন্ট রিসিভিং ফোনে ইনস্টল করুন।
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              {apkLinks.length === 0 ? (
+                <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl text-center text-slate-500 shadow-inner">
+                  এই মুহূর্তে কোনো অ্যাপ ভার্সন আপলোড করা হয়নি।
+                </div>
+              ) : (
+                apkLinks.map((link) => (
+                  <div 
+                    key={link.id} 
+                    className={`bg-white border text-left flex flex-col md:flex-row items-center justify-between border-slate-200 p-6 rounded-2xl transition-all group hover:shadow-md ${link.isLatest ? 'hover:border-indigo-300' : 'opacity-80 hover:opacity-100 hover:border-slate-300'}`}
+                  >
+                    <div className="flex items-center gap-4 mb-4 md:mb-0">
+                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors ${link.isLatest ? 'bg-slate-100 text-slate-400 group-hover:text-indigo-500 group-hover:bg-indigo-50' : 'bg-slate-50 text-slate-300'}`}>
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                      </div>
+                      <div>
+                        <h4 className="text-base font-bold text-slate-800">{link.name || "CodePay Tracker"}</h4>
+                        <p className="text-xs text-slate-500 flex items-center gap-2 mt-1">
+                          {link.isLatest && (
+                            <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[0.6rem] font-bold">LATEST</span> 
+                          )}
+                          {link.version && <span className="font-mono text-xs">v{link.version}</span>}
+                          {link.isLatest && <span>সকল নতুন আপডেট এবং বাগ ফিক্স অন্তর্ভুক্ত।</span>}
+                          {!link.isLatest && <span>পুরোনো রিলিজ।</span>}
+                        </p>
+                      </div>
+                    </div>
+
+                    {link.link && downloadAllowed !== false ? (
+                      <a 
+                        href={link.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`w-full md:w-auto px-6 py-3 font-semibold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shrink-0 no-underline ${link.isLatest ? 'bg-slate-900 text-white hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        ডাউনলোড করুন (Download)
+                      </a>
+                    ) : (
+                      <button 
+                        disabled
+                        className="w-full md:w-auto px-6 py-3 font-semibold text-xs rounded-xl cursor-not-allowed flex items-center justify-center gap-2 shrink-0 transition bg-slate-100 text-slate-400 border border-slate-200"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                        ডাউনলোড অ্যাক্সেস সীমাবদ্ধ
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="mt-8 p-5 bg-indigo-50/50 border border-indigo-100 rounded-xl flex gap-3 text-indigo-900 text-xs">
+              <svg className="w-5 h-5 shrink-0 text-indigo-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <div className="leading-relaxed space-y-1">
+                <p className="font-bold">কীভাবে কনফিগার করবেন:</p>
+                <ol className="list-decimal list-inside space-y-1 pl-1">
+                  <li>আপনার ফোন থেকে APK ফাইলটি ডাউনলোড ও ইনস্টল করুন।</li>
+                  <li>অ্যাপ্লিকেশনটি ওপেন করে আপনার CodePay API ক্রেডেনশিয়াল ব্যবহার করে লগইন করুন।</li>
+                  <li>অ্যাপ্লিকেশনটিকে SMS রিড করার প্রয়োজনীয় পারমিশন প্রদান করুন।</li>
+                  <li>ব্যাকগ্রাউন্ড সার্ভিস রান করে রাখুন যাতে প্রতিবার SMS আসার সাথে সাথে ট্র্যাকারটি ডাটাবেজে সিঙ্ক করতে পারে।</li>
+                </ol>
               </div>
             </div>
           </div>
