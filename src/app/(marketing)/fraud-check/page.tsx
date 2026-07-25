@@ -198,100 +198,97 @@ export default function FraudCheckPage() {
           </div>
         </div>
 
-        {/* --- Bottom Section: Other Services --- */}
+        {/* --- Bottom Section: Our Ecosystem Products & Services --- */}
         <div className="pt-8">
           <div className="text-center mb-10">
-            <h2 className="text-3xl font-extrabold text-slate-900 mb-3">আমাদের অন্যান্য পরিষেবা</h2>
-            <p className="text-slate-500 font-medium">আপনার ব্যবসার প্রসারে আমরা আছি আপনার পাশে।</p>
+            <h2 className="text-3xl font-extrabold text-slate-900 mb-3">আমাদের অন্যান্য প্রোডাক্ট ও সার্ভিসেস</h2>
+            <p className="text-slate-500 font-medium">আপনার ই-কমার্স ব্যবসাকে সহজ ও স্বয়ংক্রিয় করতে আমাদের সম্পূর্ণ সুইট।</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             
-            {/* Card 1: Purple */}
-            <div className="bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-2xl p-8 flex flex-col items-center text-center text-white shadow-xl shadow-purple-200">
-              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center p-3 mb-6">
-                <svg fill="currentColor" viewBox="0 0 24 24" className="w-full h-full"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"></path></svg>
+            {/* Card 1: RevenuePro Suite */}
+            <div className="bg-gradient-to-br from-emerald-500 to-teal-700 rounded-2xl p-8 flex flex-col items-center text-center text-white shadow-xl shadow-emerald-200">
+              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-2xl mb-6">
+                🛡️
+              </div>
+              <h3 className="text-xl font-bold mb-3">RevenuePro Plugin</h3>
+              <p className="text-emerald-100 text-sm mb-6 flex-1">
+                WooCommerce ফ্রড ডিটেকশন, অটো OTP ভেরিফিকেশন ও কুরিয়ার অটো-বুকিং প্ল্যাটফর্ম।
+              </p>
+              <Link href="/revenuepro" className="bg-white text-emerald-700 px-6 py-2.5 rounded-lg font-bold text-sm w-full hover:bg-emerald-50 transition-colors inline-block text-center">
+                বিস্তারিত দেখুন &rarr;
+              </Link>
+            </div>
+
+            {/* Card 2: CodePay MFS Router */}
+            <div className="bg-gradient-to-br from-teal-500 to-cyan-700 rounded-2xl p-8 flex flex-col items-center text-center text-white shadow-xl shadow-teal-200">
+              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-2xl mb-6">
+                💳
+              </div>
+              <h3 className="text-xl font-bold mb-3">CodePay MFS Router</h3>
+              <p className="text-teal-100 text-sm mb-6 flex-1">
+                পার্সোনাল bKash, Nagad ও Rocket দিয়ে ০% চার্জে পেমেন্ট গ্রহণ ও অটো ট্রানজেকশন ম্যাচিং।
+              </p>
+              <Link href="/codepay" className="bg-white text-teal-700 px-6 py-2.5 rounded-lg font-bold text-sm w-full hover:bg-teal-50 transition-colors inline-block text-center">
+                বিস্তারিত দেখুন &rarr;
+              </Link>
+            </div>
+
+            {/* Card 3: Expense Tracker */}
+            <div className="bg-gradient-to-br from-indigo-500 to-violet-700 rounded-2xl p-8 flex flex-col items-center text-center text-white shadow-xl shadow-indigo-200">
+              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-2xl mb-6">
+                📊
+              </div>
+              <h3 className="text-xl font-bold mb-3">Expense Tracker</h3>
+              <p className="text-indigo-100 text-sm mb-6 flex-1">
+                MFS এসএমএস থেকে অটোমেটেড ক্যাশফ্লো লেজার, BDT/USD এনালিটিক্স ও এক্সেল রিপোর্ট।
+              </p>
+              <Link href="/expense-tracker" className="bg-white text-indigo-700 px-6 py-2.5 rounded-lg font-bold text-sm w-full hover:bg-indigo-50 transition-colors inline-block text-center">
+                বিস্তারিত দেখুন &rarr;
+              </Link>
+            </div>
+
+            {/* Card 4: Android Companion App */}
+            <div className="bg-gradient-to-br from-purple-500 to-fuchsia-700 rounded-2xl p-8 flex flex-col items-center text-center text-white shadow-xl shadow-purple-200">
+              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-2xl mb-6">
+                📲
+              </div>
+              <h3 className="text-xl font-bold mb-3">SMS Sync Companion App</h3>
+              <p className="text-purple-100 text-sm mb-6 flex-1">
+                আপনার এন্ড্রয়েড ফোনের মাধ্যমে রিয়েল-টাইম MFS পেমেন্ট এসএমএস সার্ভারে সিঙ্ক করুন।
+              </p>
+              <Link href="/dashboard/user/payment-gateway" className="bg-white text-purple-700 px-6 py-2.5 rounded-lg font-bold text-sm w-full hover:bg-purple-50 transition-colors inline-block text-center">
+                এপ ডাউনলোড করুন &darr;
+              </Link>
+            </div>
+
+            {/* Card 5: Custom Development Services */}
+            <div className="bg-gradient-to-br from-sky-500 to-blue-700 rounded-2xl p-8 flex flex-col items-center text-center text-white shadow-xl shadow-blue-200">
+              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-2xl mb-6">
+                🔌
+              </div>
+              <h3 className="text-xl font-bold mb-3">কাস্টম ডেভেলপমেন্ট সার্ভিস</h3>
+              <p className="text-sky-100 text-sm mb-6 flex-1">
+                কাস্টম ওয়ার্ডপ্রেস প্লাগিন, থিম, ই-কমার্স অটোমেশন ও API ইন্টিগ্রেশন সেবা।
+              </p>
+              <Link href="/services" className="bg-white text-sky-700 px-6 py-2.5 rounded-lg font-bold text-sm w-full hover:bg-sky-50 transition-colors inline-block text-center">
+                সার্ভিস দেখুন &rarr;
+              </Link>
+            </div>
+
+            {/* Card 6: Entrepreneurs Community */}
+            <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-8 flex flex-col items-center text-center text-white shadow-xl shadow-amber-200">
+              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-2xl mb-6">
+                👥
               </div>
               <h3 className="text-xl font-bold mb-3">উদ্যোক্তাদের কমিউনিটি</h3>
-              <p className="text-fuchsia-100 text-sm mb-6 flex-1">
-                উদ্যোক্তাদের বিজনেস গ্রো করার জন্য অনেক ফ্রী টুল পাবেন এখানে। এছাড়া বিভিন্ন পেইড প্লাগিন ফ্রী পাবেন
+              <p className="text-amber-100 text-sm mb-6 flex-1">
+                ই-কমার্স ও উদ্যোক্তাদের জন্য গ্রোথ গাইডলাইন, ফ্রি রিসোর্স ও স্পেশাল সাপোর্ট।
               </p>
-              <button className="bg-white text-purple-600 px-6 py-2.5 rounded-lg font-bold text-sm w-full hover:bg-fuchsia-50 transition-colors">
-                কমিউনিটিতে জয়েন করুন &rarr;
-              </button>
-            </div>
-
-            {/* Card 2: Blue (RevenuePro App) */}
-            <div className="bg-gradient-to-br from-sky-400 to-blue-600 rounded-2xl p-8 flex flex-col items-center text-center text-white shadow-xl shadow-blue-200 relative overflow-hidden">
-              <div className="absolute top-4 right-4 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2 py-1 rounded-full">Featured</div>
-              <div className="absolute top-8 left-6 text-white/30 text-2xl">✨</div>
-              <div className="absolute bottom-12 right-6 text-white/30 text-3xl">✨</div>
-              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center p-3 mb-6 relative z-10">
-                <svg fill="currentColor" viewBox="0 0 24 24" className="w-full h-full"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"></path></svg>
-              </div>
-              <h3 className="text-xl font-bold mb-3 relative z-10">RevenuePro এ আপনার পণ্য বিক্রি করুন</h3>
-              <p className="text-blue-100 text-sm mb-6 flex-1 relative z-10">
-                আপনার পণ্য আমাদের সাইটে যুক্ত করে সেল করুন ২ গুনা পণ্য। বিক্রি করার দায়িত্ব আমাদের।
-              </p>
-              <button className="bg-white text-blue-600 px-6 py-2.5 rounded-lg font-bold text-sm w-full hover:bg-blue-50 transition-colors relative z-10">
-                বিস্তারিত দেখুন &rarr;
-              </button>
-            </div>
-
-            {/* Card 3: Teal */}
-            <div className="bg-gradient-to-br from-teal-400 to-emerald-600 rounded-2xl p-8 flex flex-col items-center text-center text-white shadow-xl shadow-teal-200">
-              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center p-3 mb-6">
-                <svg fill="currentColor" viewBox="0 0 24 24" className="w-full h-full"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"></path></svg>
-              </div>
-              <h3 className="text-xl font-bold mb-3">AI Courier Entry</h3>
-              <p className="text-teal-100 text-sm mb-6 flex-1">
-                মেসেঞ্জারে নেওয়া অর্ডার এক ক্লিকেই কুরিয়ারে এন্ট্রি করুন।
-              </p>
-              <button className="bg-white text-emerald-600 px-6 py-2.5 rounded-lg font-bold text-sm w-full hover:bg-teal-50 transition-colors">
-                Courier Entry &rarr;
-              </button>
-            </div>
-
-            {/* Card 4: Orange */}
-            <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl p-8 flex flex-col items-center text-center text-white shadow-xl shadow-orange-200">
-              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center p-3 mb-6">
-                <svg fill="currentColor" viewBox="0 0 24 24" className="w-full h-full"><path d="M12.16 3h-.32L9.21 8.25h5.58zm4.3 5.25h5.16L19 3h-2.54zm-8.92 0L4.99 3H2.46l2.62 5.25zM12 22.49L3.42 9.75h17.16z"></path></svg>
-              </div>
-              <h3 className="text-xl font-bold mb-3">Gold Price Calculator</h3>
-              <p className="text-orange-100 text-sm mb-6 flex-1">
-                এক ক্লিকেই সোনার দাম হিসাব করুন।
-              </p>
-              <button className="bg-white text-orange-600 px-6 py-2.5 rounded-lg font-bold text-sm w-full hover:bg-orange-50 transition-colors">
-                Gold Calculator &rarr;
-              </button>
-            </div>
-
-            {/* Card 5: Indigo */}
-            <div className="bg-gradient-to-br from-indigo-400 to-blue-600 rounded-2xl p-8 flex flex-col items-center text-center text-white shadow-xl shadow-indigo-200">
-              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center p-3 mb-6">
-                <svg fill="currentColor" viewBox="0 0 24 24" className="w-full h-full"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"></path></svg>
-              </div>
-              <h3 className="text-xl font-bold mb-3">ফ্রড চেকার ২</h3>
-              <p className="text-indigo-100 text-sm mb-6 flex-1">
-                সহজে এবং দ্রুত ফ্রড চেক করুন।
-              </p>
-              <button className="bg-white text-indigo-600 px-6 py-2.5 rounded-lg font-bold text-sm w-full hover:bg-indigo-50 transition-colors">
-                Fraud Checker 2 &rarr;
-              </button>
-            </div>
-
-            {/* Card 6: Green */}
-            <div className="bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl p-8 flex flex-col items-center text-center text-white shadow-xl shadow-green-200">
-              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center p-3 mb-6">
-                <svg fill="currentColor" viewBox="0 0 24 24" className="w-full h-full"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"></path></svg>
-              </div>
-              <h3 className="text-xl font-bold mb-3">ফ্রড চেকার এপ ডাউনলোড করুন</h3>
-              <p className="text-green-100 text-sm mb-6 flex-1">
-                সহজে এবং দ্রুত ফ্রড চেক করুন।
-              </p>
-              <button className="bg-white text-green-600 px-6 py-2.5 rounded-lg font-bold text-sm w-full hover:bg-green-50 transition-colors">
-                Download App
-              </button>
+              <Link href="/pricing" className="bg-white text-amber-700 px-6 py-2.5 rounded-lg font-bold text-sm w-full hover:bg-amber-50 transition-colors inline-block text-center">
+                কমিউনিটিতে জয়েন করুন &rarr;
+              </Link>
             </div>
 
           </div>

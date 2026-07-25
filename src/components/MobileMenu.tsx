@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 
 const navLinks = [
-  { href: "/revenuepro", label: "RevenuePro", icon: "🛡️" },
   { href: "/services", label: "Services", icon: "⚡" },
   { href: "/features", label: "Features", icon: "⚙️" },
   { href: "/pricing", label: "Pricing", icon: "💰" },
@@ -14,6 +13,7 @@ const navLinks = [
 
 export function MobileMenu({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [open, setOpen] = useState(false);
+  const [productsOpen, setProductsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   // Wait for client mount so createPortal works
@@ -34,6 +34,13 @@ export function MobileMenu({ isLoggedIn }: { isLoggedIn: boolean }) {
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
+  }, [open]);
+
+  // Reset submenu state on close
+  useEffect(() => {
+    if (!open) {
+      setProductsOpen(false);
+    }
   }, [open]);
 
   const drawer = (
@@ -95,7 +102,134 @@ export function MobileMenu({ isLoggedIn }: { isLoggedIn: boolean }) {
         </div>
 
         {/* Nav Links */}
-        <nav style={{ padding: "12px", flex: 1 }}>
+        <nav style={{ padding: "12px", flex: 1, overflowY: "auto" }}>
+          {/* Products Collapsible Item */}
+          <div style={{ marginBottom: 4 }}>
+            <button
+              onClick={() => setProductsOpen(!productsOpen)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%",
+                padding: "14px 16px",
+                borderRadius: 12,
+                color: productsOpen ? "#10b981" : "#334155",
+                fontWeight: 600,
+                fontSize: 15,
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                textAlign: "left",
+                transition: "background 0.15s, color 0.15s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#f0fdf4";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+              }}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 20, width: 24, textAlign: "center" }}>📦</span>
+                Products
+              </span>
+              <svg
+                style={{
+                  width: 14,
+                  height: 14,
+                  transition: "transform 0.2s",
+                  transform: productsOpen ? "rotate(180deg)" : "rotate(0deg)",
+                  color: productsOpen ? "#10b981" : "#94a3b8",
+                }}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            
+            <div
+              style={{
+                maxHeight: productsOpen ? "200px" : "0px",
+                overflow: "hidden",
+                transition: "max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s",
+                opacity: productsOpen ? 1 : 0,
+                paddingLeft: "16px",
+                marginTop: 2,
+              }}
+            >
+              <Link
+                href="/revenuepro"
+                onClick={() => setOpen(false)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "10px 16px",
+                  borderRadius: 10,
+                  color: "#475569",
+                  fontWeight: 500,
+                  fontSize: 14,
+                  textDecoration: "none",
+                  marginBottom: 2,
+                  transition: "background 0.15s",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              >
+                <span style={{ fontSize: 18, width: 20, textAlign: "center" }}>🛡️</span>
+                Revenue Pro
+              </Link>
+              <Link
+                href="/codepay"
+                onClick={() => setOpen(false)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "10px 16px",
+                  borderRadius: 10,
+                  color: "#475569",
+                  fontWeight: 500,
+                  fontSize: 14,
+                  textDecoration: "none",
+                  marginBottom: 2,
+                  transition: "background 0.15s",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              >
+                <span style={{ fontSize: 18, width: 20, textAlign: "center" }}>💳</span>
+                Code Pay
+              </Link>
+              <Link
+                href="/expense-tracker"
+                onClick={() => setOpen(false)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "10px 16px",
+                  borderRadius: 10,
+                  color: "#475569",
+                  fontWeight: 500,
+                  fontSize: 14,
+                  textDecoration: "none",
+                  marginBottom: 2,
+                  transition: "background 0.15s",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              >
+                <span style={{ fontSize: 18, width: 20, textAlign: "center" }}>📊</span>
+                Expense Tracker
+              </Link>
+            </div>
+          </div>
+
           {navLinks.map((link) => (
             <Link
               key={link.href}
