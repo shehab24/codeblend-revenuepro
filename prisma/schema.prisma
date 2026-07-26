@@ -30,11 +30,33 @@ model User {
   codepayBkash          String?
   codepayNagad          String?
   codepayRocket         String?
+  codepayUpay           String?
+  codepayCellfin        String?
+  codepayTap            String?
+
+  codepayBkashActive    Boolean  @default(true)
+  codepayNagadActive    Boolean  @default(true)
+  codepayRocketActive   Boolean  @default(true)
+  codepayUpayActive     Boolean  @default(true)
+  codepayCellfinActive  Boolean  @default(true)
+  codepayTapActive      Boolean  @default(true)
+
+  codepayWithTrx        Boolean  @default(true)
+  codepayWithoutTrx     Boolean  @default(false)
+
+  // Bank Transfer Settings (Deprecated, use codepayBankAccounts instead)
+  codepayBankName       String?
+  codepayBankAccountName String?
+  codepayBankAccountNo   String?
+  codepayBankBranch     String?
+  codepayBankActive     Boolean  @default(false)
 
   // CodePay Merchant Branding
   codepayBrandName      String?
   codepayBrandLogo      String?
   codepayBrandColor     String?  @default("#0f172a")
+
+  codepayBankAccounts   CodePayBankAccount[]
 
   licenses              License[]
   serviceRequests       ServiceRequest[]
@@ -42,6 +64,20 @@ model User {
   bkashSmsTransactions  BkashSmsTransaction[]
   codepayPayments       CodePayPayment[]
   invoices              Invoice[]
+}
+
+model CodePayBankAccount {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bankName    String   // e.g. "ibl", "abbank", "citybank", "sonali", "dbbl", "basic", "ebl"
+  accountName String
+  accountNo   String
+  branch      String?
+  active      Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model License {
@@ -203,6 +239,7 @@ model CodePayPayment {
   status        String   @default("pending") // pending, completed, expired
   method        String?  // bkash, nagad, rocket
   trxId         String?
+  senderNumber  String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

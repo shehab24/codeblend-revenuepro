@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { saveGatewaySettings, saveBrandingSettings, generateGatewayKeys, simulateSandboxSms, createSandboxPayment } from "./actions";
+import { saveGatewaySettings, saveBrandingSettings, generateGatewayKeys, simulateSandboxSms, createSandboxPayment, addBankAccount, deleteBankAccount, toggleBankAccountActive } from "./actions";
 
 interface BkashSmsTx {
   id: string;
@@ -30,6 +30,25 @@ interface PaymentGatewayClientProps {
     bkash: string;
     nagad: string;
     rocket: string;
+    upay: string;
+    cellfin: string;
+    tap: string;
+    bkashActive: boolean;
+    nagadActive: boolean;
+    rocketActive: boolean;
+    upayActive: boolean;
+    cellfinActive: boolean;
+    tapActive: boolean;
+    withTrx: boolean;
+    withoutTrx: boolean;
+    bankAccounts: {
+      id: string;
+      bankName: string;
+      accountName: string;
+      accountNo: string;
+      branch: string;
+      active: boolean;
+    }[];
     active: boolean;
     brandName: string;
     brandLogo: string;
@@ -108,9 +127,28 @@ export default function PaymentGatewayClient({
   const [bkash, setBkash] = useState(gatewaySettings.bkash);
   const [nagad, setNagad] = useState(gatewaySettings.nagad);
   const [rocket, setRocket] = useState(gatewaySettings.rocket);
-  const [bkashActive, setBkashActive] = useState(!!gatewaySettings.bkash);
-  const [nagadActive, setNagadActive] = useState(!!gatewaySettings.nagad);
-  const [rocketActive, setRocketActive] = useState(!!gatewaySettings.rocket);
+  const [upay, setUpay] = useState(gatewaySettings.upay || "");
+  const [cellfin, setCellfin] = useState(gatewaySettings.cellfin || "");
+  const [tap, setTap] = useState(gatewaySettings.tap || "");
+
+  const [bkashActive, setBkashActive] = useState(gatewaySettings.bkashActive);
+  const [nagadActive, setNagadActive] = useState(gatewaySettings.nagadActive);
+  const [rocketActive, setRocketActive] = useState(gatewaySettings.rocketActive);
+  const [upayActive, setUpayActive] = useState(gatewaySettings.upayActive);
+  const [cellfinActive, setCellfinActive] = useState(gatewaySettings.cellfinActive);
+  const [tapActive, setTapActive] = useState(gatewaySettings.tapActive);
+
+  const [withTrx, setWithTrx] = useState(gatewaySettings.withTrx);
+  const [withoutTrx, setWithoutTrx] = useState(gatewaySettings.withoutTrx);
+
+  // Bank transfer state
+  const [bankAccounts, setBankAccounts] = useState(gatewaySettings.bankAccounts || []);
+  const [newBankName, setNewBankName] = useState("");
+  const [newAccountName, setNewAccountName] = useState("");
+  const [newAccountNo, setNewAccountNo] = useState("");
+  const [newBranch, setNewBranch] = useState("");
+  const [isAddingBank, setIsAddingBank] = useState(false);
+
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -139,9 +177,9 @@ export default function PaymentGatewayClient({
 
   // Dynamic Gateway Form States
   const [showAddForm, setShowAddForm] = useState(false);
-  const [formProvider, setFormProvider] = useState<"bkash" | "nagad">("bkash");
+  const [formProvider, setFormProvider] = useState<"bkash" | "nagad" | "rocket" | "upay" | "cellfin" | "tap">("bkash");
   const [formNumber, setFormNumber] = useState("");
-  const [editingProvider, setEditingProvider] = useState<"bkash" | "nagad" | null>(null);
+  const [editingProvider, setEditingProvider] = useState<"bkash" | "nagad" | "rocket" | "upay" | "cellfin" | "tap" | null>(null);
 
   // API credentials states
   const [apiKey, setApiKey] = useState(gatewaySettings.apiKey);
@@ -152,7 +190,7 @@ export default function PaymentGatewayClient({
   const [selectedLang, setSelectedLang] = useState<"php" | "node" | "curl">("php");
 
   // Sandbox simulation states
-  const [sandboxMethod, setSandboxMethod] = useState<"bkash" | "nagad">("bkash");
+  const [sandboxMethod, setSandboxMethod] = useState<"bkash" | "nagad" | "rocket" | "upay" | "cellfin" | "tap">("bkash");
   const [sandboxAmount, setSandboxAmount] = useState("1200");
   const [sandboxSender, setSandboxSender] = useState("01712345678");
   const [sandboxTrxId, setSandboxTrxId] = useState(() => `TXN${Math.floor(100000 + Math.random() * 900000)}CP`);
@@ -188,7 +226,10 @@ export default function PaymentGatewayClient({
   const saveSettingsDirectly = async (
     nextBkash: string,
     nextNagad: string,
-    nextRocket: string
+    nextRocket: string,
+    nextUpay: string,
+    nextCellfin: string,
+    nextTap: string
   ) => {
     setIsSavingSettings(true);
     setSaveMessage(null);
@@ -197,6 +238,9 @@ export default function PaymentGatewayClient({
       formData.append("bkash", nextBkash);
       formData.append("nagad", nextNagad);
       formData.append("rocket", nextRocket);
+      formData.append("upay", nextUpay);
+      formData.append("cellfin", nextCellfin);
+      formData.append("tap", nextTap);
       const res = await saveGatewaySettings(formData);
       if (res.success) {
         setSaveMessage({ type: "success", text: "Merchant payment configurations updated successfully!" });
@@ -213,32 +257,87 @@ export default function PaymentGatewayClient({
     }
   };
 
+  const handleToggleGatewayActive = async (provider: "bkash" | "nagad" | "rocket" | "upay" | "cellfin" | "tap") => {
+    let nextBkashActive = bkashActive;
+    let nextNagadActive = nagadActive;
+    let nextRocketActive = rocketActive;
+    let nextUpayActive = upayActive;
+    let nextCellfinActive = cellfinActive;
+    let nextTapActive = tapActive;
+
+    if (provider === "bkash") { nextBkashActive = !bkashActive; setBkashActive(nextBkashActive); }
+    else if (provider === "nagad") { nextNagadActive = !nagadActive; setNagadActive(nextNagadActive); }
+    else if (provider === "rocket") { nextRocketActive = !rocketActive; setRocketActive(nextRocketActive); }
+    else if (provider === "upay") { nextUpayActive = !upayActive; setUpayActive(nextUpayActive); }
+    else if (provider === "cellfin") { nextCellfinActive = !cellfinActive; setCellfinActive(nextCellfinActive); }
+    else if (provider === "tap") { nextTapActive = !tapActive; setTapActive(nextTapActive); }
+
+    try {
+      const fd = new FormData();
+      fd.append("brandName", brandName);
+      fd.append("brandColor", brandColor);
+      fd.append("brandLogo", brandLogo);
+      fd.append("withTrx", String(withTrx));
+      fd.append("withoutTrx", String(withoutTrx));
+      
+      fd.append("bkashActive", String(nextBkashActive));
+      fd.append("nagadActive", String(nextNagadActive));
+      fd.append("rocketActive", String(nextRocketActive));
+      fd.append("upayActive", String(nextUpayActive));
+      fd.append("cellfinActive", String(nextCellfinActive));
+      fd.append("tapActive", String(nextTapActive));
+
+      await saveBrandingSettings(fd);
+    } catch (err: any) {
+      alert("Failed to toggle gateway status: " + err.message);
+    }
+  };
+
+  const getProviderActive = (provider: string) => {
+    if (provider === "bkash") return bkashActive;
+    if (provider === "nagad") return nagadActive;
+    if (provider === "rocket") return rocketActive;
+    if (provider === "upay") return upayActive;
+    if (provider === "cellfin") return cellfinActive;
+    if (provider === "tap") return tapActive;
+    return false;
+  };
+
   const handleGatewaySubmit = (e: React.FormEvent) => {
     e.preventDefault();
     let nextBkash = bkash;
     let nextNagad = nagad;
     let nextRocket = rocket;
+    let nextUpay = upay;
+    let nextCellfin = cellfin;
+    let nextTap = tap;
 
     const providerToSet = editingProvider || formProvider;
 
     if (providerToSet === "bkash") {
       nextBkash = formNumber;
       setBkash(formNumber);
-      setBkashActive(true);
     } else if (providerToSet === "nagad") {
       nextNagad = formNumber;
       setNagad(formNumber);
-      setNagadActive(true);
     } else if (providerToSet === "rocket") {
       nextRocket = formNumber;
       setRocket(formNumber);
-      setRocketActive(true);
+    } else if (providerToSet === "upay") {
+      nextUpay = formNumber;
+      setUpay(formNumber);
+    } else if (providerToSet === "cellfin") {
+      nextCellfin = formNumber;
+      setCellfin(formNumber);
+    } else if (providerToSet === "tap") {
+      nextTap = formNumber;
+      setTap(formNumber);
     }
 
-    saveSettingsDirectly(nextBkash, nextNagad, nextRocket);
+    saveSettingsDirectly(nextBkash, nextNagad, nextRocket, nextUpay, nextCellfin, nextTap);
   };
 
-  const handleDeleteGateway = (provider: "bkash" | "nagad" | "rocket") => {
+  const handleDeleteGateway = (provider: "bkash" | "nagad" | "rocket" | "upay" | "cellfin" | "tap") => {
     if (!confirm(`Are you sure you want to delete the ${provider} gateway?`)) {
       return;
     }
@@ -246,22 +345,31 @@ export default function PaymentGatewayClient({
     let nextBkash = bkash;
     let nextNagad = nagad;
     let nextRocket = rocket;
+    let nextUpay = upay;
+    let nextCellfin = cellfin;
+    let nextTap = tap;
 
     if (provider === "bkash") {
       nextBkash = "";
       setBkash("");
-      setBkashActive(false);
     } else if (provider === "nagad") {
       nextNagad = "";
       setNagad("");
-      setNagadActive(false);
     } else if (provider === "rocket") {
       nextRocket = "";
       setRocket("");
-      setRocketActive(false);
+    } else if (provider === "upay") {
+      nextUpay = "";
+      setUpay("");
+    } else if (provider === "cellfin") {
+      nextCellfin = "";
+      setCellfin("");
+    } else if (provider === "tap") {
+      nextTap = "";
+      setTap("");
     }
 
-    saveSettingsDirectly(nextBkash, nextNagad, nextRocket);
+    saveSettingsDirectly(nextBkash, nextNagad, nextRocket, nextUpay, nextCellfin, nextTap);
   };
 
   const handleGenerateKeys = async () => {
@@ -745,23 +853,32 @@ export default function PaymentGatewayClient({
       )}
 
       {activeTab === "settings" && (() => {
-        // Gateway meta config
         const GATEWAY_META: Record<string, { label: string; currency: string; desc: string; placeholder: string; bg: string; border: string; textColor: string; logoUrl: string; }> = {
-          bkash:  { label: "bKash Personal",  currency: "BDT", desc: "Send Money SMS trigger matching",  placeholder: "017XXXXXXXX", bg: "bg-pink-50",   border: "border-pink-200",   textColor: "text-pink-700",   logoUrl: "/logos/bkash.png" },
-          nagad:  { label: "Nagad Personal",   currency: "BDT", desc: "Personal Nagad wallet matching",   placeholder: "019XXXXXXXX", bg: "bg-orange-50", border: "border-orange-200", textColor: "text-orange-700", logoUrl: "/logos/nagad.png" },
+          bkash:   { label: "bKash Personal",   currency: "BDT", desc: "Send Money SMS matching", placeholder: "017XXXXXXXX", bg: "bg-pink-50",     border: "border-pink-200",     textColor: "text-pink-700",     logoUrl: "/logos/bkash.png" },
+          nagad:   { label: "Nagad Personal",   currency: "BDT", desc: "Nagad Wallet matching",    placeholder: "019XXXXXXXX", bg: "bg-orange-50",   border: "border-orange-200",   textColor: "text-orange-700",   logoUrl: "/logos/nagad.png" },
+          rocket:  { label: "Rocket Personal",  currency: "BDT", desc: "Rocket Wallet matching",   placeholder: "01XXXXXXXXXX", bg: "bg-purple-50",   border: "border-purple-200",   textColor: "text-purple-700",   logoUrl: "/logos/rocket.png" },
+          upay:    { label: "Upay Personal",    currency: "BDT", desc: "Upay Wallet matching",     placeholder: "01XXXXXXXXX",  bg: "bg-yellow-50",   border: "border-yellow-200",   textColor: "text-yellow-750",   logoUrl: "/codepay-upay.png" },
+          cellfin: { label: "CellFin Personal", currency: "BDT", desc: "CellFin Wallet matching",  placeholder: "01XXXXXXXXX",  bg: "bg-emerald-50",  border: "border-emerald-250",  textColor: "text-emerald-750",  logoUrl: "/logos/cellfin.png" },
+          tap:     { label: "Tap Personal",     currency: "BDT", desc: "Tap Wallet matching",      placeholder: "01XXXXXXXXX",  bg: "bg-red-50",      border: "border-red-250",      textColor: "text-red-750",      logoUrl: "/logos/tap.png" },
         };
 
         const configuredGateways = [
-          ...(bkashActive  ? [{ provider: "bkash"  as const, number: bkash  }] : []),
-          ...(nagadActive  ? [{ provider: "nagad"  as const, number: nagad  }] : []),
+          ...(bkash  ? [{ provider: "bkash"  as const, number: bkash  }] : []),
+          ...(nagad  ? [{ provider: "nagad"  as const, number: nagad  }] : []),
+          ...(rocket ? [{ provider: "rocket" as const, number: rocket }] : []),
+          ...(upay   ? [{ provider: "upay"   as const, number: upay   }] : []),
+          ...(cellfin? [{ provider: "cellfin"as const, number: cellfin}] : []),
+          ...(tap    ? [{ provider: "tap"    as const, number: tap    }] : []),
         ];
 
-        const availableToAdd = (["bkash", "nagad"] as const).filter(
-          (p) => !(p === "bkash" ? bkashActive : nagadActive)
+        const availableToAdd = (["bkash", "nagad", "rocket", "upay", "cellfin", "tap"] as const).filter(
+          (p) => !(p === "bkash" ? bkash : p === "nagad" ? nagad : p === "rocket" ? rocket : p === "upay" ? upay : p === "cellfin" ? cellfin : tap)
         );
 
         return (
-        <div className="w-full space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
+          {/* Left Column (MFS & Banks) */}
+          <div className="lg:col-span-7 space-y-6">
 
           {/* ── Add Gateway Modal ── */}
           {showAddForm && (
@@ -897,7 +1014,7 @@ export default function PaymentGatewayClient({
                 </div>
                 <div>
                   <h4 className="text-sm font-extrabold text-slate-700">No Payment Gateways Yet</h4>
-                  <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto leading-relaxed">Click <strong>Add Gateway</strong> to configure your first bKash or Nagad receiving number.</p>
+                  <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto leading-relaxed">Click <strong>Add Gateway</strong> to configure your first receiving number.</p>
                 </div>
               </div>
             ) : (
@@ -906,7 +1023,6 @@ export default function PaymentGatewayClient({
                   <tr className="bg-slate-50 border-b border-slate-100">
                     <th className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 px-6 py-3">Gateway</th>
                     <th className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 px-4 py-3">Wallet Number</th>
-                    <th className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 px-4 py-3">Currency</th>
                     <th className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 px-4 py-3">Status</th>
                     <th className="text-right text-[10px] font-black uppercase tracking-widest text-slate-400 px-6 py-3">Actions</th>
                   </tr>
@@ -931,16 +1047,23 @@ export default function PaymentGatewayClient({
                           <span className="font-mono text-sm font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded-lg">{number || "—"}</span>
                         </td>
                         <td className="px-4 py-4">
-                          <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">{m.currency}</span>
-                        </td>
-                        <td className="px-4 py-4">
-                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            Active
-                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleGatewayActive(provider)}
+                            className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full border transition cursor-pointer ${
+                              getProviderActive(provider)
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                : "bg-slate-50 text-slate-400 border-slate-200"
+                            }`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${
+                              getProviderActive(provider) ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
+                            }`}></span>
+                            {getProviderActive(provider) ? "Active" : "Inactive"}
+                          </button>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="inline-flex items-center gap-1.5">
+                          <div className="inline-flex items-center justify-end gap-2">
                             <button
                               type="button"
                               onClick={() => {
@@ -948,17 +1071,23 @@ export default function PaymentGatewayClient({
                                 setFormNumber(number || "");
                                 setShowAddForm(true);
                               }}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-600 transition cursor-pointer shadow-xs"
+                              className="w-8 h-8 inline-flex items-center justify-center rounded-xl border border-slate-250 bg-white hover:bg-slate-50 text-slate-500 hover:text-indigo-600 transition cursor-pointer shadow-2xs"
+                              title="Edit"
                             >
-                              Edit
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                              </svg>
                             </button>
                             <button
                               type="button"
                               onClick={() => handleDeleteGateway(provider)}
                               disabled={isSavingSettings}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-red-100 bg-red-50 hover:bg-red-100 text-xs font-bold text-red-600 transition cursor-pointer disabled:opacity-50"
+                              className="w-8 h-8 inline-flex items-center justify-center rounded-xl border border-red-150 bg-red-50 hover:bg-red-100 text-red-600 transition cursor-pointer disabled:opacity-50"
+                              title="Delete"
                             >
-                              Delete
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
                             </button>
                           </div>
                         </td>
@@ -970,8 +1099,212 @@ export default function PaymentGatewayClient({
             )}
           </div>
 
-          {/* ── Merchant Branding ── */}
+{/* ── Bank Accounts (Multiple) ── */}
           <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Offline Channels</p>
+                <h2 className="text-lg font-extrabold text-slate-800">Bank Accounts</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Configure multiple active bank accounts to receive direct bank transfers on checkout.</p>
+              </div>
+            </div>
+
+            {/* List of current bank accounts */}
+            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+              <h3 className="text-xs font-bold text-slate-500 mb-3">Linked Bank Accounts</h3>
+              {bankAccounts.length === 0 ? (
+                <div className="text-center py-6 text-slate-400 text-xs font-medium bg-white rounded-2xl border border-dashed border-slate-200">
+                  No bank accounts configured yet. Use the form below to link your first account.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {bankAccounts.map((account: any) => {
+                    const logoMap: Record<string, string> = {
+                      ibl: "/logos/ibl.png",
+                      abbank: "/logos/abbank.png",
+                      citybank: "/logos/citybank.png",
+                      sonali: "/logos/sonali.png",
+                      dbbl: "/logos/dbbl.png",
+                      basic: "/logos/basic.png",
+                      ebl: "/logos/ebl.png",
+                    };
+                    const nameMap: Record<string, string> = {
+                      ibl: "Islami Bank Bangladesh PLC",
+                      abbank: "AB Bank PLC",
+                      citybank: "The City Bank PLC",
+                      sonali: "Sonali Bank PLC",
+                      dbbl: "Dutch-Bangla Bank PLC",
+                      basic: "BASIC Bank PLC",
+                      ebl: "Eastern Bank PLC",
+                    };
+                    return (
+                      <div key={account.id} className="bg-white p-4.5 rounded-2xl border border-slate-200 flex items-start gap-4 shadow-2xs hover:border-slate-350 transition relative">
+                        <img src={logoMap[account.bankName] || "/logos/citybank.png"} alt={account.bankName} className="w-10 h-10 object-contain shrink-0 rounded-xl bg-slate-50 p-1 border border-slate-100" />
+                        <div className="flex-1 space-y-1 min-w-0 pr-12">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block truncate">{nameMap[account.bankName] || account.bankName}</span>
+                          <span className="text-xs font-black text-slate-800 block truncate">{account.accountName}</span>
+                          <span className="text-xs font-mono font-black text-indigo-605 block truncate">{account.accountNo}</span>
+                          {account.branch && <span className="text-[9px] text-slate-450 block truncate">Branch: {account.branch}</span>}
+                        </div>
+                        {/* Toggle & Action buttons on top right */}
+                        <div className="absolute top-4 right-4 flex items-center gap-2">
+                          {/* Toggle active switch */}
+                          <input
+                            type="checkbox"
+                            checked={account.active}
+                            onChange={async (e) => {
+                              const checked = e.target.checked;
+                              try {
+                                const res = await toggleBankAccountActive(account.id, checked);
+                                if (res.success) {
+                                  setBankAccounts((prev: any) =>
+                                    prev.map((item: any) =>
+                                      item.id === account.id ? { ...item, active: checked } : item
+                                    )
+                                  );
+                                }
+                              } catch (err) {
+                                alert("Failed to toggle bank active state.");
+                              }
+                            }}
+                            className="h-3.5 w-3.5 rounded text-indigo-650 focus:ring-indigo-555 cursor-pointer"
+                            title={account.active ? "Deactivate" : "Activate"}
+                          />
+                          {/* Delete button */}
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (!confirm("Are you sure you want to delete this bank account?")) return;
+                              try {
+                                const res = await deleteBankAccount(account.id);
+                                if (res.success) {
+                                  setBankAccounts((prev: any) => prev.filter((item: any) => item.id !== account.id));
+                                }
+                              } catch (err) {
+                                alert("Failed to delete bank account.");
+                              }
+                            }}
+                            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer"
+                            title="Delete Account"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Add Bank Form */}
+            <div className="p-6">
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Add a Bank Account</h3>
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!newBankName || !newAccountName || !newAccountNo) {
+                    alert("Please fill in all required fields.");
+                    return;
+                  }
+                  setIsAddingBank(true);
+                  try {
+                    const fd = new FormData();
+                    fd.append("bankName", newBankName);
+                    fd.append("accountName", newAccountName);
+                    fd.append("accountNo", newAccountNo);
+                    fd.append("branch", newBranch);
+
+                    const res = await addBankAccount(fd);
+                    if (res.success && res.account) {
+                      setBankAccounts((prev: any) => [...prev, res.account]);
+                      setNewBankName("");
+                      setNewAccountName("");
+                      setNewAccountNo("");
+                      setNewBranch("");
+                    }
+                  } catch (err: any) {
+                    alert(err.message || "Failed to add bank account.");
+                  } finally {
+                    setIsAddingBank(false);
+                  }
+                }}
+                className="space-y-4"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Bank Name *</label>
+                    <select
+                      value={newBankName}
+                      onChange={(e) => setNewBankName(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 transition"
+                      required
+                    >
+                      <option value="">Select Bank</option>
+                      <option value="ibl">Islami Bank Bangladesh PLC (IBL)</option>
+                      <option value="abbank">AB Bank PLC</option>
+                      <option value="citybank">The City Bank PLC</option>
+                      <option value="sonali">Sonali Bank PLC</option>
+                      <option value="dbbl">Dutch-Bangla Bank PLC (DBBL)</option>
+                      <option value="basic">BASIC Bank PLC</option>
+                      <option value="ebl">Eastern Bank PLC (EBL)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Account Name *</label>
+                    <input
+                      type="text"
+                      value={newAccountName}
+                      onChange={(e) => setNewAccountName(e.target.value)}
+                      placeholder="e.g. John Doe / Company Name"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-750 focus:outline-none focus:border-indigo-500 transition"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Account Number *</label>
+                    <input
+                      type="text"
+                      value={newAccountNo}
+                      onChange={(e) => setNewAccountNo(e.target.value)}
+                      placeholder="e.g. 2050XXXXXXXXXXXXX"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-mono font-bold text-slate-750 focus:outline-none focus:border-indigo-500 transition"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Branch Name (Optional)</label>
+                    <input
+                      type="text"
+                      value={newBranch}
+                      onChange={(e) => setNewBranch(e.target.value)}
+                      placeholder="e.g. Motijheel Branch, Dhaka"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-750 focus:outline-none focus:border-indigo-500 transition"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="submit"
+                    disabled={isAddingBank}
+                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-extrabold uppercase tracking-wider transition cursor-pointer"
+                  >
+                    {isAddingBank ? "Adding Account..." : "Add Bank Account"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+          </div>
+
+          {/* Right Column (Branding & Sandbox) */}
+          <div className="lg:col-span-5 space-y-6">
+            {/* ── Merchant Branding ── */}
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
             <div className="px-6 py-5 border-b border-slate-100">
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Checkout Page</p>
               <h2 className="text-lg font-extrabold text-slate-800">Merchant Branding</h2>
@@ -979,39 +1312,48 @@ export default function PaymentGatewayClient({
             </div>
             <div className="p-6">
               <form
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  setIsSavingBranding(true);
-                  setBrandSaveMsg(null);
-                  try {
-                    const fd = new FormData();
-                    fd.append("brandName", brandName);
-                    fd.append("brandColor", brandColor);
-                    
-                    if (brandLogo && !brandLogo.startsWith("data:")) {
-                      fd.append("brandLogo", brandLogo);
-                    }
-                    if (logoFile) {
-                      fd.append("logoFile", logoFile);
-                    }
-                    
-                    const res = await saveBrandingSettings(fd);
-                    if (res.success) {
-                      if (res.brandLogo) {
-                        setBrandLogo(res.brandLogo);
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setIsSavingBranding(true);
+                    setBrandSaveMsg(null);
+                    try {
+                      const fd = new FormData();
+                      fd.append("brandName", brandName);
+                      fd.append("brandColor", "#0f172a");
+                      fd.append("withTrx", String(withTrx));
+                      fd.append("withoutTrx", String(withoutTrx));
+
+                      fd.append("bkashActive", String(bkashActive));
+                      fd.append("nagadActive", String(nagadActive));
+                      fd.append("rocketActive", String(rocketActive));
+                      fd.append("upayActive", String(upayActive));
+                      fd.append("cellfinActive", String(cellfinActive));
+                      fd.append("tapActive", String(tapActive));
+
+                      if (brandLogo && !brandLogo.startsWith("data:")) {
+                        fd.append("brandLogo", brandLogo);
                       }
-                      setLogoFile(null);
-                      setBrandSaveMsg({ type: "success", text: "Branding saved successfully!" });
+                      if (logoFile) {
+                        fd.append("logoFile", logoFile);
+                      }
+
+                      const res = await saveBrandingSettings(fd);
+                      if (res.success) {
+                        if (res.brandLogo) {
+                          setBrandLogo(res.brandLogo);
+                        }
+                        setLogoFile(null);
+                        setBrandSaveMsg({ type: "success", text: "Settings saved successfully!" });
+                      }
+                    } catch (err: any) {
+                      setBrandSaveMsg({ type: "error", text: err.message || "Failed to save settings." });
+                    } finally {
+                      setIsSavingBranding(false);
                     }
-                  } catch (err: any) {
-                    setBrandSaveMsg({ type: "error", text: err.message || "Failed to save branding." });
-                  } finally {
-                    setIsSavingBranding(false);
-                  }
-                }}
+                  }}
                 className="space-y-5"
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="flex flex-col gap-6">
                   {/* Left: fields */}
                   <div className="space-y-4">
                     <div>
@@ -1112,51 +1454,128 @@ export default function PaymentGatewayClient({
                       )}
                       <p className="text-[10px] text-slate-400 mt-1">Recommended: 200×60px transparent logo.</p>
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Header Accent Color</label>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="color"
-                          value={brandColor}
-                          onChange={(e) => setBrandColor(e.target.value)}
-                          className="w-10 h-10 rounded-xl border border-slate-200 cursor-pointer p-0.5 bg-white"
-                        />
-                        <input
-                          type="text"
-                          value={brandColor}
-                          onChange={(e) => setBrandColor(e.target.value)}
-                          placeholder="#0f172a"
-                          className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
-                        />
+
+
+                    <div className="border-t border-slate-100 pt-4 space-y-3">
+                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">Checkout Verification Modes</label>
+                      <div className="space-y-2">
+                        <label className="flex items-start gap-3 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="verificationMode"
+                            checked={withTrx}
+                            onChange={() => {
+                              setWithTrx(true);
+                              setWithoutTrx(false);
+                            }}
+                            className="mt-1 h-4 w-4 border-slate-350 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <div>
+                            <span className="text-xs font-bold text-slate-700 block">Transaction ID (TrxID) Verification</span>
+                            <span className="text-[10px] text-slate-455 leading-relaxed block mt-0.5">Requires customers to enter the TrxID from their SMS receipt.</span>
+                          </div>
+                        </label>
+                        <label className="flex items-start gap-3 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="verificationMode"
+                            checked={withoutTrx}
+                            onChange={() => {
+                              setWithoutTrx(true);
+                              setWithTrx(false);
+                            }}
+                            className="mt-1 h-4 w-4 border-slate-350 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <div>
+                            <span className="text-xs font-bold text-slate-700 block">Sender Number Matching (Without TrxID)</span>
+                            <span className="text-[10px] text-slate-450 leading-relaxed block mt-0.5">Customers enter their mobile number, and we match it automatically against synced SMS.</span>
+                          </div>
+                        </label>
                       </div>
-                      <p className="text-[10px] text-slate-400 mt-1">Used as the checkout header background color.</p>
                     </div>
                   </div>
 
                   {/* Right: live preview */}
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Live Preview</p>
-                    <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50">
-                      {/* Preview header */}
-                      <div
-                        className="px-5 py-6 text-center text-white space-y-2 transition-colors duration-300"
-                        style={{ backgroundColor: brandColor || "#0f172a" }}
-                      >
-                        {brandLogo ? (
-                          <img src={brandLogo} alt={brandName || "Brand"} className="h-8 object-contain mx-auto mb-2" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-1">
-                            <svg className="w-5 h-5 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    {/* Simulated dark checkout background */}
+                    <div className="bg-[#2d3748] rounded-[32px] p-3.5 flex flex-col items-center justify-center min-h-[500px] shadow-inner relative">
+                      
+                      {/* Floating Checkout Card Mockup */}
+                      <div className="w-full max-w-[360px] h-[465px] bg-white rounded-[28px] p-5 flex flex-col justify-between shadow-2xl relative border border-slate-100/10 select-none">
+                        
+                        {/* Top: Header, Logo, Details */}
+                        <div className="space-y-4">
+                          {/* Search Bar Row */}
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 bg-slate-50 border border-slate-100 rounded-xl px-3 py-1.5 flex items-center gap-2">
+                              <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                              </svg>
+                              <span className="text-[9px] text-slate-400 font-semibold">Search payment method...</span>
+                            </div>
+                            <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 text-xs font-bold pointer-events-none">✕</div>
                           </div>
-                        )}
-                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-black tracking-widest uppercase border border-emerald-500/30">CodePay Secured</span>
-                        <div className="text-2xl font-black">৳1,200.00</div>
-                        <div className="text-[10px] text-white/60 uppercase tracking-wider">Pay to {brandName || "Your Brand"}</div>
+
+                          {/* Merchant Info Area */}
+                          <div className="text-center pt-1">
+                            {/* Circular Brand Logo */}
+                            <div className="w-16 h-16 rounded-full bg-white border border-slate-100 flex items-center justify-center p-1.5 relative mx-auto shadow-sm">
+                              {brandLogo ? (
+                                <img src={brandLogo} alt={brandName || "Brand"} className="max-h-full max-w-full object-contain rounded-full" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                              ) : (
+                                <div className="w-full h-full rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-black">
+                                  {brandName ? brandName.substring(0, 2).toUpperCase() : "CP"}
+                                </div>
+                              )}
+                              {/* Green checkmark badge */}
+                              <div className="absolute bottom-0 right-0 bg-emerald-500 text-white w-4.5 h-4.5 rounded-full flex items-center justify-center text-[8px] font-black border-2 border-white shadow-sm">
+                                ✓
+                              </div>
+                            </div>
+
+                            {/* Brand Name */}
+                            <h4 className="text-xs font-extrabold text-slate-800 mt-2.5">{brandName || "Your Brand"}</h4>
+
+                            {/* View Details Pill */}
+                            <div className="inline-flex items-center justify-center gap-1 mt-1.5 px-3 py-0.5 bg-sky-50 text-sky-600 rounded-full text-[9px] font-bold border border-sky-100/85">
+                              View Details ▾
+                            </div>
+                          </div>
+
+                          {/* Tab Selectors */}
+                          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-1 flex gap-1 mt-1">
+                            <div className="bg-white text-slate-700 shadow-3xs border border-slate-100/40 rounded-xl flex-1 text-center py-1.5 text-[9px] font-black tracking-wide uppercase">
+                              Mobile Banking
+                            </div>
+                            <div className="text-slate-400 flex-1 text-center py-1.5 text-[9px] font-black tracking-wide uppercase pointer-events-none">
+                              Bank Transfer
+                            </div>
+                          </div>
+
+                          {/* Payment Methods Grid Mock */}
+                          <div className="grid grid-cols-4 gap-2 mt-2">
+                            {[
+                              { name: "bkash", logo: "/logos/bkash.png" },
+                              { name: "nagad", logo: "/logos/nagad.png" },
+                              { name: "rocket", logo: "/logos/rocket.png" },
+                              { name: "upay", logo: "/codepay-upay.png" },
+                              { name: "cellfin", logo: "/logos/cellfin.png" },
+                              { name: "tap", logo: "/logos/tap.png" },
+                            ].map((m) => (
+                              <div key={m.name} className="bg-white rounded-xl border border-slate-200/60 p-1.5 flex items-center justify-center h-10 shadow-3xs hover:border-slate-300 transition">
+                                <img src={m.logo} alt={m.name} className="max-h-full max-w-full object-contain h-7" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Bottom: Footer */}
+                        <div className="text-center text-[7px] font-black tracking-widest text-slate-400 uppercase pt-3 border-t border-slate-100">
+                          POWERED BY CODEPAY SECURED GATEWAY
+                        </div>
                       </div>
-                      {/* Preview body snippet */}
-                      <div className="bg-white px-4 py-3 text-xs text-slate-400 text-center border-t border-slate-100">
-                        Customer payment method selection appears here
-                      </div>
+
                     </div>
                   </div>
                 </div>
@@ -1183,21 +1602,21 @@ export default function PaymentGatewayClient({
           {/* ── Sandbox Simulator ── */}
           <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-lg w-full">
             {/* Header row */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+            <div className="flex flex-col gap-4 mb-5">
               <div>
                 <h2 className="text-sm font-extrabold text-white uppercase tracking-wider">CodePay Sandbox Simulator</h2>
                 <p className="text-[11px] text-slate-400 mt-0.5">Generate a mock checkout to test redirection &amp; verification flow.</p>
               </div>
-              {/* Inline form */}
-              <form onSubmit={handleCreateSandboxPayment} className="flex items-center gap-2 shrink-0">
-                <div className="relative">
+              {/* Sidebar form */}
+              <form onSubmit={handleCreateSandboxPayment} className="flex items-center gap-2 w-full">
+                <div className="relative flex-1">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold pointer-events-none">৳</span>
                   <input
                     type="number"
                     required
                     value={sandboxAmount}
                     onChange={(e) => setSandboxAmount(e.target.value)}
-                    className="bg-slate-800 border border-slate-700 text-white rounded-xl py-2.5 pl-7 pr-3 text-sm font-mono font-bold w-36 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
+                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl py-2.5 pl-7 pr-3 text-sm font-mono font-bold focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
                     placeholder="Amount"
                   />
                 </div>
@@ -1263,6 +1682,7 @@ export default function PaymentGatewayClient({
                 </div>
               </div>
             )}
+          </div>
           </div>
         </div>
         );

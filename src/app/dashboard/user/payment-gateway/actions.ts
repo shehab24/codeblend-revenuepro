@@ -13,6 +13,9 @@ export async function saveGatewaySettings(formData: FormData) {
   const bkash = formData.get("bkash") as string;
   const nagad = formData.get("nagad") as string;
   const rocket = formData.get("rocket") as string;
+  const upay = formData.get("upay") as string;
+  const cellfin = formData.get("cellfin") as string;
+  const tap = formData.get("tap") as string;
 
   await prisma.user.update({
     where: { id: userId },
@@ -20,6 +23,9 @@ export async function saveGatewaySettings(formData: FormData) {
       codepayBkash: bkash || null,
       codepayNagad: nagad || null,
       codepayRocket: rocket || null,
+      codepayUpay: upay || null,
+      codepayCellfin: cellfin || null,
+      codepayTap: tap || null,
     },
   });
 
@@ -34,6 +40,16 @@ export async function saveBrandingSettings(formData: FormData) {
   const brandName = formData.get("brandName") as string;
   const brandColor = formData.get("brandColor") as string;
   let brandLogo = formData.get("brandLogo") as string;
+
+  const withTrx = formData.get("withTrx") === "true";
+  const withoutTrx = formData.get("withoutTrx") === "true";
+
+  const bkashActive = formData.get("bkashActive") === "true";
+  const nagadActive = formData.get("nagadActive") === "true";
+  const rocketActive = formData.get("rocketActive") === "true";
+  const upayActive = formData.get("upayActive") === "true";
+  const cellfinActive = formData.get("cellfinActive") === "true";
+  const tapActive = formData.get("tapActive") === "true";
 
   const logoFile = formData.get("logoFile") as File | null;
   if (logoFile && logoFile.size > 0) {
@@ -52,6 +68,14 @@ export async function saveBrandingSettings(formData: FormData) {
       codepayBrandName: brandName || null,
       codepayBrandLogo: brandLogo || null,
       codepayBrandColor: brandColor || "#0f172a",
+      codepayWithTrx: withTrx,
+      codepayWithoutTrx: withoutTrx,
+      codepayBkashActive: bkashActive,
+      codepayNagadActive: nagadActive,
+      codepayRocketActive: rocketActive,
+      codepayUpayActive: upayActive,
+      codepayCellfinActive: cellfinActive,
+      codepayTapActive: tapActive,
     },
   });
 
@@ -108,6 +132,12 @@ export async function simulateSandboxSms(formData: FormData) {
     rawMessage = `Nagad: You have received Tk ${amount.toFixed(2)} from ${sender}. Ref: CodePay. TxnID: ${cleanTrx} Time: ${dateStr}`;
   } else if (method === "rocket") {
     rawMessage = `Dbbl Mobile Banking: You have received BDT ${amount.toFixed(2)} from ${sender}. Ref: CodePay. TxID: ${cleanTrx} Time: ${dateStr}`;
+  } else if (method === "upay") {
+    rawMessage = `upay: You have received Tk ${amount.toFixed(2)} from ${sender}. TxnID: ${cleanTrx} at ${dateStr}`;
+  } else if (method === "cellfin") {
+    rawMessage = `CellFin: You have received Tk ${amount.toFixed(2)} from ${sender}. TxnID: ${cleanTrx} at ${dateStr}`;
+  } else if (method === "tap") {
+    rawMessage = `tap: You have received Tk ${amount.toFixed(2)} from ${sender}. TxnID: ${cleanTrx} at ${dateStr}`;
   }
 
   await prisma.bkashSmsTransaction.create({
@@ -158,4 +188,73 @@ export async function createSandboxPayment(formData: FormData, baseUrl: string) 
 
   revalidatePath("/dashboard/user/payment-gateway");
   return { success: true, paymentUrl };
+}
+
+export async function addBankAccount(formData: FormData) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const bankName = formData.get("bankName") as string;
+  const accountName = formData.get("accountName") as string;
+  const accountNo = formData.get("accountNo") as string;
+  const branch = formData.get("branch") as string;
+
+  if (!bankName || !accountName || !accountNo) {
+    throw new Error("Missing required bank fields");
+  }
+
+  const account = await prisma.codePayBankAccount.create({
+    data: {
+      userId,
+      bankName,
+      accountName,
+      accountNo,
+      branch: branch || null,
+      active: true,
+    },
+  });
+
+  revalidatePath("/dashboard/user/payment-gateway");
+  return { success: true, account };
+}
+
+export async function deleteBankAccount(accountId: string) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  // Verify ownership
+  const account = await prisma.codePayBankAccount.findUnique({
+    where: { id: accountId },
+  });
+  if (!account || account.userId !== userId) {
+    throw new Error("Unauthorized or bank account not found");
+  }
+
+  await prisma.codePayBankAccount.delete({
+    where: { id: accountId },
+  });
+
+  revalidatePath("/dashboard/user/payment-gateway");
+  return { success: true };
+}
+
+export async function toggleBankAccountActive(accountId: string, active: boolean) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  // Verify ownership
+  const account = await prisma.codePayBankAccount.findUnique({
+    where: { id: accountId },
+  });
+  if (!account || account.userId !== userId) {
+    throw new Error("Unauthorized or bank account not found");
+  }
+
+  await prisma.codePayBankAccount.update({
+    where: { id: accountId },
+    data: { active },
+  });
+
+  revalidatePath("/dashboard/user/payment-gateway");
+  return { success: true };
 }
