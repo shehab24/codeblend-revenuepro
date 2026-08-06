@@ -11,6 +11,7 @@ const adminLinks: { section: string; links: NavLink[] }[] = [
       { href: "/dashboard/admin", label: "Dashboard", icon: "📊" },
       { href: "/dashboard/admin/users", label: "System Users", icon: "👥" },
       { href: "/dashboard/admin/licenses", label: "Licenses", icon: "🔑" },
+      { href: "/dashboard/admin/invoices", label: "Guest Billing", icon: "📑" },
       { href: "/dashboard/admin/transactions", label: "Transactions", icon: "💳" },
     ],
   },

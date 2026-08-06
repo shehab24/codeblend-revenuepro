@@ -248,8 +248,8 @@ model CodePayPayment {
 
 model Invoice {
   id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   type        String   // "custom" | "license" | "service" | "transaction"
   itemId      String?  // ID of the target License, ServiceRequest, or PaymentTransaction
   title       String
@@ -259,6 +259,7 @@ model Invoice {
   name        String?
   email       String?
   phone       String?
+  items       Json?    // [{ description: string, quantity: number, rate: number, amount: number }]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
