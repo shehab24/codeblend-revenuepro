@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import SharePageControls from "@/components/SharePageControls";
+import { getCurrencySymbol } from "@/lib/currency";
 
 export default async function PublicInvoicePage({
   params,
@@ -22,6 +23,8 @@ export default async function PublicInvoicePage({
   const docTypeName = isQuotation ? "Quotation" : "Invoice";
   const docNumber = `${isQuotation ? "QT" : "INV"}-${invoice.id.slice(-8).toUpperCase()}`;
   const docDate = invoice.createdAt ? new Date(invoice.createdAt) : new Date();
+
+  const sym = getCurrencySymbol(invoice.currency);
 
   const subtotal = invoice.amount;
   const totalPaid = isQuotation ? 0 : invoice.paid;
@@ -82,7 +85,7 @@ export default async function PublicInvoicePage({
             </div>
             <p className="text-slate-500 text-xs leading-relaxed">
               Official Billing & Estimate Statement<br />
-              Email: contact@codeblend.co | Dhaka, Bangladesh
+              contact@codeblend.co | Dhaka, Bangladesh
             </p>
           </div>
 
@@ -90,15 +93,41 @@ export default async function PublicInvoicePage({
             <h1 className="text-2xl font-black text-slate-900 mb-1 uppercase tracking-wider">{docTypeName}</h1>
             <p className="text-xs text-slate-500 font-mono"><span className="font-bold text-slate-700">{docTypeName} #:</span> {docNumber}</p>
             <p className="text-xs text-slate-500"><span className="font-bold text-slate-700">Date:</span> {docDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}</p>
+            {invoice.billingMonth && (() => {
+              const [year, month] = invoice.billingMonth.split("-");
+              const label = new Date(parseInt(year), parseInt(month) - 1, 1).toLocaleString("en-US", { month: "long", year: "numeric" });
+              return (
+                <p className="text-xs text-slate-500"><span className="font-bold text-slate-700">Billing Month:</span> {label}</p>
+              );
+            })()}
           </div>
         </div>
 
-        {/* Billed To / Recipient Info */}
-        <div className="mb-8 p-4 bg-slate-50 rounded-xl border border-slate-100">
-          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{isQuotation ? "Prepared For:" : "Billed To:"}</h3>
-          <p className="font-extrabold text-slate-900 text-sm">{invoice.name}</p>
-          {invoice.email && <p className="text-xs text-slate-600 font-medium">✉️ {invoice.email}</p>}
-          {invoice.phone && <p className="text-xs text-slate-600 font-medium">📞 {invoice.phone}</p>}
+        {/* Recipient & Issuer Info Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+            <div className="flex items-baseline gap-1.5 mb-1">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
+                {isQuotation ? "Prepared For:" : "Billed To:"}
+              </span>
+              <span className="font-extrabold text-slate-900 text-sm leading-tight">{invoice.name}</span>
+            </div>
+            {invoice.address && (
+              <p className="text-xs text-slate-600 font-medium whitespace-pre-wrap leading-relaxed mt-1 mb-1.5">
+                {invoice.address}
+              </p>
+            )}
+            {invoice.email && <p className="text-xs text-slate-500">✉️ {invoice.email}</p>}
+            {invoice.phone && <p className="text-xs text-slate-500">📞 {invoice.phone}</p>}
+          </div>
+
+          <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+            <div className="flex items-baseline gap-1.5 mb-1">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Billed By:</span>
+              <span className="font-extrabold text-slate-900 text-sm leading-tight">{invoice.preparedBy || "CodeBlend Digital Solutions"}</span>
+            </div>
+            <p className="text-xs text-slate-500">✉️ {invoice.preparedByEmail || "contact@codeblend.co"}</p>
+          </div>
         </div>
 
         {/* Line Items Table */}
@@ -108,7 +137,7 @@ export default async function PublicInvoicePage({
               // Multi-item columns
               <tr className="border-b-2 border-slate-200 text-xs uppercase text-slate-400 font-black tracking-wider">
                 <th className="pb-3 text-left">Item Description</th>
-                <th className="pb-3 text-center w-16">Qty</th>
+                <th className="pb-3 text-center w-20">Qty / Hrs</th>
                 <th className="pb-3 text-right w-24">Rate</th>
                 <th className="pb-3 text-right w-28">Total</th>
               </tr>
@@ -127,14 +156,14 @@ export default async function PublicInvoicePage({
                   <td className="py-4 align-top text-slate-800 font-medium">
                     {item.description}
                   </td>
-                  <td className="py-4 text-center align-top text-slate-500">
+                  <td className="py-4 text-center align-top text-slate-600 font-mono">
                     {item.quantity}
                   </td>
                   <td className="py-4 text-right align-top text-slate-500 font-mono">
-                    ৳{(parseFloat(item.rate) || 0).toFixed(2)}
+                    {sym}{(parseFloat(item.rate) || 0).toFixed(2)}
                   </td>
                   <td className="py-4 font-bold text-slate-900 text-right align-top whitespace-nowrap font-mono">
-                    ৳{(parseFloat(item.amount) || 0).toFixed(2)}
+                    {sym}{(parseFloat(item.amount) || 0).toFixed(2)}
                   </td>
                 </tr>
               ))
@@ -145,7 +174,7 @@ export default async function PublicInvoicePage({
                   {invoice.title}
                 </td>
                 <td className="py-4 font-bold text-slate-900 text-right align-top whitespace-nowrap font-mono">
-                  ৳{invoice.amount.toFixed(2)}
+                  {sym}{invoice.amount.toFixed(2)}
                 </td>
               </tr>
             )}
@@ -157,24 +186,36 @@ export default async function PublicInvoicePage({
           <div className="w-72 space-y-2">
             <div className="flex justify-between py-1.5 text-xs text-slate-600 border-b border-slate-100 font-medium">
               <span>{isQuotation ? "Estimated Cost:" : "Total Invoiced:"}</span>
-              <span className="font-extrabold text-slate-800 font-mono">৳{subtotal.toFixed(2)}</span>
+              <span className="font-extrabold text-slate-800 font-mono">{sym}{subtotal.toFixed(2)}</span>
             </div>
             {!isQuotation && (
               <>
                 <div className="flex justify-between py-1.5 text-xs border-b border-slate-100 font-medium">
                   <span className="text-slate-600">Total Paid:</span>
-                  <span className="font-extrabold text-emerald-600 font-mono">- ৳{totalPaid.toFixed(2)}</span>
+                  <span className="font-extrabold text-emerald-600 font-mono">- {sym}{totalPaid.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between py-2 text-base font-black border-t border-slate-200">
+                <div className="flex justify-between py-2 text-base font-black">
                   <span className="text-slate-900">Balance Due:</span>
                   <span className={`font-mono ${balanceDue > 0 ? "text-rose-600" : "text-emerald-600"}`}>
-                    ৳{balanceDue.toFixed(2)}
+                    {sym}{balanceDue.toFixed(2)}
                   </span>
                 </div>
               </>
             )}
           </div>
         </div>
+
+        {/* Payment Information / Bank Details */}
+        {invoice.paymentDetails && (
+          <div className="mb-8 p-5 bg-slate-50 border border-slate-200/80 rounded-xl">
+            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+              <span>💳</span> Payment Information / Bank Details:
+            </h4>
+            <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed font-mono font-medium">
+              {invoice.paymentDetails}
+            </p>
+          </div>
+        )}
 
         {/* Custom Notes Section */}
         {invoice.notes && (
@@ -190,7 +231,6 @@ export default async function PublicInvoicePage({
             Thank you for trusting CodeBlend. For inquiries or questions, please contact contact@codeblend.co.
           </p>
         </div>
-
 
       </div>
     </div>

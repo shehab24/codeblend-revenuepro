@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getLicenseFinancials } from "../page";
+import { getCurrencySymbol } from "@/lib/currency";
 
 export default async function AdminUserInvoicePage({
   params,
@@ -238,6 +239,8 @@ export default async function AdminUserInvoicePage({
     balanceDue = Math.max(0, subtotal - totalPaid);
   }
 
+  const sym = getCurrencySymbol(dbInvoice?.currency);
+
   return (
     <div className="min-h-screen bg-slate-100 p-4 sm:p-8 font-sans print:p-0 print:bg-white text-slate-800">
       <style dangerouslySetInnerHTML={{ __html: `
@@ -301,6 +304,11 @@ export default async function AdminUserInvoicePage({
               Official Billing & Payment Receipt<br />
               Email: contact@codeblend.co | Dhaka, Bangladesh
             </p>
+            {dbInvoice?.preparedBy && (
+              <p className="text-xs text-slate-500 font-medium mt-1">
+                <span className="font-bold text-slate-700">Prepared By:</span> {dbInvoice.preparedBy}
+              </p>
+            )}
           </div>
 
           <div className="sm:text-right">
@@ -310,12 +318,26 @@ export default async function AdminUserInvoicePage({
           </div>
         </div>
 
-        {/* Billed To Customer Info */}
-        <div className="mb-8 p-4 bg-slate-50 rounded-xl border border-slate-100">
-          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Billed To:</h3>
-          <p className="font-extrabold text-slate-900 text-sm">{billingName}</p>
-          <p className="text-xs text-slate-600 font-medium">✉️ {billingEmail}</p>
-          {billingPhone && <p className="text-xs text-slate-600 font-medium">📞 {billingPhone}</p>}
+        {/* Billed To / Billed By Customer Info */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Billed To:</h3>
+            <p className="font-extrabold text-slate-900 text-sm mb-1">{billingName}</p>
+            {dbInvoice?.address && (
+              <p className="text-xs text-slate-700 font-medium whitespace-pre-wrap leading-relaxed mb-1.5 font-sans">
+                {dbInvoice.address}
+              </p>
+            )}
+            <p className="text-xs text-slate-600 font-medium">✉️ {billingEmail}</p>
+            {billingPhone && <p className="text-xs text-slate-600 font-medium">📞 {billingPhone}</p>}
+          </div>
+
+          <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Billed By:</h3>
+            <p className="font-extrabold text-slate-900 text-sm">{dbInvoice?.preparedBy || "CodeBlend Digital Solutions"}</p>
+            <p className="text-xs text-slate-600 font-medium">✉️ {dbInvoice?.preparedByEmail || "contact@codeblend.co"}</p>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">Dhaka, Bangladesh</p>
+          </div>
         </div>
 
         {/* Line Items Table */}
@@ -342,8 +364,8 @@ export default async function AdminUserInvoicePage({
                       {item.status}
                     </span>
                   </td>
-                  <td className="py-4 font-bold text-slate-900 text-right align-top whitespace-nowrap">
-                    ৳{item.amount.toFixed(2)}
+                  <td className="py-4 font-bold text-slate-900 text-right align-top whitespace-nowrap font-mono">
+                    {sym}{item.amount.toFixed(2)}
                   </td>
                 </tr>
               ))
@@ -362,20 +384,32 @@ export default async function AdminUserInvoicePage({
           <div className="w-72 space-y-2">
             <div className="flex justify-between py-1.5 text-xs text-slate-600 border-b border-slate-100 font-medium">
               <span>Total Invoiced:</span>
-              <span className="font-extrabold text-slate-800">৳{subtotal.toFixed(2)}</span>
+              <span className="font-extrabold text-slate-800 font-mono">{sym}{subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between py-1.5 text-xs border-b border-slate-100 font-medium">
               <span className="text-slate-600">Total Paid:</span>
-              <span className="font-extrabold text-emerald-600">- ৳{totalPaid.toFixed(2)}</span>
+              <span className="font-extrabold text-emerald-600 font-mono">- {sym}{totalPaid.toFixed(2)}</span>
             </div>
             <div className="flex justify-between py-2 text-base font-black border-t border-slate-200">
               <span className="text-slate-900">Balance Due:</span>
-              <span className={balanceDue > 0 ? "text-rose-600" : "text-emerald-600"}>
-                ৳{balanceDue.toFixed(2)}
+              <span className={`font-mono ${balanceDue > 0 ? "text-rose-600" : "text-emerald-600"}`}>
+                {sym}{balanceDue.toFixed(2)}
               </span>
             </div>
           </div>
         </div>
+
+        {/* Payment Details / Bank Info */}
+        {dbInvoice?.paymentDetails && (
+          <div className="mb-8 p-5 bg-slate-50 border border-slate-200/80 rounded-xl">
+            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+              <span>💳</span> Payment Information / Bank Details:
+            </h4>
+            <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed font-mono font-medium">
+              {dbInvoice.paymentDetails}
+            </p>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="pt-6 border-t border-slate-200 text-center">

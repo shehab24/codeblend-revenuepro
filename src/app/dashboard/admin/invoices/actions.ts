@@ -18,6 +18,72 @@ async function ensureAdmin() {
   }
 }
 
+import { getCurrencySymbol, DEFAULT_BANK_DETAILS, DEFAULT_PREPARED_BY_NAME, DEFAULT_PREPARED_BY_EMAIL, DEFAULT_CURRENCY, DEFAULT_CLIENT_NAME, DEFAULT_CLIENT_ADDRESS } from "@/lib/currency";
+
+
+export async function getGlobalInvoiceDefaults() {
+  const { userId } = await auth();
+  let callerName = DEFAULT_PREPARED_BY_NAME;
+  let callerEmail = DEFAULT_PREPARED_BY_EMAIL;
+
+  if (userId) {
+    const caller = await prisma.user.findUnique({ where: { id: userId } });
+    if (caller?.name) callerName = caller.name;
+    if (caller?.email) callerEmail = caller.email;
+  }
+
+  const [currSetting, nameSetting, emailSetting, bankSetting] = await Promise.all([
+    prisma.setting.findUnique({ where: { key: "INVOICE_DEFAULT_CURRENCY" } }),
+    prisma.setting.findUnique({ where: { key: "INVOICE_DEFAULT_PREPARED_BY_NAME" } }),
+    prisma.setting.findUnique({ where: { key: "INVOICE_DEFAULT_PREPARED_BY_EMAIL" } }),
+    prisma.setting.findUnique({ where: { key: "INVOICE_DEFAULT_PAYMENT_DETAILS" } }),
+  ]);
+
+  return {
+    currency: currSetting?.value || DEFAULT_CURRENCY,
+    preparedBy: nameSetting?.value || callerName,
+    preparedByEmail: emailSetting?.value || callerEmail,
+    paymentDetails: bankSetting?.value || DEFAULT_BANK_DETAILS,
+    defaultClientName: DEFAULT_CLIENT_NAME,
+    defaultClientAddress: DEFAULT_CLIENT_ADDRESS,
+  };
+}
+
+export async function saveGlobalInvoiceDefaults(data: {
+  currency: string;
+  preparedBy: string;
+  preparedByEmail: string;
+  paymentDetails: string;
+}) {
+  await ensureAdmin();
+
+  await Promise.all([
+    prisma.setting.upsert({
+      where: { key: "INVOICE_DEFAULT_CURRENCY" },
+      update: { value: data.currency },
+      create: { key: "INVOICE_DEFAULT_CURRENCY", value: data.currency },
+    }),
+    prisma.setting.upsert({
+      where: { key: "INVOICE_DEFAULT_PREPARED_BY_NAME" },
+      update: { value: data.preparedBy },
+      create: { key: "INVOICE_DEFAULT_PREPARED_BY_NAME", value: data.preparedBy },
+    }),
+    prisma.setting.upsert({
+      where: { key: "INVOICE_DEFAULT_PREPARED_BY_EMAIL" },
+      update: { value: data.preparedByEmail },
+      create: { key: "INVOICE_DEFAULT_PREPARED_BY_EMAIL", value: data.preparedByEmail },
+    }),
+    prisma.setting.upsert({
+      where: { key: "INVOICE_DEFAULT_PAYMENT_DETAILS" },
+      update: { value: data.paymentDetails },
+      create: { key: "INVOICE_DEFAULT_PAYMENT_DETAILS", value: data.paymentDetails },
+    }),
+  ]);
+
+  revalidatePath("/dashboard/admin/invoices");
+  return { success: true };
+}
+
 export async function createGuestInvoiceOrQuotation(formData: FormData) {
   await ensureAdmin();
 
@@ -26,7 +92,13 @@ export async function createGuestInvoiceOrQuotation(formData: FormData) {
   const email = (formData.get("email") as string) || "";
   const phone = (formData.get("phone") as string) || "";
   const notes = (formData.get("notes") as string) || "";
-  
+  const currency = (formData.get("currency") as string) || "BDT";
+  const preparedBy = (formData.get("preparedBy") as string) || "";
+  const preparedByEmail = (formData.get("preparedByEmail") as string) || "";
+  const paymentDetails = (formData.get("paymentDetails") as string) || "";
+  const address = (formData.get("address") as string) || "";
+  const billingMonth = (formData.get("billingMonth") as string) || "";
+
   // Parse multiple line items
   const itemsJsonStr = formData.get("items") as string;
   let items = [];
@@ -40,7 +112,7 @@ export async function createGuestInvoiceOrQuotation(formData: FormData) {
     throw new Error("Missing required fields: Document Type, Customer Name, and at least one Line Item are required.");
   }
 
-  // Calculate sum of item amounts
+  // Calculate sum of item amounts using float rates and decimal quantities
   const totalAmount = items.reduce((sum: number, item: any) => sum + (parseFloat(item.amount) || 0), 0);
   const paid = parseFloat(formData.get("paid") as string) || 0;
 
@@ -49,7 +121,6 @@ export async function createGuestInvoiceOrQuotation(formData: FormData) {
 
   const invoice = await prisma.invoice.create({
     data: {
-      userId: null,
       type,
       title,
       amount: totalAmount,
@@ -58,6 +129,12 @@ export async function createGuestInvoiceOrQuotation(formData: FormData) {
       name,
       email,
       phone,
+      currency,
+      preparedBy,
+      preparedByEmail,
+      paymentDetails,
+      address,
+      billingMonth: billingMonth || null,
       items: items, // Save parsed JSON array
     },
   });
@@ -74,6 +151,12 @@ export async function updateGuestInvoiceOrQuotation(id: string, formData: FormDa
   const email = (formData.get("email") as string) || "";
   const phone = (formData.get("phone") as string) || "";
   const notes = (formData.get("notes") as string) || "";
+  const currency = (formData.get("currency") as string) || "BDT";
+  const preparedBy = (formData.get("preparedBy") as string) || "";
+  const preparedByEmail = (formData.get("preparedByEmail") as string) || "";
+  const paymentDetails = (formData.get("paymentDetails") as string) || "";
+  const address = (formData.get("address") as string) || "";
+  const billingMonth = (formData.get("billingMonth") as string) || "";
 
   // Parse multiple line items
   const itemsJsonStr = formData.get("items") as string;
@@ -106,6 +189,12 @@ export async function updateGuestInvoiceOrQuotation(id: string, formData: FormDa
       name,
       email,
       phone,
+      currency,
+      preparedBy,
+      preparedByEmail,
+      paymentDetails,
+      address,
+      billingMonth: billingMonth || null,
       items: items, // Save parsed JSON array
     },
   });
@@ -125,6 +214,21 @@ export async function deleteGuestInvoiceOrQuotation(id: string) {
   return { success: true };
 }
 
+export async function markInvoicePaid(id: string, paidAmount: number) {
+  await ensureAdmin();
+
+  const invoice = await prisma.invoice.findUnique({ where: { id } });
+  if (!invoice) throw new Error("Invoice not found.");
+
+  const updated = await prisma.invoice.update({
+    where: { id },
+    data: { paid: paidAmount },
+  });
+
+  revalidatePath("/dashboard/admin/invoices");
+  return { success: true, paid: updated.paid };
+}
+
 export async function sendInvoiceOrQuotationEmail(id: string, pdfBase64?: string, pdfFilename?: string) {
   await ensureAdmin();
 
@@ -141,8 +245,9 @@ export async function sendInvoiceOrQuotationEmail(id: string, pdfBase64?: string
   const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://codeblend.co";
   const viewUrl = `${siteUrl}/share/invoice/${invoice.id}`;
   
-  const formattedAmount = `৳${invoice.amount.toFixed(2)}`;
-  const balanceDue = `৳${(invoice.amount - invoice.paid).toFixed(2)}`;
+  const sym = getCurrencySymbol(invoice.currency);
+  const formattedAmount = `${sym}${invoice.amount.toFixed(2)}`;
+  const balanceDue = `${sym}${(invoice.amount - invoice.paid).toFixed(2)}`;
 
   // Parse items if they exist
   let itemsList: any[] = [];
@@ -163,10 +268,10 @@ export async function sendInvoiceOrQuotationEmail(id: string, pdfBase64?: string
             ${item.quantity}
           </td>
           <td style="padding: 10px 0; text-align: right; font-size: 13px; color: #64748b;">
-            ৳${(parseFloat(item.rate) || 0).toFixed(2)}
+            ${sym}${(parseFloat(item.rate) || 0).toFixed(2)}
           </td>
           <td style="padding: 10px 0; text-align: right; font-size: 13px; font-weight: bold; color: #0f172a;">
-            ৳${(parseFloat(item.amount) || 0).toFixed(2)}
+            ${sym}${(parseFloat(item.amount) || 0).toFixed(2)}
           </td>
         </tr>
       `;
@@ -190,15 +295,24 @@ export async function sendInvoiceOrQuotationEmail(id: string, pdfBase64?: string
       <div style="text-align:center;margin-bottom:28px;">
         <div style="width:48px;height:48px;line-height:48px;border-radius:12px;background:linear-gradient(135deg,#10b981,#0d9488);display:inline-block;text-align:center;color:white;font-weight:bold;font-size:20px;margin:0 auto;">C</div>
         <h2 style="margin:12px 0 4px;color:#0f172a;font-size:20px;">CodeBlend — Digital Solutions</h2>
+        <p style="color:#64748b;font-size:12px;margin:2px 0;">Dhaka, Bangladesh</p>
+        ${invoice.preparedBy ? `<p style="color:#0f172a;font-size:12px;font-weight:bold;margin-top:4px;">Prepared By: ${invoice.preparedBy}${invoice.preparedByEmail ? ` &lt;${invoice.preparedByEmail}&gt;` : ""}</p>` : ""}
       </div>
       
       <p style="color:#334155;font-size:15px;line-height:1.7;">Hello <strong>${invoice.name || "Valued Customer"}</strong>,</p>
+      ${invoice.address ? `<div style="background:#f8fafc;padding:12px 16px;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:16px;font-size:13px;color:#475569;line-height:1.8;">${invoice.address.split("\n").map((line: string) => `<span style="display:block;">${line.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</span>`).join("")}</div>` : ""}
       
       <p style="color:#334155;font-size:15px;line-height:1.7;">
         ${isQuotation 
           ? "Here is your quotation. Please find the estimation details and the attached PDF document for your review." 
           : "Here is your invoice. Please find the billing details and the attached PDF document for your payment/records."}
       </p>
+
+      ${invoice.billingMonth ? (() => {
+        const [year, month] = invoice.billingMonth.split("-");
+        const monthName = new Date(parseInt(year), parseInt(month) - 1, 1).toLocaleString("en-US", { month: "long", year: "numeric" });
+        return `<div style="display:inline-block;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:8px;padding:6px 14px;margin-bottom:16px;font-size:13px;color:#065f46;font-weight:600;">📅 Billing Period: ${monthName}</div>`;
+      })() : ""}
 
       <!-- Items Table -->
       <table style="width:100%; border-collapse: collapse; margin: 20px 0; font-size: 13px;">
@@ -225,7 +339,7 @@ export async function sendInvoiceOrQuotationEmail(id: string, pdfBase64?: string
           ${!isQuotation ? `
           <tr>
             <td style="padding:6px 0;font-weight:600;color:#0f172a;">Amount Paid:</td>
-            <td style="padding:6px 0;text-align: right; color:#10b981;font-weight:bold;">৳${invoice.paid.toFixed(2)}</td>
+            <td style="padding:6px 0;text-align: right; color:#10b981;font-weight:bold;">${sym}${invoice.paid.toFixed(2)}</td>
           </tr>
           <tr>
             <td style="padding:6px 0;font-weight:600;color:#0f172a;">Balance Due:</td>
@@ -234,6 +348,13 @@ export async function sendInvoiceOrQuotationEmail(id: string, pdfBase64?: string
           ` : ""}
         </table>
       </div>
+
+      ${invoice.paymentDetails ? `
+        <div style="background:#f1f5f9;border-radius:10px;padding:16px;margin:20px 0;">
+          <h4 style="margin:0 0 8px;font-size:11px;font-weight:bold;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Payment Details / Bank Info:</h4>
+          <div style="margin:0;font-size:12px;color:#334155;line-height:1.8;font-family:monospace;">${invoice.paymentDetails.split("\n").map((line: string) => `<span style="display:block;">${line.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/(\d{4})/g, "$1&#8203;")}</span>`).join("")}</div>
+        </div>
+      ` : ""}
 
       <div style="text-align:center;margin:32px 0;">
         <a href="${viewUrl}" style="background:#10b981;color:#ffffff;text-decoration:none;padding:12px 28px;font-size:15px;font-weight:bold;border-radius:10px;display:inline-block;box-shadow:0 4px 6px -1px rgba(16,185,129,0.2);">
@@ -255,12 +376,57 @@ export async function sendInvoiceOrQuotationEmail(id: string, pdfBase64?: string
     </div>
   `;
 
+  // Plain text fallback (critical for spam filter avoidance)
+  const itemsText = itemsList.length > 0
+    ? itemsList.map((item: any) => `- ${item.description}: ${item.quantity} x ${sym}${(parseFloat(item.rate)||0).toFixed(2)} = ${sym}${(parseFloat(item.amount)||0).toFixed(2)}`).join("\n")
+    : `- ${invoice.title}: ${formattedAmount}`;
+
+  const billingMonthText = invoice.billingMonth ? (() => {
+    const [y, m] = invoice.billingMonth.split("-");
+    return `\nBilling Period: ${new Date(parseInt(y), parseInt(m) - 1, 1).toLocaleString("en-US", { month: "long", year: "numeric" })}`;
+  })() : "";
+
+  const plainText = [
+    `CodeBlend — Digital Solutions`,
+    `Dhaka, Bangladesh`,
+    invoice.preparedBy ? `Prepared By: ${invoice.preparedBy}${invoice.preparedByEmail ? ` <${invoice.preparedByEmail}>` : ""}` : "",
+    "",
+    `Hello ${invoice.name || "Valued Customer"},`,
+    invoice.address ? `\nAddress:\n${invoice.address}` : "",
+    "",
+    isQuotation
+      ? "Here is your quotation. Please find the estimation details in the attached PDF."
+      : "Here is your invoice. Please find the billing details in the attached PDF.",
+    billingMonthText,
+    "",
+    "--- ITEMS ---",
+    itemsText,
+    "",
+    `Total Amount: ${formattedAmount}`,
+    !isQuotation ? `Amount Paid: ${sym}${invoice.paid.toFixed(2)}` : "",
+    !isQuotation ? `Balance Due: ${balanceDue}` : "",
+    invoice.paymentDetails ? `\n--- PAYMENT DETAILS ---\n${invoice.paymentDetails}` : "",
+    invoice.notes ? `\nNotes: ${invoice.notes}` : "",
+    "",
+    `View & Download: ${viewUrl}`,
+    "",
+    "---",
+    "This email was sent by the CodeBlend administration team.",
+    "For questions, contact: contact@codeblend.co",
+  ].filter(Boolean).join("\n");
+
   try {
     const payload: any = {
       from: "CodeBlend <info@codeblend.co>",
+      reply_to: invoice.preparedByEmail || "contact@codeblend.co",
       to: invoice.email,
-      subject: `Official CodeBlend ${docTypeName} — #${invoice.id.slice(-8).toUpperCase()}`,
+      subject: `${docTypeName} #${invoice.id.slice(-8).toUpperCase()} from CodeBlend`,
       html: emailHtml,
+      text: plainText,
+      headers: {
+        "X-Entity-Ref-ID": invoice.id,
+        "List-Unsubscribe": `<mailto:contact@codeblend.co?subject=unsubscribe>`,
+      },
     };
 
     if (pdfBase64 && pdfFilename) {
@@ -273,7 +439,14 @@ export async function sendInvoiceOrQuotationEmail(id: string, pdfBase64?: string
     }
 
     await resend.emails.send(payload);
-    return { success: true };
+
+    // Persist the sent timestamp so the UI can show "Last sent X ago" permanently
+    await prisma.invoice.update({
+      where: { id },
+      data: { lastEmailedAt: new Date() },
+    });
+
+    return { success: true, lastEmailedAt: new Date().toISOString() };
   } catch (err: any) {
     console.error("sendInvoiceOrQuotationEmail error:", err);
     throw new Error(err?.message || "Failed to send email via Resend.");

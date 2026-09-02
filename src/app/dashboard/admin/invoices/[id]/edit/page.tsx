@@ -18,9 +18,5 @@ export default async function EditGuestInvoicePage({ params }: { params: Promise
 
   if (!invoice) return notFound();
 
-  return (
-    <div className="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-      <EditInvoiceForm invoice={invoice} />
-    </div>
-  );
+  return <EditInvoiceForm invoice={invoice} />;
 }

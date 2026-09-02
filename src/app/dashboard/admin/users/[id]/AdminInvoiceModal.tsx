@@ -42,6 +42,9 @@ export function AdminInvoiceModal({
   const [name, setName] = useState(userName || "");
   const [email, setEmail] = useState(userEmail || "");
   const [phone, setPhone] = useState(userPhone || "");
+  const [currency, setCurrency] = useState("BDT");
+  const [preparedBy, setPreparedBy] = useState("CodeBlend Team");
+  const [paymentDetails, setPaymentDetails] = useState("");
 
   const due = Math.max(0, (amount || 0) - (paid || 0));
 
@@ -59,6 +62,9 @@ export function AdminInvoiceModal({
     formData.append("name", name || "");
     formData.append("email", email || "");
     formData.append("phone", phone || "");
+    formData.append("currency", currency);
+    formData.append("preparedBy", preparedBy);
+    formData.append("paymentDetails", paymentDetails);
 
     let invoiceId = "";
     try {

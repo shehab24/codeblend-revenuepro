@@ -276,6 +276,10 @@ export async function upsertInvoice(formData: FormData) {
   const email = (formData.get("email") as string) || "";
   const phone = (formData.get("phone") as string) || "";
 
+  const currency = (formData.get("currency") as string) || "BDT";
+  const preparedBy = (formData.get("preparedBy") as string) || "";
+  const paymentDetails = (formData.get("paymentDetails") as string) || "";
+
   if (!userId || !type || !title) throw new Error("Missing required fields.");
 
   let existingInvoice = null;
@@ -301,6 +305,9 @@ export async function upsertInvoice(formData: FormData) {
         name,
         email,
         phone,
+        currency,
+        preparedBy,
+        paymentDetails,
       },
     });
   } else {
@@ -316,6 +323,9 @@ export async function upsertInvoice(formData: FormData) {
         name,
         email,
         phone,
+        currency,
+        preparedBy,
+        paymentDetails,
       },
     });
   }

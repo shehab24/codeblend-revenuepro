@@ -259,9 +259,16 @@ model Invoice {
   name        String?
   email       String?
   phone       String?
-  items       Json?    // [{ description: string, quantity: number, rate: number, amount: number }]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  currency       String?  @default("BDT")
+  preparedBy     String?
+  preparedByEmail String?
+  paymentDetails String?
+  address        String?  // Client multi-line address, company name, EIN/Tax ID
+  items          Json?    // [{ description: string, quantity: number, rate: number, amount: number }]
+  billingMonth   String?   // "YYYY-MM" — the month this invoice covers (e.g. "2026-08")
+  lastEmailedAt  DateTime? // Timestamp of last email sent to client
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([userId, type])
 }
