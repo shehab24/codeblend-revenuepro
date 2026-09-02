@@ -290,17 +290,29 @@ export async function sendInvoiceOrQuotationEmail(id: string, pdfBase64?: string
     `;
   }
 
+  // Helper: break Gmail's email & address auto-detection with zero-width spaces (&#8203;)
+  const breakEmail = (email: string) =>
+    email.replace("@", "&#8203;@"); // ZWS before @ breaks email pattern detection
+
+  const breakAddress = (line: string) =>
+    line
+      // Break "1234 Street" — ZWS after leading number
+      .replace(/^(\d+)\s/, (_, n) => `${n}&#8203; `)
+      // Break "City, ST 12345" — ZWS between state abbreviation and zip
+      .replace(/([A-Z]{2})\s+(\d{5})/, (_, st, zip) => `${st}&#8203;&#8203;${zip}`)
+      // Escape HTML special chars
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
   const emailHtml = `
     <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;">
       <div style="text-align:center;margin-bottom:28px;">
         <div style="width:48px;height:48px;line-height:48px;border-radius:12px;background:linear-gradient(135deg,#10b981,#0d9488);display:inline-block;text-align:center;color:white;font-weight:bold;font-size:20px;margin:0 auto;">C</div>
         <h2 style="margin:12px 0 4px;color:#0f172a;font-size:20px;">CodeBlend — Digital Solutions</h2>
         <p style="color:#64748b;font-size:12px;margin:2px 0;">Dhaka, Bangladesh</p>
-        ${invoice.preparedBy ? `<p style="color:#0f172a;font-size:12px;font-weight:bold;margin-top:4px;">Prepared By: ${invoice.preparedBy}${invoice.preparedByEmail ? ` &lt;${invoice.preparedByEmail}&gt;` : ""}</p>` : ""}
+        ${invoice.preparedBy ? `<p style="color:#0f172a;font-size:12px;font-weight:bold;margin-top:4px;">Prepared By: ${invoice.preparedBy}${invoice.preparedByEmail ? ` &mdash; ${breakEmail(invoice.preparedByEmail)}` : ""}</p>` : ""}
       </div>
       
       <p style="color:#334155;font-size:15px;line-height:1.7;">Hello <strong>${invoice.name || "Valued Customer"}</strong>,</p>
-      ${invoice.address ? `<div style="background:#f8fafc;padding:12px 16px;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:16px;font-size:13px;color:#475569;line-height:1.8;">${invoice.address.split("\n").map((line: string) => `<span style="display:block;">${line.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</span>`).join("")}</div>` : ""}
       
       <p style="color:#334155;font-size:15px;line-height:1.7;">
         ${isQuotation 
