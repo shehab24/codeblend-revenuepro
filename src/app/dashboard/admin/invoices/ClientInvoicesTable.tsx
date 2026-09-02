@@ -4,8 +4,7 @@ import React, { useState, useTransition } from "react";
 import Link from "next/link";
 import { deleteGuestInvoiceOrQuotation, sendInvoiceOrQuotationEmail, markInvoicePaid } from "./actions";
 import { getCurrencySymbol } from "@/lib/currency";
-import html2canvas from "html2canvas-pro";
-import { jsPDF } from "jspdf";
+import { generateInvoicePdf } from "@/lib/generateInvoicePdf";
 
 type InvoiceItem = {
   id: string;
@@ -18,6 +17,12 @@ type InvoiceItem = {
   email: string | null;
   phone: string | null;
   currency: string | null;
+  preparedBy?: string | null;
+  preparedByEmail?: string | null;
+  paymentDetails?: string | null;
+  address?: string | null;
+  billingMonth?: string | null;
+  items?: any;
   lastEmailedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -62,68 +67,9 @@ export function ClientInvoicesTable({ initialInvoices }: Props) {
     setConfirmModal(null); // close modal before sending
     setEmailLoading((prev) => ({ ...prev, [id]: "sending" }));
     try {
-      const resPage = await fetch(`/share/invoice/${id}`);
-      if (!resPage.ok) throw new Error("Failed to fetch document layout for PDF conversion");
-      const htmlText = await resPage.text();
-
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(htmlText, "text/html");
-      const card = doc.querySelector(".invoice-card");
-      if (!card) throw new Error("Document card container not found");
-
-      const tempDiv = document.createElement("div");
-      tempDiv.style.position = "absolute";
-      tempDiv.style.width = "800px";
-      tempDiv.style.top = "-9999px";
-      tempDiv.style.left = "-9999px";
-      tempDiv.appendChild(card.cloneNode(true));
-      document.body.appendChild(tempDiv);
-
-      const controls = tempDiv.querySelector("#controls-bar");
-      if (controls) controls.remove();
-
-      const invoiceItem = invoices.find((i) => i.id === id);
-      const isQuo = invoiceItem?.type === "guest_quotation";
-      const docNumber = `${isQuo ? "QT" : "INV"}-${id.slice(-8).toUpperCase()}`;
-      const filename = `${docNumber}.pdf`;
-
-      const canvas = await html2canvas(tempDiv, {
-        scale: 2.0,
-        useCORS: true,
-        logging: false
-      });
-
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
-      const pdf = new jsPDF("p", "mm", "a4");
-
-      const pageWidth = 210;
-      const pageHeight = 297;
-      const margin = 10;
-      const imgWidth = pageWidth - (margin * 2);
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      let heightLeft = imgHeight;
-      let position = margin;
-
-      pdf.addImage(imgData, "JPEG", margin, position, imgWidth, imgHeight);
-      heightLeft -= (pageHeight - margin * 2);
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight + margin;
-        pdf.addPage();
-        pdf.addImage(imgData, "JPEG", margin, position, imgWidth, imgHeight);
-        heightLeft -= (pageHeight - margin * 2);
-      }
-
-      const pdfDataUri = pdf.output("datauristring");
-      const pdfBase64 = pdfDataUri.split(";base64,")[1];
-
-      tempDiv.remove();
-
-      const res = await sendInvoiceOrQuotationEmail(id, pdfBase64, filename);
+      const res = await sendInvoiceOrQuotationEmail(id);
       if (res.success) {
         setEmailLoading((prev) => ({ ...prev, [id]: "sent" }));
-        // Persist the sent timestamp in local state — no more reset timeout
         setEmailedAt((prev) => ({ ...prev, [id]: res.lastEmailedAt || new Date().toISOString() }));
       }
     } catch (err: any) {
@@ -428,87 +374,24 @@ export function ClientInvoicesTable({ initialInvoices }: Props) {
                         <button
                           type="button"
                           disabled={downloadingId !== null}
-                          onClick={async () => {
+                          onClick={() => {
                             try {
                               setDownloadingId(inv.id);
-                              
-                              const res = await fetch(`/share/invoice/${inv.id}`);
-                              if (!res.ok) throw new Error("Failed to fetch document");
-                              
-                              const htmlText = await res.text();
-                              const parser = new DOMParser();
-                              const doc = parser.parseFromString(htmlText, "text/html");
-                              const card = doc.querySelector(".invoice-card");
-                              if (!card) throw new Error("Document card container not found");
-
-                              const tempDiv = document.createElement("div");
-                              tempDiv.style.position = "absolute";
-                              tempDiv.style.width = "800px";
-                              tempDiv.style.top = "-9999px";
-                              tempDiv.style.left = "-9999px";
-                              
-                              tempDiv.appendChild(card.cloneNode(true));
-                              document.body.appendChild(tempDiv);
-
-                              const controls = tempDiv.querySelector("#controls-bar");
-                              if (controls) controls.remove();
-
-                              const docNumber = `${isQuotation ? "QT" : "INV"}-${inv.id.slice(-8).toUpperCase()}`;
-                              const filename = `${docNumber}.pdf`;
-
-                              const canvas = await html2canvas(tempDiv, {
-                                scale: 2.5,
-                                useCORS: true,
-                                logging: false
-                              });
-
-                              const imgData = canvas.toDataURL("image/jpeg", 0.98);
-                              const pdf = new jsPDF("p", "mm", "a4");
-
-                              const pageWidth = 210;
-                              const pageHeight = 297;
-                              const margin = 10;
-                              const imgWidth = pageWidth - (margin * 2);
-                              const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-                              let heightLeft = imgHeight;
-                              let position = margin;
-
-                              pdf.addImage(imgData, "JPEG", margin, position, imgWidth, imgHeight);
-                              heightLeft -= (pageHeight - margin * 2);
-
-                              while (heightLeft > 0) {
-                                position = heightLeft - imgHeight + margin;
-                                pdf.addPage();
-                                pdf.addImage(imgData, "JPEG", margin, position, imgWidth, imgHeight);
-                                heightLeft -= (pageHeight - margin * 2);
-                              }
-
-                              pdf.save(filename);
-                              tempDiv.remove();
+                              const pdfDoc = generateInvoicePdf(inv);
+                              const docRef = `${isQuotation ? "QT" : "INV"}-${inv.id.slice(-8).toUpperCase()}`;
+                              pdfDoc.save(`${docRef}.pdf`);
                             } catch (err: any) {
                               alert(err.message || "Failed to download PDF.");
                             } finally {
                               setDownloadingId(null);
                             }
                           }}
-                          title={downloadingId === inv.id ? "Generating PDF..." : "Download PDF directly"}
-                          className={`p-1.5 rounded-lg transition ${
-                            downloadingId === inv.id 
-                              ? "bg-slate-50 text-emerald-600 animate-pulse" 
-                              : "hover:bg-slate-100 text-slate-500 hover:text-slate-700 cursor-pointer disabled:opacity-50"
-                          }`}
+                          title="Download PDF directly"
+                          className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded-lg transition cursor-pointer disabled:opacity-50"
                         >
-                          {downloadingId === inv.id ? (
-                            <svg className="w-4 h-4 animate-spin text-emerald-600" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                            </svg>
-                          ) : (
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                            </svg>
-                          )}
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
                         </button>
 
                         {/* Edit */}

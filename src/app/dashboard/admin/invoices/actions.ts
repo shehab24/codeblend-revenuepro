@@ -19,6 +19,7 @@ async function ensureAdmin() {
 }
 
 import { getCurrencySymbol, DEFAULT_BANK_DETAILS, DEFAULT_PREPARED_BY_NAME, DEFAULT_PREPARED_BY_EMAIL, DEFAULT_CURRENCY, DEFAULT_CLIENT_NAME, DEFAULT_CLIENT_ADDRESS } from "@/lib/currency";
+import { generateInvoicePdf } from "@/lib/generateInvoicePdf";
 
 
 export async function getGlobalInvoiceDefaults() {
@@ -291,8 +292,12 @@ export async function sendInvoiceOrQuotationEmail(id: string, pdfBase64?: string
   }
 
   // Helper: break Gmail's email & address auto-detection with zero-width spaces (&#8203;)
-  const breakEmail = (email: string) =>
-    email.replace("@", "&#8203;@"); // ZWS before @ breaks email pattern detection
+  const breakEmail = (email: string) => {
+    const [local, domain] = email.split("@");
+    // ZWS after local part AND before the last dot in domain breaks both email + URL detection
+    const brokenDomain = domain.replace(/\.(?=[^.]+$)/, "&#8203;.");
+    return `${local}&#8203;@${brokenDomain}`;
+  };
 
   const breakAddress = (line: string) =>
     line
@@ -308,8 +313,8 @@ export async function sendInvoiceOrQuotationEmail(id: string, pdfBase64?: string
       <div style="text-align:center;margin-bottom:28px;">
         <div style="width:48px;height:48px;line-height:48px;border-radius:12px;background:linear-gradient(135deg,#10b981,#0d9488);display:inline-block;text-align:center;color:white;font-weight:bold;font-size:20px;margin:0 auto;">C</div>
         <h2 style="margin:12px 0 4px;color:#0f172a;font-size:20px;">CodeBlend — Digital Solutions</h2>
-        <p style="color:#64748b;font-size:12px;margin:2px 0;">Dhaka, Bangladesh</p>
-        ${invoice.preparedBy ? `<p style="color:#0f172a;font-size:12px;font-weight:bold;margin-top:4px;">Prepared By: ${invoice.preparedBy}${invoice.preparedByEmail ? ` &mdash; ${breakEmail(invoice.preparedByEmail)}` : ""}</p>` : ""}
+        <p style="color:#64748b;font-size:12px;margin:2px 0;">${breakEmail("contact@codeblend.co")} | Dhaka, Bangladesh</p>
+        ${invoice.preparedBy ? `<p style="color:#0f172a;font-size:12px;font-weight:bold;margin-top:4px;">Prepared By: ${invoice.preparedBy}</p>` : ""}
       </div>
       
       <p style="color:#334155;font-size:15px;line-height:1.7;">Hello <strong>${invoice.name || "Valued Customer"}</strong>,</p>
@@ -441,14 +446,25 @@ export async function sendInvoiceOrQuotationEmail(id: string, pdfBase64?: string
       },
     };
 
+    let pdfContentBuffer: Buffer;
+    let attachmentFilename = pdfFilename;
+
     if (pdfBase64 && pdfFilename) {
-      payload.attachments = [
-        {
-          filename: pdfFilename,
-          content: Buffer.from(pdfBase64, "base64"),
-        }
-      ];
+      pdfContentBuffer = Buffer.from(pdfBase64, "base64");
+    } else {
+      const pdfDoc = generateInvoicePdf(invoice);
+      const pdfArrayBuffer = pdfDoc.output("arraybuffer");
+      pdfContentBuffer = Buffer.from(pdfArrayBuffer);
+      const docRef = `${isQuotation ? "QT" : "INV"}-${invoice.id.slice(-8).toUpperCase()}`;
+      attachmentFilename = `${docRef}.pdf`;
     }
+
+    payload.attachments = [
+      {
+        filename: attachmentFilename,
+        content: pdfContentBuffer,
+      }
+    ];
 
     await resend.emails.send(payload);
 

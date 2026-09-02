@@ -1,60 +1,27 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import html2canvas from "html2canvas-pro";
-import { jsPDF } from "jspdf";
+import { generateInvoicePdf, InvoicePdfData } from "@/lib/generateInvoicePdf";
 
 type Props = {
   docTypeName: string;
   docNumber: string;
   autoDownload: boolean;
   autoPrint: boolean;
+  invoice?: InvoicePdfData | null;
 };
 
-export default function SharePageControls({ docTypeName, docNumber, autoDownload, autoPrint }: Props) {
+export default function SharePageControls({ docTypeName, docNumber, autoDownload, autoPrint, invoice }: Props) {
   const [downloading, setDownloading] = useState(false);
 
   const triggerDownload = async () => {
     try {
       setDownloading(true);
-      const element = document.querySelector(".invoice-card") as HTMLElement;
-      if (!element) throw new Error("Document card container not found");
-
-      // Temporarily hide controls bar during render
-      const controls = document.getElementById("controls-bar");
-      if (controls) controls.style.display = "none";
-
-      const canvas = await html2canvas(element, {
-        scale: 2.5,
-        useCORS: true,
-        logging: false
-      });
-
-      if (controls) controls.style.display = "flex";
-
-      const imgData = canvas.toDataURL("image/jpeg", 0.98);
-      const pdf = new jsPDF("p", "mm", "a4");
-
-      const pageWidth = 210;
-      const pageHeight = 297;
-      const margin = 10;
-      const imgWidth = pageWidth - (margin * 2);
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      let heightLeft = imgHeight;
-      let position = margin;
-
-      pdf.addImage(imgData, "JPEG", margin, position, imgWidth, imgHeight);
-      heightLeft -= (pageHeight - margin * 2);
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight + margin;
-        pdf.addPage();
-        pdf.addImage(imgData, "JPEG", margin, position, imgWidth, imgHeight);
-        heightLeft -= (pageHeight - margin * 2);
+      if (invoice) {
+        const doc = generateInvoicePdf(invoice);
+        doc.save(`${docTypeName}-${docNumber}.pdf`);
+        return;
       }
-
-      pdf.save(`${docTypeName}-${docNumber}.pdf`);
     } catch (err: any) {
       alert(err.message || "Failed to download PDF.");
     } finally {
