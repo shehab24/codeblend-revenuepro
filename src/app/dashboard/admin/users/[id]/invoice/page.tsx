@@ -341,43 +341,45 @@ export default async function AdminUserInvoicePage({
         </div>
 
         {/* Line Items Table */}
-        <table className="w-full mb-8 text-left border-collapse">
-          <thead>
-            <tr className="border-b-2 border-slate-200 text-xs uppercase text-slate-400 font-black tracking-wider">
-              <th className="pb-3 w-3/5">Item Description</th>
-              <th className="pb-3 text-center">Status</th>
-              <th className="pb-3 text-right">Amount</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 text-sm">
-            {lineItems.length > 0 ? (
-              lineItems.map((item, idx) => (
-                <tr key={idx}>
-                  <td className="py-4 align-top">
-                    <div className="font-bold text-slate-800">{item.title}</div>
-                    {item.details && (
-                      <div className="text-xs text-slate-500 mt-1 whitespace-pre-wrap">{item.details}</div>
-                    )}
-                  </td>
-                  <td className="py-4 text-center align-top whitespace-nowrap">
-                    <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold uppercase">
-                      {item.status}
-                    </span>
-                  </td>
-                  <td className="py-4 font-bold text-slate-900 text-right align-top whitespace-nowrap font-mono">
-                    {sym}{item.amount.toFixed(2)}
+        <div className="overflow-x-auto">
+          <table className="w-full mb-8 text-left border-collapse table-fixed min-w-[280px]">
+            <thead>
+              <tr className="border-b-2 border-slate-200 text-[11px] sm:text-xs uppercase text-slate-400 font-black tracking-wider">
+                <th className="pb-3 w-[55%] text-left whitespace-nowrap pr-2">Item Description</th>
+                <th className="pb-3 text-center w-[20%] whitespace-nowrap px-1">Status</th>
+                <th className="pb-3 text-right w-[25%] whitespace-nowrap pl-2">Amount</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
+              {lineItems.length > 0 ? (
+                lineItems.map((item, idx) => (
+                  <tr key={idx}>
+                    <td className="py-4 align-top pr-2">
+                      <div className="font-bold text-slate-800 break-words">{item.title}</div>
+                      {item.details && (
+                        <div className="text-xs text-slate-500 mt-1 whitespace-pre-wrap break-words">{item.details}</div>
+                      )}
+                    </td>
+                    <td className="py-4 text-center align-top whitespace-nowrap px-1">
+                      <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold uppercase">
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="py-4 font-bold text-slate-900 text-right align-top whitespace-nowrap font-mono pl-2">
+                      {sym}{item.amount.toFixed(2)}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={3} className="py-6 text-center text-slate-400 font-semibold">
+                    No payable service items found for this statement.
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={3} className="py-6 text-center text-slate-400 font-semibold">
-                  No payable service items found for this statement.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
 
         {/* Financial Summary Breakdown */}
         <div className="flex justify-end pr-2 mb-10">

@@ -262,16 +262,16 @@ export async function sendInvoiceOrQuotationEmail(id: string, pdfBase64?: string
     itemsList.forEach((item) => {
       itemsTableRowsHtml += `
         <tr style="border-bottom: 1px solid #f1f5f9;">
-          <td style="padding: 10px 0; text-align: left; font-size: 13px; color: #334155;">
+          <td style="padding: 10px 4px 10px 0; text-align: left; font-size: 13px; color: #334155; word-break: break-word; overflow-wrap: break-word;">
             ${item.description}
           </td>
-          <td style="padding: 10px 0; text-align: center; font-size: 13px; color: #64748b;">
+          <td style="padding: 10px 4px; text-align: center; font-size: 13px; color: #64748b; white-space: nowrap;">
             ${item.quantity}
           </td>
-          <td style="padding: 10px 0; text-align: right; font-size: 13px; color: #64748b;">
+          <td style="padding: 10px 4px; text-align: right; font-size: 13px; color: #64748b; white-space: nowrap;">
             ${sym}${(parseFloat(item.rate) || 0).toFixed(2)}
           </td>
-          <td style="padding: 10px 0; text-align: right; font-size: 13px; font-weight: bold; color: #0f172a;">
+          <td style="padding: 10px 0 10px 4px; text-align: right; font-size: 13px; font-weight: bold; color: #0f172a; white-space: nowrap;">
             ${sym}${(parseFloat(item.amount) || 0).toFixed(2)}
           </td>
         </tr>
@@ -281,10 +281,10 @@ export async function sendInvoiceOrQuotationEmail(id: string, pdfBase64?: string
     // Fallback for single-item documents
     itemsTableRowsHtml = `
       <tr style="border-bottom: 1px solid #f1f5f9;">
-        <td style="padding: 10px 0; text-align: left; font-size: 13px; color: #334155;" colspan="3">
+        <td style="padding: 10px 4px 10px 0; text-align: left; font-size: 13px; color: #334155; word-break: break-word;" colspan="3">
           ${invoice.title}
         </td>
-        <td style="padding: 10px 0; text-align: right; font-size: 13px; font-weight: bold; color: #0f172a;">
+        <td style="padding: 10px 0 10px 4px; text-align: right; font-size: 13px; font-weight: bold; color: #0f172a; white-space: nowrap;">
           ${formattedAmount}
         </td>
       </tr>
@@ -309,10 +309,10 @@ export async function sendInvoiceOrQuotationEmail(id: string, pdfBase64?: string
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
   const emailHtml = `
-    <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;">
-      <div style="text-align:center;margin-bottom:28px;">
-        <div style="width:48px;height:48px;line-height:48px;border-radius:12px;background:linear-gradient(135deg,#10b981,#0d9488);display:inline-block;text-align:center;color:white;font-weight:bold;font-size:20px;margin:0 auto;">C</div>
-        <h2 style="margin:12px 0 4px;color:#0f172a;font-size:20px;">CodeBlend — Digital Solutions</h2>
+    <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px 16px;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;">
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="width:44px;height:44px;line-height:44px;border-radius:12px;background:linear-gradient(135deg,#10b981,#0d9488);display:inline-block;text-align:center;color:white;font-weight:bold;font-size:18px;margin:0 auto;">C</div>
+        <h2 style="margin:10px 0 4px;color:#0f172a;font-size:19px;">CodeBlend — Digital Solutions</h2>
         <p style="color:#64748b;font-size:12px;margin:2px 0;">${breakEmail("contact@codeblend.co")} | Dhaka, Bangladesh</p>
         ${invoice.preparedBy ? `<p style="color:#0f172a;font-size:12px;font-weight:bold;margin-top:4px;">Prepared By: ${invoice.preparedBy}</p>` : ""}
       </div>
@@ -332,13 +332,13 @@ export async function sendInvoiceOrQuotationEmail(id: string, pdfBase64?: string
       })() : ""}
 
       <!-- Items Table -->
-      <table style="width:100%; border-collapse: collapse; margin: 20px 0; font-size: 13px;">
+      <table style="width:100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; table-layout: fixed;">
         <thead>
-          <tr style="border-bottom: 2px solid #e2e8f0; color: #94a3b8; font-weight: bold; text-transform: uppercase;">
-            <th style="padding: 8px 0; text-align: left;">Item Description</th>
-            <th style="padding: 8px 0; text-align: center; width: 60px;">Qty</th>
-            <th style="padding: 8px 0; text-align: right; width: 80px;">Rate</th>
-            <th style="padding: 8px 0; text-align: right; width: 90px;">Total</th>
+          <tr style="border-bottom: 2px solid #e2e8f0; color: #94a3b8; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+            <th style="padding: 8px 4px 8px 0; text-align: left; width: 44%; white-space: nowrap;">Item Description</th>
+            <th style="padding: 8px 4px; text-align: center; width: 16%; white-space: nowrap;">Qty</th>
+            <th style="padding: 8px 4px; text-align: right; width: 20%; white-space: nowrap;">Rate</th>
+            <th style="padding: 8px 0 8px 4px; text-align: right; width: 20%; white-space: nowrap;">Total</th>
           </tr>
         </thead>
         <tbody>

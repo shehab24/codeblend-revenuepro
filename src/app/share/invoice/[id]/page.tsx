@@ -62,7 +62,7 @@ export default async function PublicInvoicePage({
         }
       `}} />
 
-      <div className="max-w-3xl mx-auto bg-white p-8 sm:p-12 shadow-sm rounded-2xl border border-slate-200 invoice-card">
+      <div className="max-w-3xl mx-auto bg-white p-5 sm:p-12 shadow-sm rounded-2xl border border-slate-200 invoice-card">
         
         <SharePageControls
           docTypeName={docTypeName}
@@ -132,52 +132,54 @@ export default async function PublicInvoicePage({
         </div>
 
         {/* Line Items Table */}
-        <table className="w-full mb-8 text-left border-collapse">
-          <thead>
-            {itemsList.length > 0 ? (
-              <tr className="border-b-2 border-slate-200 text-xs uppercase text-slate-400 font-bold tracking-wider">
-                <th className="pb-3 text-left">Item Description</th>
-                <th className="pb-3 text-center w-20">Qty / Hrs</th>
-                <th className="pb-3 text-right w-24">Rate</th>
-                <th className="pb-3 text-right w-28">Total</th>
-              </tr>
-            ) : (
-              <tr className="border-b-2 border-slate-200 text-xs uppercase text-slate-400 font-bold tracking-wider">
-                <th className="pb-3 w-3/4">Item Description</th>
-                <th className="pb-3 text-right">Price</th>
-              </tr>
-            )}
-          </thead>
-          <tbody className="divide-y divide-slate-100 text-sm">
-            {itemsList.length > 0 ? (
-              itemsList.map((item, index) => (
-                <tr key={index}>
-                  <td className="py-3.5 align-top text-slate-800 font-medium">
-                    {item.description}
+        <div className="overflow-x-auto">
+          <table className="w-full mb-8 text-left border-collapse table-fixed min-w-[280px]">
+            <thead>
+              {itemsList.length > 0 ? (
+                <tr className="border-b-2 border-slate-200 text-[11px] sm:text-xs uppercase text-slate-400 font-bold tracking-wider">
+                  <th className="pb-3 text-left w-[45%] whitespace-nowrap pr-2">Item Description</th>
+                  <th className="pb-3 text-center w-[15%] whitespace-nowrap px-1">Qty</th>
+                  <th className="pb-3 text-right w-[20%] whitespace-nowrap px-1">Rate</th>
+                  <th className="pb-3 text-right w-[20%] whitespace-nowrap pl-2">Total</th>
+                </tr>
+              ) : (
+                <tr className="border-b-2 border-slate-200 text-[11px] sm:text-xs uppercase text-slate-400 font-bold tracking-wider">
+                  <th className="pb-3 w-[70%] text-left whitespace-nowrap pr-2">Item Description</th>
+                  <th className="pb-3 text-right whitespace-nowrap pl-2">Price</th>
+                </tr>
+              )}
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
+              {itemsList.length > 0 ? (
+                itemsList.map((item, index) => (
+                  <tr key={index}>
+                    <td className="py-3.5 align-top text-slate-800 font-medium break-words pr-2">
+                      {item.description}
+                    </td>
+                    <td className="py-3.5 text-center align-top text-slate-600 font-mono text-xs whitespace-nowrap px-1">
+                      {item.quantity}
+                    </td>
+                    <td className="py-3.5 text-right align-top text-slate-500 font-mono text-xs whitespace-nowrap px-1">
+                      {sym}{(parseFloat(item.rate) || 0).toFixed(2)}
+                    </td>
+                    <td className="py-3.5 font-bold text-slate-900 text-right align-top whitespace-nowrap font-mono text-xs pl-2">
+                      {sym}{(parseFloat(item.amount) || 0).toFixed(2)}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td className="py-3.5 align-top text-slate-800 font-medium break-words pr-2">
+                    {invoice.title}
                   </td>
-                  <td className="py-3.5 text-center align-top text-slate-600 font-mono text-xs">
-                    {item.quantity}
-                  </td>
-                  <td className="py-3.5 text-right align-top text-slate-500 font-mono text-xs">
-                    {sym}{(parseFloat(item.rate) || 0).toFixed(2)}
-                  </td>
-                  <td className="py-3.5 font-bold text-slate-900 text-right align-top whitespace-nowrap font-mono text-xs">
-                    {sym}{(parseFloat(item.amount) || 0).toFixed(2)}
+                  <td className="py-3.5 font-bold text-slate-900 text-right align-top whitespace-nowrap font-mono text-xs pl-2">
+                    {sym}{invoice.amount.toFixed(2)}
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td className="py-3.5 align-top text-slate-800 font-medium">
-                  {invoice.title}
-                </td>
-                <td className="py-3.5 font-bold text-slate-900 text-right align-top whitespace-nowrap font-mono text-xs">
-                  {sym}{invoice.amount.toFixed(2)}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
 
         {/* Financial Summary */}
         <div className="flex justify-end mb-8">
