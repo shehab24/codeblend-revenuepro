@@ -101,7 +101,7 @@ export function generateInvoicePdf(invoice: InvoicePdfData): jsPDF {
     const monthLabel = new Date(parseInt(year), parseInt(month) - 1, 1).toLocaleString("en-US", { month: "long", year: "numeric" });
     doc.setFont("helvetica", "normal");
     doc.setTextColor(100, 116, 139);
-    doc.text("Billing Month:", endX - 38, metaY);
+    doc.text("Billing Month:", endX - 46, metaY);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(15, 23, 42);
     doc.text(monthLabel, endX, metaY, { align: "right" });
