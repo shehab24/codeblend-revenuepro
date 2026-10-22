@@ -27,6 +27,8 @@ interface CodePayCheckoutClientProps {
     upayActive: boolean;
     cellfinActive: boolean;
     tapActive: boolean;
+    bkashType: "personal" | "merchant";
+    bkashQr: string;
     withTrx: boolean;
     withoutTrx: boolean;
     bankAccounts: {
@@ -43,23 +45,26 @@ interface CodePayCheckoutClientProps {
   };
 }
 
-const METHOD_CONFIG: Record<string, { label: string; logo: string; bg: string; text: string; }> = {
-  bkash:   { label: "bKash",   logo: "/logos/bkash.png",   bg: "#e2136e", text: "text-white" },
-  nagad:   { label: "Nagad",   logo: "/logos/nagad.png",   bg: "#a30f14", text: "text-white" },
-  rocket:  { label: "Rocket",  logo: "/logos/rocket.png",  bg: "#8c3c95", text: "text-white" },
-  upay:    { label: "Upay",    logo: "/logos/upay.png",    bg: "#ffc000", text: "text-[#0f3057]" },
-  cellfin: { label: "CellFin", logo: "/logos/cellfin.png", bg: "#0984e3", text: "text-white" },
-  tap:     { label: "Tap",     logo: "/logos/tap.png",     bg: "#0f4c9c", text: "text-white" },
+// Brand themes: gradient (from → to), text on gradient (ink), accent readable on white, and a soft tint
+const METHOD_CONFIG: Record<string, { label: string; logo: string } & BrandTheme> = {
+  bkash:   { label: "bKash",   logo: "/logos/bkash.png",   from: "#e2136e", to: "#a3094e", ink: "#ffffff", accent: "#d1105f", soft: "rgba(226,19,110,0.10)" },
+  nagad:   { label: "Nagad",   logo: "/logos/nagad.png",   from: "#f26522", to: "#c8102e", ink: "#ffffff", accent: "#d9331f", soft: "rgba(236,28,36,0.10)" },
+  rocket:  { label: "Rocket",  logo: "/logos/rocket.png",  from: "#9b3fa6", to: "#5b1f66", ink: "#ffffff", accent: "#8c3c95", soft: "rgba(140,60,149,0.10)" },
+  upay:    { label: "Upay",    logo: "/logos/upay.png",    from: "#ffd23f", to: "#f5a700", ink: "#0f3057", accent: "#0f3057", soft: "rgba(255,192,0,0.16)" },
+  cellfin: { label: "CellFin", logo: "/logos/cellfin.png", from: "#1fa463", to: "#0b6b3a", ink: "#ffffff", accent: "#138a4e", soft: "rgba(31,164,99,0.10)" },
+  tap:     { label: "Tap",     logo: "/logos/tap.png",     from: "#2f6fd6", to: "#0f3f8c", ink: "#ffffff", accent: "#1f5bbf", soft: "rgba(47,111,214,0.10)" },
 };
 
-const BANK_CONFIG: Record<string, { label: string; logo: string; bg: string; text: string; }> = {
-  ibl:      { label: "Islami Bank",  logo: "/logos/ibl.png",      bg: "#006c35", text: "text-white" },
-  abbank:   { label: "AB Bank",      logo: "/logos/abbank.png",   bg: "#e2136e", text: "text-white" },
-  citybank: { label: "City Bank",    logo: "/logos/citybank.png", bg: "#0f3057", text: "text-white" },
-  sonali:   { label: "Sonali Bank",  logo: "/logos/sonali.png",   bg: "#ffc000", text: "text-[#0f3057]" },
-  dbbl:     { label: "DBBL",         logo: "/logos/dbbl.png",     bg: "#0f3057", text: "text-white" },
-  basic:    { label: "Basic Bank",   logo: "/logos/basic.png",    bg: "#006c35", text: "text-white" },
-  ebl:      { label: "EBL",          logo: "/logos/ebl.png",      bg: "#0f3057", text: "text-white" },
+const BANK_THEME: BrandTheme = { from: "#1e3a8a", to: "#0b1a3d", ink: "#ffffff", accent: "#1e40af", soft: "rgba(30,64,175,0.10)" };
+
+const BANK_CONFIG: Record<string, { label: string; logo: string } & BrandTheme> = {
+  ibl:      { label: "Islami Bank",  logo: "/logos/ibl.png",      ...BANK_THEME },
+  abbank:   { label: "AB Bank",      logo: "/logos/abbank.png",   ...BANK_THEME },
+  citybank: { label: "City Bank",    logo: "/logos/citybank.png", ...BANK_THEME },
+  sonali:   { label: "Sonali Bank",  logo: "/logos/sonali.png",   ...BANK_THEME },
+  dbbl:     { label: "DBBL",         logo: "/logos/dbbl.png",     ...BANK_THEME },
+  basic:    { label: "Basic Bank",   logo: "/logos/basic.png",    ...BANK_THEME },
+  ebl:      { label: "EBL",          logo: "/logos/ebl.png",      ...BANK_THEME },
 };
 
 export default function CodePayCheckoutClient({ payment, merchant }: CodePayCheckoutClientProps) {
@@ -128,6 +133,14 @@ export default function CodePayCheckoutClient({ payment, merchant }: CodePayChec
   const activeMethodConfig = selectedMethod ? METHOD_CONFIG[selectedMethod] : null;
   const activeMethodNumber = selectedMethod ? merchant[selectedMethod as keyof typeof merchant] as string | null : null;
 
+  // bKash merchant accounts are paid via "Payment" (optionally by scanning the merchant QR), not "Send Money"
+  const isBkashMerchant = selectedMethod === "bkash" && merchant.bkashType === "merchant";
+  const merchantQr = isBkashMerchant ? merchant.bkashQr : "";
+  const qrDownloadUrl = merchantQr && merchantQr.includes("ik.imagekit.io")
+    ? `${merchantQr}${merchantQr.includes("?") ? "&" : "?"}ik-attachment=true`
+    : merchantQr;
+
+
   const activeBankConfig = selectedBank ? BANK_CONFIG[selectedBank] : null;
   const activeBankData = useMemo(() => {
     return banks.find((b) => b.id === selectedBank);
@@ -149,7 +162,7 @@ export default function CodePayCheckoutClient({ payment, merchant }: CodePayChec
   }, [banks, searchQuery]);
 
   const copyToClipboard = (text: string, field: string) => {
-    navigator.clipboard.writeText(text);
+    navigator.clipboard?.writeText(text);
     setCopiedField(field);
     setTimeout(() => setCopiedField(null), 2000);
   };
@@ -245,6 +258,15 @@ export default function CodePayCheckoutClient({ payment, merchant }: CodePayChec
       }
     } catch (e) {
       window.location.href = "/";
+    }
+  };
+
+  const handleConfirmAccount = () => {
+    if (/^01\d{9}$/.test(customerPhone)) {
+      setStep(3);
+      setErrorMessage(null);
+    } else {
+      setErrorMessage("Please enter a valid 11-digit mobile number starting with 01.");
     }
   };
 
@@ -450,537 +472,585 @@ export default function CodePayCheckoutClient({ payment, merchant }: CodePayChec
         </div>
       )}
 
-      {/* ── STEP 2 & 3: Mobile Banking High Fidelity Viewports ── */}
+      {/* ── STEP 2 & 3: Mobile Banking (shared premium shell, themed per wallet) ── */}
       {step >= 2 && activeTab === "mobile" && activeMethodConfig && (
-        <div 
-          className="w-[370px] h-[520px] rounded-[32px] overflow-hidden shadow-2xl transition-all bg-white flex flex-col font-sans border border-slate-200/50 animate-in fade-in zoom-in-95 duration-200"
-        >
-          {/* Header Area */}
-          {selectedMethod === "bkash" || selectedMethod === "rocket" ? (
-            <div className="bg-white py-4 flex items-center justify-center border-b border-pink-50/50 relative">
-              <img src={activeMethodConfig.logo} alt={activeMethodConfig.label} className="h-8 object-contain" />
-            </div>
-          ) : selectedMethod === "nagad" ? (
-            <div className="bg-[#7a0609] py-4 px-6 flex items-center justify-center gap-2 text-white text-sm font-extrabold uppercase tracking-wide border-b border-[#600507]">
-              <span className="text-base">🛒</span>
-              <span>{displayName}</span>
-            </div>
-          ) : selectedMethod === "upay" ? (
-            <div className="bg-[#ffc000] py-4 flex justify-center border-b border-[#e6ac00]">
-              <img src="/logos/upay.png" alt="Upay" className="h-8 object-contain" />
-            </div>
-          ) : (
-            // CellFin or Tap
-            <div className="bg-[#0f4c9c] py-4 px-5 text-white flex items-center justify-between border-b border-[#0c3e80]">
-              <img src={activeMethodConfig.logo} alt={activeMethodConfig.label} className="h-7 object-contain" />
-              <span className="text-[9px] font-black uppercase tracking-wider text-sky-200">Secure Merchant Pay</span>
-            </div>
-          )}
-
-          {/* Sub-header containing Merchant Info & Amount */}
-          {selectedMethod === "bkash" || selectedMethod === "rocket" ? (
-            <div className="bg-white py-3.5 px-6 border-b border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div 
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-black uppercase shadow-inner"
-                  style={{ backgroundColor: selectedMethod === "bkash" ? "#e2136e" : "#8c3c95" }}
-                >
-                  {displayName.charAt(0)}
-                </div>
-                <div>
-                  <h3 className="text-xs font-black text-slate-800 leading-tight">{displayName}</h3>
-                  <p className="text-[9px] font-mono text-slate-400">Inv: #{payment.orderId}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="text-[8px] text-slate-400 uppercase tracking-widest font-black block">Amount</span>
-                <span className="text-sm font-black text-slate-800 font-mono">৳{payment.amount.toFixed(2)}</span>
-              </div>
-            </div>
-          ) : selectedMethod === "nagad" ? (
-            <div className="bg-[#9c0c14] px-6 py-4 border-b border-[#87080a]">
-              <div className="bg-[#5c0305] rounded-2xl p-4 text-[10px] space-y-1.5 font-mono text-white/90 shadow-inner">
-                <div className="flex justify-between"><span>Invoice No:</span><strong className="text-white">#{payment.orderId}</strong></div>
-                <div className="flex justify-between"><span>Total Amount:</span><strong className="text-white">BDT {payment.amount.toFixed(2)}</strong></div>
-                <div className="flex justify-between border-t border-[#800c0f] pt-1.5 mt-1.5 text-xs font-extrabold text-orange-400">
-                  <span>Payable Amount:</span><span>BDT {payment.amount.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-          ) : selectedMethod === "upay" ? (
-            <div className="bg-[#ffc000] px-6 pb-4">
-              <div className="bg-white rounded-2xl p-4 text-xs space-y-2 text-[#0f3057] shadow-inner font-semibold border border-yellow-300">
-                <div className="flex justify-between"><span>Merchant:</span><strong>{displayName}</strong></div>
-                <div className="flex justify-between"><span>Invoice ID:</span><strong className="font-mono">#{payment.orderId}</strong></div>
-                <div className="flex justify-between border-t border-slate-100 pt-2 text-[#0f3057] font-black">
-                  <span>Total BDT:</span><span>৳{payment.amount.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            // CellFin or Tap
-            <div className="bg-[#0984e3] px-6 py-4 border-b border-sky-600 text-white">
-              <div className="bg-black/15 rounded-xl p-3.5 text-xs font-medium space-y-1">
-                <div className="flex justify-between"><span>Recipient Account:</span><strong>{displayName}</strong></div>
-                <div className="flex justify-between"><span>Ref Inv:</span><strong className="font-mono">#{payment.orderId}</strong></div>
-                <div className="flex justify-between border-t border-white/10 pt-1.5 mt-1 text-sm font-black text-amber-300">
-                  <span>Payable:</span><span>৳{payment.amount.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Core Gateway Body View */}
-          <div 
-            className="flex-grow p-6 flex flex-col items-center justify-between text-center relative"
-            style={{ 
-              backgroundColor: activeMethodConfig.bg,
-              minHeight: "260px"
-            }}
-          >
-            {/* Step 2: Customer Phone Number input screen */}
-            {step === 2 && (
-              <div className="w-full space-y-6">
-                <span className="block text-[11px] font-black uppercase tracking-wider text-white/95">
-                  {selectedMethod === "upay" ? "Enter Your upay Account Number" : `Your ${activeMethodConfig.label} Account Number`}
-                </span>
-
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g 017XXXXXXXX"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  className={`w-full bg-white rounded-xl py-3 px-4 text-center text-base font-mono font-black text-slate-800 placeholder-slate-350 focus:outline-none shadow-inner
-                    ${selectedMethod === "upay" ? "border border-yellow-400 text-[#0f3057]" : ""}
-                  `}
-                />
-
-                <p className={`text-[10px] leading-normal font-bold opacity-80 ${selectedMethod === "upay" ? "text-[#0f3057]/80" : "text-white/80"}`}>
-                  {selectedMethod === "nagad" 
-                    ? "By clicking/tapping \"Proceed\" you are agreeing to our Terms and Conditions"
-                    : selectedMethod === "upay" 
-                    ? "By clicking on Confirm, you are agreeing to the terms & conditions"
-                    : "Confirm and proceed, terms & conditions"
-                  }
-                </p>
-
-                {errorMessage && (
-                  <div className="p-3 bg-red-950/20 text-white border border-red-500/30 rounded-xl text-[10px] font-bold text-left flex gap-1.5 items-start">
-                    <svg className="w-3.5 h-3.5 shrink-0 text-white mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    <span>{errorMessage}</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Step 3: Send Money instructions & verification inputs */}
-            {step === 3 && (
-              <div className="w-full space-y-4">
-                
-                {/* Instructions container */}
-                <div className="bg-black/10 border border-white/10 rounded-2xl p-4 text-left space-y-3.5 shadow-inner">
-                  <div className="flex items-center justify-between border-b border-white/15 pb-2">
-                    <span className="text-[9px] font-black uppercase tracking-wider text-white">Payment Steps</span>
-                    <span className="px-1.5 py-0.5 rounded bg-white/15 text-white text-[8px] font-black uppercase tracking-wider">Send Money</span>
-                  </div>
-                  <div className={`text-[10px] space-y-2 leading-relaxed font-semibold ${selectedMethod === "upay" ? "text-[#0f3057]" : "text-white"} opacity-95`}>
-                    <p>1. Open your <strong>{activeMethodConfig.label} app</strong> or dial USSD code.</p>
-                    <p>2. Select <strong>Send Money</strong> option.</p>
-                    <p>3. Send exactly <strong className="underline">৳{payment.amount.toFixed(2)}</strong> to the recipient:</p>
-                  </div>
-
-                  {/* Recipient Wallet number to copy */}
-                  <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-2xs">
-                    <div>
-                      <span className="text-[7px] text-slate-400 font-black uppercase tracking-wider block">Wallet Number</span>
-                      <span className="text-xs font-black text-slate-800 font-mono">{activeMethodNumber}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => copyToClipboard(activeMethodNumber || "", "number")}
-                      className="px-2 py-0.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded text-[8px] font-extrabold text-slate-700 transition"
-                    >
-                      {copiedField === "number" ? "Copied" : "Copy"}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Verification fields */}
-                <div className="space-y-3">
-                  {isWithTrxMode && (
-                    <div className="space-y-1.5">
-                      <span className={`text-[8px] font-black uppercase tracking-widest block text-center ${selectedMethod === "upay" ? "text-[#0f3057]" : "text-white"}`}>
-                        Enter Transaction ID (TrxID)
-                      </span>
-                      <input
-                        type="text"
-                        disabled={isLoading}
-                        placeholder="e.g. 8N34KJL98S"
-                        value={trxId}
-                        onChange={(e) => setTrxId(e.target.value)}
-                        className="w-full bg-white border-2 border-white/20 rounded-xl py-2 px-4 text-center font-mono text-xs uppercase tracking-widest text-slate-800 focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        disabled={isLoading}
-                        onClick={() => handleVerify(true)}
-                        className="w-full py-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer shadow-md"
-                        style={{ color: selectedMethod === "bkash" ? "#e2136e" : selectedMethod === "nagad" ? "#a30f14" : "#1e293b" }}
-                      >
-                        Verify with TrxID
-                      </button>
-                    </div>
-                  )}
-
-                  {isWithoutTrxMode && (
-                    <button
-                      type="button"
-                      disabled={isLoading}
-                      onClick={() => handleVerify(false)}
-                      className="w-full py-3.5 bg-white hover:bg-slate-50 rounded-2xl text-xs font-black uppercase tracking-wider transition cursor-pointer shadow-md flex items-center justify-center gap-1.5"
-                      style={{ color: selectedMethod === "bkash" ? "#e2136e" : selectedMethod === "nagad" ? "#a30f14" : "#1e293b" }}
-                    >
-                      <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span>Confirm Payment (Auto-Match)</span>
-                    </button>
-                  )}
-                </div>
-
-                {errorMessage && (
-                  <div className="p-3 bg-red-950/20 text-white border border-red-500/30 rounded-xl text-[10px] font-bold text-left flex gap-1.5 items-start">
-                    <svg className="w-3.5 h-3.5 shrink-0 text-white mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    <span>{errorMessage}</span>
-                  </div>
-                )}
-
-                {successMessage && (
-                  <div className="p-3 bg-white/20 rounded-xl text-xs text-white font-black leading-relaxed flex gap-2 items-center justify-center">
-                    <svg className="w-4 h-4 shrink-0 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>{successMessage}</span>
-                  </div>
-                )}
-
-                {isLoading && (
-                  <div className="flex items-center justify-center gap-2 py-0.5">
-                    <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                    </svg>
-                    <p className="text-[9px] font-bold text-white/90 text-center animate-pulse">
-                      {loadingMessage}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Themed White Footer panel */}
-          <div className="bg-white py-4 px-6 flex justify-between gap-4 border-t border-slate-100">
-            {step === 2 ? (
+        <PaymentShell
+          theme={activeMethodConfig}
+          logo={activeMethodConfig.logo}
+          logoAlt={activeMethodConfig.label}
+          merchantName={displayName}
+          orderId={payment.orderId}
+          amount={payment.amount}
+          step={step}
+          stepTitle={step === 2 ? "Your account" : "Pay & verify"}
+          footer={
+            step === 2 ? (
               <>
-                <button
-                  type="button"
-                  onClick={handleBackToGrid}
-                  className="flex-1 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-black uppercase tracking-wider rounded-xl transition cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (customerPhone.trim().length >= 11) {
-                      setStep(3);
-                      setErrorMessage(null);
-                    } else {
-                      alert("Please enter a valid 11-digit account number.");
-                    }
-                  }}
-                  className={`flex-1 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition cursor-pointer shadow-sm
-                    ${customerPhone.trim().length >= 11 
-                      ? "bg-slate-800 text-white hover:bg-slate-900" 
-                      : "bg-slate-200 text-slate-400 cursor-not-allowed"
-                    }
-                  `}
-                >
-                  {selectedMethod === "nagad" ? "Proceed" : "Confirm"}
-                </button>
+                <SecondaryButton onClick={handleBackToGrid}>Cancel</SecondaryButton>
+                <PrimaryButton theme={activeMethodConfig} onClick={handleConfirmAccount} disabled={customerPhone.length !== 11}>
+                  {selectedMethod === "nagad" ? "Proceed" : "Continue"}
+                </PrimaryButton>
               </>
             ) : (
-              // Step 3 footer button to go back
-              <button
-                type="button"
-                onClick={() => { setStep(2); setErrorMessage(null); setTrxId(""); }}
-                className="w-full py-2.5 bg-white border border-slate-250 hover:bg-slate-50 text-slate-500 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Go Back
-              </button>
-            )}
-          </div>
-
-          {/* Nagad Bottom-most white bar branding */}
-          {selectedMethod === "nagad" && (
-            <div className="bg-[#a30f14] pb-4 pt-3 text-center border-t border-[#87080a]">
-              <img src="/logos/nagad.png" alt="Nagad" className="h-6 object-contain mx-auto filter brightness-0 invert opacity-95" />
-            </div>
-          )}
-
-          {/* Upay Bottom-most white bar hotline */}
-          {selectedMethod === "upay" && (
-            <div className="bg-white py-3 text-center border-t border-slate-100 flex items-center justify-center gap-1.5 text-xs font-black text-[#0f3057]">
-              <span>📞</span>
-              <span>16268</span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── STEP 2 & 3: Bank Transfer High Fidelity Viewports ── */}
-      {step >= 2 && activeTab === "bank" && activeBankConfig && (
-        <div className="w-[370px] h-[520px] rounded-[32px] overflow-hidden shadow-2xl transition-all border bg-[#0f3057] border-[#0c2544] text-white flex flex-col font-sans animate-in fade-in zoom-in-95 duration-200">
-          
-          {/* Header */}
-          <div className="bg-white px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-            <img src={activeBankConfig.logo} alt={activeBankConfig.label} className="h-8 object-contain" />
-            <div className="text-right">
-              <span className="text-[8px] text-slate-400 uppercase tracking-widest font-black block">Total Payable</span>
-              <span className="text-sm font-black text-slate-800 font-mono">৳{payment.amount.toFixed(2)}</span>
-            </div>
-          </div>
-
-          {/* Content Body */}
-          <div className="p-6 flex-grow flex flex-col justify-between">
-            
-            {/* Step 2: Select Recipient Account */}
-            {step === 2 && activeBankData && activeBankData.isConfigured && (
-              <div className="w-full space-y-5">
-                {activeBankData.accounts.length > 1 ? (
-                  <div>
-                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-300 mb-2">
-                      Select Merchant Bank Account
-                    </label>
-                    <div className="space-y-2">
-                      {activeBankData.accounts.map((acc) => (
-                        <button
-                          key={acc.id}
-                          type="button"
-                          onClick={() => setSelectedBankAccount(acc)}
-                          className={`w-full p-3 rounded-2xl border text-left transition flex justify-between items-center cursor-pointer
-                            ${selectedBankAccount?.id === acc.id 
-                              ? "border-sky-400 bg-white/10 ring-1 ring-sky-400" 
-                              : "border-white/10 bg-black/15 hover:bg-black/20"
-                            }
-                          `}
-                        >
-                          <div>
-                            <span className="text-xs font-black text-white block">{acc.accountName}</span>
-                            <span className="text-[10px] font-mono text-slate-300">{acc.accountNo}</span>
-                          </div>
-                          <span className="text-[10px] text-slate-400 font-bold">{acc.branch || "General Branch"}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-black/15 border border-white/10 rounded-2xl p-4 space-y-1">
-                    <span className="text-[8px] font-black text-slate-300 uppercase tracking-wider">Recipient Account</span>
-                    <span className="text-xs font-black text-white block">{activeBankData.accounts[0].accountName}</span>
-                    <span className="text-xs font-mono font-bold text-slate-300 block">{activeBankData.accounts[0].accountNo}</span>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-300 mb-2">
-                    Enter your Bank Account Number / Reference
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Account Number or Name"
-                    value={customerAccount}
-                    onChange={(e) => setCustomerAccount(e.target.value)}
-                    className="w-full bg-white border-2 border-white/20 rounded-2xl py-3 px-4 text-center text-xs font-mono font-bold text-slate-800 focus:outline-none"
-                  />
-                </div>
+              <>
+                <BackIconButton disabled={isLoading} onClick={() => { setStep(2); setErrorMessage(null); setTrxId(""); }} />
+                <PrimaryButton
+                  theme={activeMethodConfig}
+                  disabled={isLoading || (isWithTrxMode && !trxId)}
+                  onClick={() => handleVerify(isWithTrxMode)}
+                >
+                  {isLoading ? <Spinner /> : <ShieldIcon />}
+                  <span>{isLoading ? "Verifying..." : isWithTrxMode ? "Verify Payment" : "I've Paid — Verify"}</span>
+                </PrimaryButton>
+              </>
+            )
+          }
+        >
+          {/* Step 2: Customer Phone Number input screen */}
+          {step === 2 && (
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-base font-extrabold text-slate-900 tracking-tight">
+                  Enter your {activeMethodConfig.label} number
+                </h4>
+                <p className="text-xs text-slate-500 mt-1">The wallet number you&apos;ll send the payment from.</p>
               </div>
-            )}
 
-            {/* Step 3: Instructions & Upload Form */}
-            {step === 3 && selectedBankAccount && (
-              <div className="w-full space-y-4">
-                
-                {/* Bengali Styled green instructions container */}
-                <div className="bg-emerald-950/30 border border-emerald-500/20 rounded-2xl p-4 text-left space-y-3.5 shadow-inner">
-                  <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2">
-                    <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400">পেমেন্ট স্লিপ আপলোড করুন</span>
-                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-200 text-[8px] font-bold uppercase tracking-wider">Manual Upload</span>
-                  </div>
+              <ThemedInput
+                id="cp-customer-phone"
+                theme={activeMethodConfig}
+                icon={<PhoneIcon />}
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel"
+                autoFocus
+                maxLength={11}
+                placeholder="01XXXXXXXXX"
+                value={customerPhone}
+                onChange={(e) => { setCustomerPhone(e.target.value.replace(/\D/g, "")); setErrorMessage(null); }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleConfirmAccount(); }}
+                className="text-lg tracking-[0.18em]"
+              />
 
-                  <p className="text-xs text-slate-200 leading-relaxed">
-                    Please transfer exactly <strong>৳{payment.amount.toFixed(2)}</strong> to the merchant bank account below and upload a payment slip.
-                  </p>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                By tapping &quot;{selectedMethod === "nagad" ? "Proceed" : "Continue"}&quot; you agree to the terms &amp; conditions.
+              </p>
 
-                  {/* Bank Name */}
-                  <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800">
-                    <div>
-                      <span className="text-[7px] text-slate-400 font-black uppercase block">Bank Name</span>
-                      <span className="text-xs font-black text-slate-900">{activeBankConfig.label}</span>
-                    </div>
-                  </div>
+              {errorMessage && <CheckoutAlert tone="error" message={errorMessage} />}
+            </div>
+          )}
 
-                  {/* Account Name */}
-                  <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800">
-                    <div>
-                      <span className="text-[8px] text-slate-400 font-black uppercase block">Account Name</span>
-                      <span className="text-xs font-black text-slate-900">{selectedBankAccount.accountName}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => copyToClipboard(selectedBankAccount.accountName, "bankName")}
-                      className="px-2 py-0.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded text-[8px] font-extrabold text-slate-700 transition"
+          {/* Step 3: Send Money / Merchant Payment instructions & verification inputs */}
+          {step === 3 && (
+            <div className="space-y-5">
+              <ol className="space-y-2.5 text-[13px] text-slate-600 leading-snug">
+                {(isBkashMerchant
+                  ? [
+                      <>Open your <strong className="text-slate-900">bKash</strong> app.</>,
+                      merchantQr
+                        ? <>Tap <strong className="text-slate-900">Scan QR</strong> and scan the code below, or choose <strong className="text-slate-900">Payment</strong> and enter the merchant number.</>
+                        : <>Choose <strong className="text-slate-900">Payment</strong> and enter the merchant number below.</>,
+                      <>Pay exactly <strong className="text-slate-900">৳{payment.amount.toFixed(2)}</strong> and confirm with your PIN.</>,
+                    ]
+                  : [
+                      <>Open your <strong className="text-slate-900">{activeMethodConfig.label}</strong> app or dial the USSD code.</>,
+                      <>Choose <strong className="text-slate-900">Send Money</strong>.</>,
+                      <>Send exactly <strong className="text-slate-900">৳{payment.amount.toFixed(2)}</strong> to the number below.</>,
+                    ]
+                ).map((content, i) => (
+                  <li key={i} className="flex gap-3 items-start">
+                    <span
+                      className="w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-[10px] font-black"
+                      style={{ backgroundColor: activeMethodConfig.soft, color: activeMethodConfig.accent }}
                     >
-                      {copiedField === "bankName" ? "Copied" : "Copy"}
-                    </button>
-                  </div>
+                      {i + 1}
+                    </span>
+                    <span className="pt-px">{content}</span>
+                  </li>
+                ))}
+              </ol>
 
-                  {/* Account Number */}
-                  <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800">
-                    <div>
-                      <span className="text-[8px] text-slate-400 font-black uppercase block">Account Number</span>
-                      <span className="text-xs font-black text-slate-900 font-mono">{selectedBankAccount.accountNo}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => copyToClipboard(selectedBankAccount.accountNo, "bankNo")}
-                      className="px-2 py-0.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded text-[8px] font-extrabold text-slate-700 transition"
+              {/* Merchant QR code (bKash merchant accounts only) */}
+              {merchantQr && (
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm text-center">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Scan to pay</span>
+                    <span
+                      className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                      style={{ backgroundColor: activeMethodConfig.soft, color: activeMethodConfig.accent }}
                     >
-                      {copiedField === "bankNo" ? "Copied" : "Copy"}
-                    </button>
+                      bKash Merchant
+                    </span>
                   </div>
-
-                  {/* Branch */}
-                  {selectedBankAccount.branch && (
-                    <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800">
-                      <div>
-                        <span className="text-[8px] text-slate-400 font-black uppercase block">Branch</span>
-                        <span className="text-xs font-black text-slate-900">{selectedBankAccount.branch}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {errorMessage && (
-                  <div className="p-3 bg-red-950/20 text-white border border-red-500/30 rounded-xl text-[10px] font-bold text-left flex gap-1.5 items-start">
-                    <svg className="w-3.5 h-3.5 shrink-0 text-white mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  <div
+                    className="mx-auto w-44 h-44 max-w-full rounded-2xl p-2 bg-white"
+                    style={{ boxShadow: `0 0 0 2px ${activeMethodConfig.accent}` }}
+                  >
+                    <img src={merchantQr} alt={`${displayName} bKash merchant QR code`} className="w-full h-full object-contain" />
+                  </div>
+                  <a
+                    href={qrDownloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download
+                    className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-bold transition hover:opacity-80"
+                    style={{ color: activeMethodConfig.accent }}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                    <span>{errorMessage}</span>
-                  </div>
-                )}
+                    On this phone? Save QR → &quot;Scan from gallery&quot;
+                  </a>
+                </div>
+              )}
 
-                {successMessage && (
-                  <div className="p-3 bg-emerald-950/25 rounded-xl text-xs text-white font-black leading-relaxed flex gap-2 items-center justify-center">
-                    <svg className="w-4 h-4 shrink-0 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+              {/* Recipient wallet number to copy */}
+              <div
+                className="rounded-2xl border border-dashed p-4 flex items-center justify-between gap-3"
+                style={{ borderColor: activeMethodConfig.accent, backgroundColor: activeMethodConfig.soft }}
+              >
+                <div className="min-w-0">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                    {isBkashMerchant ? "Merchant number" : "Send money to"}
+                  </span>
+                  <span className="text-xl font-black text-slate-900 font-mono tracking-wider break-all">{activeMethodNumber}</span>
+                </div>
+                <CopyButton
+                  theme={activeMethodConfig}
+                  copied={copiedField === "number"}
+                  onCopy={() => copyToClipboard(activeMethodNumber || "", "number")}
+                />
+              </div>
+
+              {isWithTrxMode && (
+                <div className="space-y-2">
+                  <label htmlFor="cp-trxid" className="text-xs font-bold text-slate-700 block">
+                    Transaction ID (TrxID)
+                  </label>
+                  <ThemedInput
+                    id="cp-trxid"
+                    theme={activeMethodConfig}
+                    icon={<ReceiptIcon />}
+                    type="text"
+                    autoComplete="off"
+                    autoCapitalize="characters"
+                    spellCheck={false}
+                    disabled={isLoading}
+                    placeholder="e.g. 8N34KJL98S"
+                    value={trxId}
+                    onChange={(e) => { setTrxId(e.target.value.toUpperCase().trim()); setErrorMessage(null); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleVerify(true); }}
+                    className="text-sm uppercase tracking-[0.2em] placeholder:normal-case placeholder:tracking-normal"
+                  />
+                  <p className="text-[11px] text-slate-400">You&apos;ll find it in the confirmation SMS from {activeMethodConfig.label}.</p>
+                </div>
+              )}
+
+              {isWithTrxMode && isWithoutTrxMode && (
+                <>
+                  <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    <span className="flex-1 h-px bg-slate-200" />
+                    or
+                    <span className="flex-1 h-px bg-slate-200" />
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isLoading}
+                    onClick={() => handleVerify(false)}
+                    className="w-full py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 transition cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>{successMessage}</span>
-                  </div>
-                )}
+                    <span>Verify without TrxID (auto-match)</span>
+                  </button>
+                </>
+              )}
 
-                {isLoading && (
-                  <div className="flex items-center justify-center gap-2 py-0.5">
-                    <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                    </svg>
-                    <p className="text-[9px] font-bold text-white/90 text-center animate-pulse">
-                      {loadingMessage}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+              {errorMessage && <CheckoutAlert tone="error" message={errorMessage} />}
+              {successMessage && <CheckoutAlert tone="success" message={successMessage} />}
 
-          {/* Footer controls for Bank Transfer */}
-          <div className="bg-white py-4 px-6 flex justify-between gap-4 border-t border-slate-100/50">
-            {step === 2 ? (
+              {isLoading && loadingMessage && (
+                <p className="text-[11px] font-semibold text-center text-slate-500 animate-pulse">{loadingMessage}</p>
+              )}
+            </div>
+          )}
+        </PaymentShell>
+      )}
+
+      {/* ── STEP 2 & 3: Bank Transfer (same premium shell) ── */}
+      {step >= 2 && activeTab === "bank" && activeBankConfig && (
+        <PaymentShell
+          theme={activeBankConfig}
+          logo={activeBankConfig.logo}
+          logoAlt={activeBankConfig.label}
+          merchantName={displayName}
+          orderId={payment.orderId}
+          amount={payment.amount}
+          step={step}
+          stepTitle={step === 2 ? "Recipient & reference" : "Transfer & submit"}
+          footer={
+            step === 2 ? (
               <>
-                <button
-                  type="button"
-                  onClick={handleBackToGrid}
-                  className="flex-1 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-black uppercase tracking-wider rounded-xl transition cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
+                <SecondaryButton onClick={handleBackToGrid}>Cancel</SecondaryButton>
+                <PrimaryButton
+                  theme={activeBankConfig}
+                  disabled={customerAccount.trim().length < 4}
                   onClick={() => {
                     const targetAcc = (activeBankData && activeBankData.accounts.length === 1) ? activeBankData.accounts[0] : selectedBankAccount;
                     if (!targetAcc) {
-                      alert("Please select a merchant bank account to pay to.");
+                      setErrorMessage("Please select a merchant bank account to pay to.");
                       return;
                     }
                     if (customerAccount.trim().length >= 4) {
                       setSelectedBankAccount(targetAcc);
+                      setErrorMessage(null);
                       setStep(3);
                     } else {
-                      alert("Please enter a valid account number / name reference.");
+                      setErrorMessage("Please enter a valid account number / name reference.");
                     }
                   }}
-                  className={`flex-1 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition cursor-pointer shadow-sm
-                    ${customerAccount.trim().length >= 4 
-                      ? "bg-slate-800 text-white hover:bg-slate-900" 
-                      : "bg-slate-200 text-slate-400 cursor-not-allowed"
-                    }
-                  `}
                 >
-                  Next
-                </button>
+                  Continue
+                </PrimaryButton>
               </>
             ) : (
-              // Step 3 Submit/Go Back footer controls
-              <div className="w-full space-y-3">
-                <button
-                  type="button"
-                  disabled={isLoading}
-                  onClick={() => handleVerify(false)}
-                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer shadow-md flex items-center justify-center gap-1.5"
-                >
-                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Verify</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={isLoading}
-                  onClick={() => { setStep(2); setErrorMessage(null); }}
-                  className="w-full py-2 bg-white border border-slate-250 hover:bg-slate-50 text-slate-500 rounded-xl text-[10px] font-bold uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                  </svg>
-                  Go Back
-                </button>
+              <>
+                <BackIconButton disabled={isLoading} onClick={() => { setStep(2); setErrorMessage(null); }} />
+                <PrimaryButton theme={activeBankConfig} disabled={isLoading} onClick={() => handleVerify(false)}>
+                  {isLoading ? <Spinner /> : <ShieldIcon />}
+                  <span>{isLoading ? "Submitting..." : "I've Transferred"}</span>
+                </PrimaryButton>
+              </>
+            )
+          }
+        >
+          {/* Step 2: Select Recipient Account */}
+          {step === 2 && activeBankData && activeBankData.isConfigured && (
+            <div className="space-y-5">
+              {activeBankData.accounts.length > 1 ? (
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-slate-700 block">Select merchant account</span>
+                  {activeBankData.accounts.map((acc) => {
+                    const isSelected = selectedBankAccount?.id === acc.id;
+                    return (
+                      <button
+                        key={acc.id}
+                        type="button"
+                        onClick={() => { setSelectedBankAccount(acc); setErrorMessage(null); }}
+                        className="w-full p-3.5 rounded-2xl border text-left transition flex justify-between items-center gap-3 cursor-pointer hover:bg-slate-50"
+                        style={isSelected ? { borderColor: activeBankConfig.accent, backgroundColor: activeBankConfig.soft, boxShadow: `0 0 0 1px ${activeBankConfig.accent}` } : { borderColor: "#e2e8f0" }}
+                      >
+                        <div className="min-w-0">
+                          <span className="text-sm font-bold text-slate-900 block truncate">{acc.accountName}</span>
+                          <span className="text-xs font-mono text-slate-500">{acc.accountNo}</span>
+                        </div>
+                        <span className="text-[11px] text-slate-400 font-semibold shrink-0">{acc.branch || "General Branch"}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Recipient account</span>
+                  <span className="text-sm font-bold text-slate-900 block mt-0.5">{activeBankData.accounts[0].accountName}</span>
+                  <span className="text-xs font-mono text-slate-500 block">{activeBankData.accounts[0].accountNo}</span>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label htmlFor="cp-bank-ref" className="text-xs font-bold text-slate-700 block">
+                  Your bank account number / reference
+                </label>
+                <ThemedInput
+                  id="cp-bank-ref"
+                  theme={activeBankConfig}
+                  icon={<ReceiptIcon />}
+                  type="text"
+                  placeholder="Account number or name"
+                  value={customerAccount}
+                  onChange={(e) => { setCustomerAccount(e.target.value); setErrorMessage(null); }}
+                  className="text-sm"
+                />
               </div>
-            )}
-          </div>
-        </div>
+
+              {errorMessage && <CheckoutAlert tone="error" message={errorMessage} />}
+            </div>
+          )}
+
+          {/* Step 3: Bank details & submit */}
+          {step === 3 && selectedBankAccount && (
+            <div className="space-y-4">
+              <p className="text-[13px] text-slate-600 leading-snug">
+                Transfer exactly <strong className="text-slate-900">৳{payment.amount.toFixed(2)}</strong> to the account below, then tap <strong className="text-slate-900">I&apos;ve Transferred</strong>.
+              </p>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 divide-y divide-slate-200">
+                <CopyRow label="Bank" value={activeBankConfig.label} />
+                <CopyRow
+                  label="Account name"
+                  value={selectedBankAccount.accountName}
+                  theme={activeBankConfig}
+                  copied={copiedField === "bankName"}
+                  onCopy={() => copyToClipboard(selectedBankAccount.accountName, "bankName")}
+                />
+                <CopyRow
+                  label="Account number"
+                  value={selectedBankAccount.accountNo}
+                  mono
+                  theme={activeBankConfig}
+                  copied={copiedField === "bankNo"}
+                  onCopy={() => copyToClipboard(selectedBankAccount.accountNo, "bankNo")}
+                />
+                {selectedBankAccount.branch && <CopyRow label="Branch" value={selectedBankAccount.branch} />}
+              </div>
+
+              {errorMessage && <CheckoutAlert tone="error" message={errorMessage} />}
+              {successMessage && <CheckoutAlert tone="success" message={successMessage} />}
+
+              {isLoading && loadingMessage && (
+                <p className="text-[11px] font-semibold text-center text-slate-500 animate-pulse">{loadingMessage}</p>
+              )}
+            </div>
+          )}
+        </PaymentShell>
       )}
 
+    </div>
+  );
+}
+
+type BrandTheme = {
+  from: string;   // gradient start
+  to: string;     // gradient end
+  ink: string;    // text color on the gradient
+  accent: string; // brand color readable on white
+  soft: string;   // translucent accent for tints
+};
+
+const brandGradient = (t: BrandTheme) => `linear-gradient(135deg, ${t.from} 0%, ${t.to} 100%)`;
+
+function PaymentShell({
+  theme, logo, logoAlt, merchantName, orderId, amount, step, stepTitle, footer, children,
+}: {
+  theme: BrandTheme;
+  logo: string;
+  logoAlt: string;
+  merchantName: string;
+  orderId: string;
+  amount: number;
+  step: number;
+  stepTitle: string;
+  footer: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const current = step - 1; // steps 2 & 3 → 1 & 2
+  return (
+    <div className="w-full max-w-[400px] max-h-[calc(100dvh-2rem)] rounded-[28px] overflow-hidden bg-white flex flex-col shadow-[0_30px_60px_-15px_rgba(15,23,42,0.45)] ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-200">
+      {/* Branded hero */}
+      <div className="relative shrink-0 overflow-hidden px-6 pt-5 pb-9" style={{ background: brandGradient(theme), color: theme.ink }}>
+        <div className="pointer-events-none absolute -top-20 -right-16 w-56 h-56 rounded-full bg-white/10" />
+        <div className="pointer-events-none absolute -bottom-24 -left-12 w-48 h-48 rounded-full bg-white/10" />
+
+        <div className="relative flex items-center justify-between">
+          <div className="h-11 px-3 rounded-xl bg-white shadow-md shadow-black/10 flex items-center">
+            <img src={logo} alt={logoAlt} className="h-8 max-w-[104px] object-contain" />
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 ring-1 ring-white/20 text-[10px] font-bold uppercase tracking-wider">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+            Secure
+          </span>
+        </div>
+
+        <div className="relative mt-5 flex items-end justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold opacity-75">Paying to</p>
+            <h3 className="text-base font-extrabold leading-tight truncate">{merchantName}</h3>
+            <p className="text-[11px] font-mono opacity-70 truncate">Invoice #{orderId}</p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-[11px] font-semibold opacity-75">Amount</p>
+            <p className="text-[26px] leading-none font-black tracking-tight mt-1">৳{amount.toFixed(2)}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Body sheet overlapping the hero */}
+      <div className="relative -mt-4 flex-1 min-h-0 overflow-y-auto rounded-t-[24px] bg-white px-6 pt-5 pb-5">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Step {current} of 2</span>
+          <span className="text-[11px] font-bold text-slate-700">{stepTitle}</span>
+        </div>
+        <div className="flex gap-1.5 mb-5">
+          {[1, 2].map((s) => (
+            <span
+              key={s}
+              className="h-1 flex-1 rounded-full transition-colors"
+              style={{ background: s <= current ? brandGradient(theme) : "#e2e8f0" }}
+            />
+          ))}
+        </div>
+        {children}
+      </div>
+
+      {/* Footer actions */}
+      <div className="shrink-0 bg-white px-6 pt-3 pb-4 border-t border-slate-100">
+        <div className="flex gap-3">{footer}</div>
+        <p className="mt-3 flex items-center justify-center gap-1 text-[10px] font-semibold text-slate-400">
+          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
+          </svg>
+          Secured by CodePay
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function PrimaryButton({ theme, disabled, onClick, children }: { theme: BrandTheme; disabled?: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="flex-1 py-3.5 rounded-2xl text-sm font-bold transition cursor-pointer flex items-center justify-center gap-2 hover:brightness-105 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:active:scale-100"
+      style={{ background: brandGradient(theme), color: theme.ink, boxShadow: `0 10px 24px -10px ${theme.from}` }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SecondaryButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex-1 py-3.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-bold text-slate-600 transition cursor-pointer"
+    >
+      {children}
+    </button>
+  );
+}
+
+function BackIconButton({ disabled, onClick }: { disabled?: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      title="Go Back"
+      aria-label="Go Back"
+      className="shrink-0 w-12 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition cursor-pointer flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      </svg>
+    </button>
+  );
+}
+
+function ThemedInput({ theme, icon, className = "", style, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { theme: BrandTheme; icon?: React.ReactNode }) {
+  return (
+    <div className="relative">
+      {icon && <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">{icon}</span>}
+      <input
+        {...props}
+        className={`w-full rounded-2xl border border-slate-200 bg-slate-50 py-3.5 ${icon ? "pl-11" : "pl-4"} pr-4 font-mono font-bold text-slate-900 placeholder:text-slate-300 placeholder:font-sans placeholder:font-medium transition focus:outline-none focus:bg-white focus:border-[var(--cp-accent)] focus:ring-4 focus:ring-[var(--cp-soft)] disabled:opacity-60 ${className}`}
+        style={{ ...style, ["--cp-accent" as string]: theme.accent, ["--cp-soft" as string]: theme.soft }}
+      />
+    </div>
+  );
+}
+
+function CopyButton({ theme, copied, onCopy }: { theme?: BrandTheme; copied: boolean; onCopy: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onCopy}
+      className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold transition cursor-pointer
+        ${copied ? "bg-emerald-500 text-white" : "bg-white text-slate-700 ring-1 ring-slate-200 hover:ring-slate-300 shadow-sm"}
+      `}
+      style={!copied && theme ? { color: theme.accent } : undefined}
+    >
+      {copied ? (
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      ) : (
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      )}
+      {copied ? "Copied" : "Copy"}
+    </button>
+  );
+}
+
+function CopyRow({ label, value, mono, theme, copied = false, onCopy }: { label: string; value: string; mono?: boolean; theme?: BrandTheme; copied?: boolean; onCopy?: () => void }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-4 py-3">
+      <div className="min-w-0">
+        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">{label}</span>
+        <span className={`text-sm font-bold text-slate-900 break-all ${mono ? "font-mono tracking-wide" : ""}`}>{value}</span>
+      </div>
+      {onCopy && <CopyButton theme={theme} copied={copied} onCopy={onCopy} />}
+    </div>
+  );
+}
+
+function Spinner() {
+  return (
+    <svg className="animate-spin h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+    </svg>
+  );
+}
+
+function ShieldIcon() {
+  return (
+    <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+    </svg>
+  );
+}
+
+function PhoneIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+    </svg>
+  );
+}
+
+function ReceiptIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0c1.1.128 1.907 1.077 1.907 2.185z" />
+    </svg>
+  );
+}
+
+function CheckoutAlert({ tone, message }: { tone: "error" | "success"; message: string }) {
+  const isError = tone === "error";
+  return (
+    <div
+      role={isError ? "alert" : "status"}
+      className={`p-3 rounded-xl text-xs font-semibold text-left flex gap-2 items-start border
+        ${isError ? "bg-red-50 text-red-700 border-red-100" : "bg-emerald-50 text-emerald-700 border-emerald-100"}
+      `}
+    >
+      <svg className="w-4 h-4 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+        {isError ? (
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        ) : (
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        )}
+      </svg>
+      <span>{message}</span>
     </div>
   );
 }

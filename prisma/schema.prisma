@@ -41,6 +41,10 @@ model User {
   codepayCellfinActive  Boolean  @default(true)
   codepayTapActive      Boolean  @default(true)
 
+  // bKash account type: "personal" (Send Money) or "merchant" (Payment / QR scan)
+  codepayBkashType      String   @default("personal")
+  codepayBkashQr        String?  // Merchant QR image URL (ImageKit or external)
+
   codepayWithTrx        Boolean  @default(true)
   codepayWithoutTrx     Boolean  @default(false)
 

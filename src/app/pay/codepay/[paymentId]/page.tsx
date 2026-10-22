@@ -40,6 +40,8 @@ export default async function CodePayCheckoutPage({ params }: PageProps) {
           codepayUpayActive: true,
           codepayCellfinActive: true,
           codepayTapActive: true,
+          codepayBkashType: true,
+          codepayBkashQr: true,
           codepayWithTrx: true,
           codepayWithoutTrx: true,
           codepayBankAccounts: {
@@ -112,6 +114,8 @@ export default async function CodePayCheckoutPage({ params }: PageProps) {
         upayActive: payment.user.codepayUpayActive,
         cellfinActive: payment.user.codepayCellfinActive,
         tapActive: payment.user.codepayTapActive,
+        bkashType: payment.user.codepayBkashType === "merchant" ? "merchant" : "personal",
+        bkashQr: payment.user.codepayBkashQr || "",
         withTrx: payment.user.codepayWithTrx,
         withoutTrx: payment.user.codepayWithoutTrx,
         bankAccounts: payment.user.codepayBankAccounts.map((b) => ({

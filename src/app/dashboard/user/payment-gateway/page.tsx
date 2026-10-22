@@ -60,6 +60,8 @@ export default async function PaymentGatewayPage() {
         codepayUpayActive: true,
         codepayCellfinActive: true,
         codepayTapActive: true,
+        codepayBkashType: true,
+        codepayBkashQr: true,
         codepayWithTrx: true,
         codepayWithoutTrx: true,
         codepayBankAccounts: {
@@ -144,6 +146,8 @@ export default async function PaymentGatewayPage() {
           upayActive: dbUser.codepayUpayActive,
           cellfinActive: dbUser.codepayCellfinActive,
           tapActive: dbUser.codepayTapActive,
+          bkashType: dbUser.codepayBkashType === "merchant" ? "merchant" : "personal",
+          bkashQr: dbUser.codepayBkashQr || "",
           withTrx: dbUser.codepayWithTrx,
           withoutTrx: dbUser.codepayWithoutTrx,
           bankAccounts: dbUser.codepayBankAccounts.map((b) => ({

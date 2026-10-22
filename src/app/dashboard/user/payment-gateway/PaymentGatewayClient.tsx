@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { saveGatewaySettings, saveBrandingSettings, generateGatewayKeys, simulateSandboxSms, createSandboxPayment, addBankAccount, deleteBankAccount, toggleBankAccountActive } from "./actions";
+import { saveGatewaySettings, saveBrandingSettings, generateGatewayKeys, simulateSandboxSms, createSandboxPayment, addBankAccount, deleteBankAccount, toggleBankAccountActive, saveBkashMerchantSettings } from "./actions";
 
 interface BkashSmsTx {
   id: string;
@@ -39,6 +39,8 @@ interface PaymentGatewayClientProps {
     upayActive: boolean;
     cellfinActive: boolean;
     tapActive: boolean;
+    bkashType: "personal" | "merchant";
+    bkashQr: string;
     withTrx: boolean;
     withoutTrx: boolean;
     bankAccounts: {
@@ -180,6 +182,18 @@ export default function PaymentGatewayClient({
   const [formProvider, setFormProvider] = useState<"bkash" | "nagad" | "rocket" | "upay" | "cellfin" | "tap">("bkash");
   const [formNumber, setFormNumber] = useState("");
   const [editingProvider, setEditingProvider] = useState<"bkash" | "nagad" | "rocket" | "upay" | "cellfin" | "tap" | null>(null);
+  const [modalError, setModalError] = useState<string | null>(null);
+
+  // bKash merchant (Payment / QR) settings
+  const [bkashType, setBkashType] = useState<"personal" | "merchant">(gatewaySettings.bkashType);
+  const [bkashQr, setBkashQr] = useState(gatewaySettings.bkashQr);
+  const [formBkashType, setFormBkashType] = useState<"personal" | "merchant">(gatewaySettings.bkashType);
+  const [formQr, setFormQr] = useState(gatewaySettings.bkashQr);
+  const [formQrFile, setFormQrFile] = useState<File | null>(null);
+  const [qrInputMode, setQrInputMode] = useState<"upload" | "url">("upload");
+
+  // Bank form visibility
+  const [showBankForm, setShowBankForm] = useState(false);
 
   // API credentials states
   const [apiKey, setApiKey] = useState(gatewaySettings.apiKey);
@@ -303,7 +317,47 @@ export default function PaymentGatewayClient({
     return false;
   };
 
-  const handleGatewaySubmit = (e: React.FormEvent) => {
+  const openGatewayModal = (provider: "bkash" | "nagad" | "rocket" | "upay" | "cellfin" | "tap", editing: boolean, number = "") => {
+    setFormProvider(provider);
+    setEditingProvider(editing ? provider : null);
+    setFormNumber(number);
+    setFormBkashType(bkashType);
+    setFormQr(bkashQr);
+    setFormQrFile(null);
+    setQrInputMode(bkashQr && !bkashQr.includes("ik.imagekit.io") ? "url" : "upload");
+    setModalError(null);
+    setShowAddForm(true);
+  };
+
+  const closeGatewayModal = () => {
+    setShowAddForm(false);
+    setEditingProvider(null);
+    setFormNumber("");
+    setFormQrFile(null);
+    setModalError(null);
+  };
+
+  const handleQrFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setModalError("QR code must be an image file (PNG, JPG or WEBP).");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setModalError("QR code image must be 2MB or smaller.");
+      return;
+    }
+    setModalError(null);
+    setFormQrFile(file);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) setFormQr(event.target.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleGatewaySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     let nextBkash = bkash;
     let nextNagad = nagad;
@@ -313,6 +367,29 @@ export default function PaymentGatewayClient({
     let nextTap = tap;
 
     const providerToSet = editingProvider || formProvider;
+
+    // bKash: persist account type + merchant QR before the number
+    if (providerToSet === "bkash") {
+      setIsSavingSettings(true);
+      setModalError(null);
+      try {
+        const fd = new FormData();
+        fd.append("bkashType", formBkashType);
+        if (formQrFile) {
+          fd.append("qrFile", formQrFile);
+        } else if (formQr && !formQr.startsWith("data:")) {
+          fd.append("bkashQr", formQr);
+        }
+        const res = await saveBkashMerchantSettings(fd);
+        setBkashType(res.bkashType as "personal" | "merchant");
+        setBkashQr(res.bkashQr || "");
+        setFormQrFile(null);
+      } catch (err: any) {
+        setModalError(err.message || "Failed to save bKash merchant settings.");
+        setIsSavingSettings(false);
+        return;
+      }
+    }
 
     if (providerToSet === "bkash") {
       nextBkash = formNumber;
@@ -334,7 +411,7 @@ export default function PaymentGatewayClient({
       setTap(formNumber);
     }
 
-    saveSettingsDirectly(nextBkash, nextNagad, nextRocket, nextUpay, nextCellfin, nextTap);
+    await saveSettingsDirectly(nextBkash, nextNagad, nextRocket, nextUpay, nextCellfin, nextTap);
   };
 
   const handleDeleteGateway = (provider: "bkash" | "nagad" | "rocket" | "upay" | "cellfin" | "tap") => {
@@ -447,363 +524,348 @@ export default function PaymentGatewayClient({
     setTimeout(() => setCopiedField(null), 2000);
   };
 
+  const connectedWallets = [bkash, nagad, rocket, upay, cellfin, tap].filter(Boolean).length;
+  const activeBanks = bankAccounts.filter((b: any) => b.active).length;
+
+  const TAB_META: Record<TabType, { label: string; icon: IconName }> = {
+    transactions: { label: "Transactions", icon: "list" },
+    settings: { label: "Gateway Settings", icon: "settings" },
+    api: { label: "Developer API", icon: "code" },
+    app: { label: "Android App", icon: "phone" },
+  };
+
   return (
     <div className="space-y-6">
       {showSandboxSuccess && (
-        <div className="bg-emerald-600 text-white rounded-3xl p-6 shadow-md flex items-center justify-between gap-4 animate-in fade-in duration-350">
-          <div className="space-y-1">
-            <h3 className="font-extrabold text-base">
-              Sandbox Payment Verified Successfully!
-            </h3>
-            <p className="text-xs text-emerald-100">
-              The CodePay payment matched your simulated SMS transaction, updated status to completed, and redirected back to your callback URL successfully.
-            </p>
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 p-5 sm:p-6 text-white shadow-lg shadow-emerald-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-300">
+          <div className="flex items-start gap-3">
+            <span className="w-10 h-10 shrink-0 rounded-2xl bg-white/20 flex items-center justify-center"><Icon name="check" className="w-5 h-5" /></span>
+            <div>
+              <h3 className="font-extrabold text-base">Sandbox payment verified successfully!</h3>
+              <p className="text-xs text-white/85 mt-0.5 leading-relaxed">
+                The checkout matched your simulated SMS, marked the payment as completed, and redirected back to your callback URL.
+              </p>
+            </div>
           </div>
-          <button 
+          <button
             onClick={() => setShowSandboxSuccess(false)}
-            className="text-white hover:text-emerald-250 text-xs font-black uppercase tracking-wider bg-emerald-700 hover:bg-emerald-800 px-4 py-2 rounded-xl transition cursor-pointer shrink-0"
+            className="self-start sm:self-auto px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-xs font-bold transition cursor-pointer shrink-0"
           >
             Dismiss
           </button>
         </div>
       )}
 
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">
-            CodePay Gateway
-          </h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Setup merchant configurations, obtain API keys, and track live transactions like UddoktaPay.
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3 shrink-0 flex-wrap">
-          {latestApkLink && (
-            downloadAllowed !== false ? (
-              latestApkLink.link ? (
-                <a
-                  href={latestApkLink.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-2xl text-xs font-bold shadow-xs transition cursor-pointer no-underline"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  <span>Download App ({latestApkLink.version || "Latest"})</span>
-                </a>
-              ) : null
-            ) : (
-              <button
-                disabled
-                className="flex items-center gap-2 bg-slate-100 text-slate-400 px-4 py-2.5 rounded-2xl text-xs font-bold cursor-not-allowed border border-slate-200"
-                title="Download access restricted by Administrator"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-                <span>Download Restricted</span>
-              </button>
-            )
-          )}
-          
-          {gatewaySettings.active && (
-            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2.5 rounded-2xl border border-emerald-100 text-xs font-semibold shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              Gateway Active
+      {/* ── Page Header ── */}
+      <div className="relative overflow-hidden rounded-3xl border border-slate-200/70 bg-white p-6 sm:p-8 shadow-sm">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/80 via-white to-cyan-50/60" />
+        <div className="absolute -top-24 -right-16 w-72 h-72 bg-emerald-200/30 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 left-1/3 w-72 h-72 bg-cyan-200/20 rounded-full blur-3xl" />
+
+        <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-emerald-100 shadow-sm">
+              <span className={`w-2 h-2 rounded-full ${gatewaySettings.active ? "bg-emerald-500 animate-pulse" : "bg-red-400"}`} />
+              <span className="text-xs font-semibold text-slate-700">
+                {gatewaySettings.active ? "Gateway live" : "Gateway suspended"}
+              </span>
             </div>
-          )}
-        </div>
-      </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                CodePay{" "}
+                <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent">Gateway</span>
+              </h1>
+              <p className="text-sm text-slate-500 mt-1.5 max-w-xl leading-relaxed">
+                Connect your MFS wallets and bank accounts, auto-verify payments from synced SMS, and integrate checkout into any website.
+              </p>
+            </div>
+          </div>
 
-      {/* Tabs Switcher — URL-driven */}
-      <div className="flex border-b border-slate-200">
-        {(["transactions", "settings", "api", "app"] as const)
-          .filter((tab) => tab !== "api" || gatewaySettings.active)
-          .map((tab) => {
-            const labels: Record<TabType, string> = {
-              transactions: "Transactions & Logs",
-              settings: "Gateway Settings",
-              api: "Developer Keys & API",
-              app: "Android App",
-            };
-            return (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-5 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
-                  activeTab === tab
-                    ? "border-slate-900 text-slate-900"
-                    : "border-transparent text-slate-400 hover:text-slate-700"
-                }`}
-              >
-                {labels[tab]}
-              </button>
-            );
-          })}
-      </div>
-
-      {activeTab === "transactions" && (
-        <div className="space-y-6">
-          {latestApkLink && (
-            <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-3xl p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in duration-300">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded text-[9px] font-bold uppercase tracking-wider">SMS Listener</span>
-                  <h3 className="font-extrabold text-sm text-slate-800">
-                    Android Companion App {latestApkLink.version ? `v${latestApkLink.version}` : ""}
-                  </h3>
-                </div>
-                <p className="text-xs text-slate-500 max-w-2xl leading-relaxed">
-                  ইনকামিং পেমেন্ট SMS স্বয়ংক্রিয়ভাবে ভেরিফাই করার জন্য আমাদের অফিশিয়াল অ্যান্ড্রয়েড অ্যাপটি আপনার পেমেন্ট গ্রহণকারী ফোনে ইনস্টল করুন। অ্যাপটি ব্যাকগ্রাউন্ডে রান হয়ে ইনস্ট্যান্ট পেমেন্ট ভেরিফিকেশন সম্পন্ন করবে।
-                </p>
-              </div>
-              
-              {downloadAllowed !== false ? (
+          <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-3 shrink-0">
+            {latestApkLink && (
+              downloadAllowed !== false ? (
                 latestApkLink.link ? (
-                  <a 
+                  <a
                     href={latestApkLink.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shrink-0 shadow-xs cursor-pointer no-underline"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold shadow-lg shadow-emerald-200 transition no-underline"
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    ডাউনলোড করুন (Download APK)
+                    <Icon name="download" className="w-4 h-4" />
+                    Download App {latestApkLink.version ? `v${latestApkLink.version}` : ""}
                   </a>
-                ) : (
-                  <span className="text-xs text-slate-400 font-semibold">No active download link available.</span>
-                )
+                ) : null
               ) : (
-                <div className="flex items-center gap-1.5 text-xs text-slate-400 bg-slate-100 border border-slate-200 px-4 py-2.5 rounded-xl cursor-not-allowed">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  ডাউনলোড অ্যাক্সেস সীমাবদ্ধ
+                <span
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-slate-100 text-slate-400 text-sm font-bold border border-slate-200 cursor-not-allowed"
+                  title="Download access restricted by Administrator"
+                >
+                  <Icon name="lock" className="w-4 h-4" />
+                  Download Restricted
+                </span>
+              )
+            )}
+          </div>
+        </div>
+
+        {/* Quick stats */}
+        <div className="relative grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
+          {[
+            { label: "Wallets connected", value: `${connectedWallets}/6`, icon: "wallet" as IconName },
+            { label: "Bank accounts", value: String(activeBanks), icon: "bank" as IconName },
+            { label: "Verification", value: withoutTrx ? "Auto-match" : "TrxID", icon: "shield" as IconName },
+            { label: "API keys", value: apiKey ? "Generated" : "Not set", icon: "key" as IconName },
+          ].map((s) => (
+            <div key={s.label} className="flex items-center gap-3 rounded-2xl bg-white/80 backdrop-blur border border-slate-100 px-4 py-3 shadow-sm">
+              <span className="w-9 h-9 shrink-0 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><Icon name={s.icon} className="w-4 h-4" /></span>
+              <div className="min-w-0">
+                <p className="text-sm font-extrabold text-slate-900 truncate">{s.value}</p>
+                <p className="text-[11px] text-slate-500 leading-tight">{s.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Tabs (URL-driven) ── */}
+      <div className="overflow-x-auto -mx-1 px-1 pb-1">
+        <div className="inline-flex min-w-max gap-1 p-1 rounded-2xl bg-slate-100/80 border border-slate-200/60">
+          {(["transactions", "settings", "api", "app"] as const)
+            .filter((tab) => tab !== "api" || gatewaySettings.active)
+            .map((tab) => {
+              const isActive = activeTab === tab;
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition cursor-pointer ${
+                    isActive ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  <Icon name={TAB_META[tab].icon} className={`w-4 h-4 ${isActive ? "text-emerald-500" : ""}`} />
+                  {TAB_META[tab].label}
+                </button>
+              );
+            })}
+        </div>
+      </div>
+
+      {activeTab === "transactions" && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          {latestApkLink && (
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 p-6 text-white shadow-lg shadow-emerald-200/50">
+              <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/10" />
+              <div className="absolute right-24 -bottom-16 w-40 h-40 rounded-full bg-white/10" />
+              <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-5">
+                <div className="flex items-start gap-4">
+                  <span className="w-12 h-12 shrink-0 rounded-2xl bg-white/20 flex items-center justify-center"><Icon name="phone" className="w-6 h-6" /></span>
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-extrabold text-base">Android SMS Listener {latestApkLink.version ? `v${latestApkLink.version}` : ""}</h3>
+                      <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold uppercase tracking-wider">Required</span>
+                    </div>
+                    <p className="text-[13px] text-white/90 max-w-2xl leading-relaxed">
+                      ইনকামিং পেমেন্ট SMS স্বয়ংক্রিয়ভাবে ভেরিফাই করার জন্য আমাদের অফিশিয়াল অ্যান্ড্রয়েড অ্যাপটি আপনার পেমেন্ট গ্রহণকারী ফোনে ইনস্টল করুন। অ্যাপটি ব্যাকগ্রাউন্ডে রান হয়ে ইনস্ট্যান্ট পেমেন্ট ভেরিফিকেশন সম্পন্ন করবে।
+                    </p>
+                  </div>
                 </div>
-              )}
+                {downloadAllowed !== false ? (
+                  latestApkLink.link ? (
+                    <a
+                      href={latestApkLink.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white text-emerald-700 hover:bg-emerald-50 text-sm font-bold shadow-md transition shrink-0 no-underline"
+                    >
+                      <Icon name="download" className="w-4 h-4" />
+                      ডাউনলোড করুন
+                    </a>
+                  ) : (
+                    <span className="text-xs text-white/80 font-semibold">No active download link available.</span>
+                  )
+                ) : (
+                  <span className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-white/15 text-white/80 text-sm font-semibold cursor-not-allowed shrink-0">
+                    <Icon name="lock" className="w-4 h-4" />
+                    ডাউনলোড অ্যাক্সেস সীমাবদ্ধ
+                  </span>
+                )}
+              </div>
             </div>
           )}
 
           {/* KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
-                <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: "Total synced SMS", value: stats.totalCount.toLocaleString("en-US"), icon: "inbox" as IconName, tile: "bg-slate-100 text-slate-600", ring: "from-slate-200" },
+              { label: "Unused / available", value: stats.unusedCount.toLocaleString("en-US"), icon: "check" as IconName, tile: "bg-emerald-50 text-emerald-600", ring: "from-emerald-300" },
+              { label: "Matched orders", value: stats.usedCount.toLocaleString("en-US"), icon: "bolt" as IconName, tile: "bg-cyan-50 text-cyan-600", ring: "from-cyan-300" },
+              { label: "Total volume", value: `৳${stats.totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: "cash" as IconName, tile: "bg-purple-50 text-purple-600", ring: "from-purple-300" },
+            ].map((k) => (
+              <div key={k.label} className="group relative overflow-hidden rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm hover:shadow-md transition">
+                <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${k.ring} to-transparent`} />
+                <span className={`w-10 h-10 rounded-xl flex items-center justify-center ${k.tile}`}><Icon name={k.icon} className="w-5 h-5" /></span>
+                <p className="mt-4 text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight truncate">{k.value}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{k.label}</p>
               </div>
-              <div>
-                <div className="text-2xl font-black text-slate-800">{stats.totalCount}</div>
-                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mt-0.5">
-                  Total Synced SMS
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              </div>
-              <div>
-                <div className="text-2xl font-black text-emerald-600">{stats.unusedCount}</div>
-                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mt-0.5">
-                  Unused / Available
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-              </div>
-              <div>
-                <div className="text-2xl font-black text-blue-600">{stats.usedCount}</div>
-                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mt-0.5">
-                  Matched Orders
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              </div>
-              <div>
-                <div className="text-2xl font-black text-indigo-600">
-                  ৳{stats.totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                </div>
-                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mt-0.5">
-                  Total Volume
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
 
-          {/* Main Panel */}
-          <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs">
-            {/* Filters */}
-            <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 bg-gradient-to-r from-slate-50 to-white">
-              <div className="w-full md:max-w-md relative">
-                <input
-                  type="text"
-                  placeholder="Search by TrxID, sender number, or order ID..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
-                />
-                <span className="absolute left-3.5 top-3.5 text-slate-400 text-sm">🔍</span>
+          {/* Transactions panel */}
+          <div className="rounded-3xl border border-slate-200/70 bg-white shadow-sm overflow-hidden">
+            <div className="p-5 sm:p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-extrabold text-slate-900">SMS transactions</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Payments synced from your phone in the last 7 days. Click a row to see the raw SMS.</p>
               </div>
-
-              <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider shrink-0">
-                  Status:
-                </span>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 cursor-pointer min-w-[120px]"
-                >
-                  <option value="all">All SMS</option>
-                  <option value="unused">Unused</option>
-                  <option value="used">Used</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Transactions Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="text-xs text-slate-400 uppercase tracking-wider border-b border-slate-100 bg-slate-50/50">
-                  <tr>
-                    <th className="py-3 px-6">Date & Time</th>
-                    <th className="py-3 px-6">Transaction ID</th>
-                    <th className="py-3 px-6">Sender Phone</th>
-                    <th className="py-3 px-6 text-right">Amount</th>
-                    <th className="py-3 px-6 text-center">Status</th>
-                    <th className="py-3 px-6 text-center">Matched Order</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {paginatedTransactions.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-12 text-center text-slate-400 font-medium">
-                        No matching transactions found.
-                      </td>
-                    </tr>
-                  ) : (
-                    paginatedTransactions.map((tx) => {
-                      const isExpanded = expandedTxId === tx.id;
-                      return (
-                        <React.Fragment key={tx.id}>
-                          <tr
-                            onClick={() => toggleExpand(tx.id)}
-                            className="hover:bg-slate-50/80 transition-colors cursor-pointer"
-                          >
-                            <td className="py-4 px-6 font-medium text-slate-500">
-                              {new Date(tx.createdAt).toLocaleString("en-US", {
-                                dateStyle: "medium",
-                                timeStyle: "short",
-                                timeZone: "Asia/Dhaka",
-                              })}
-                            </td>
-                            <td className="py-4 px-6 font-mono font-bold text-slate-700">
-                              <span className="flex items-center gap-1">
-                                {tx.trxId}
-                                <span className="text-[10px] text-slate-300">▼</span>
-                              </span>
-                            </td>
-                            <td className="py-4 px-6 font-semibold text-slate-600">
-                              {tx.sender}
-                            </td>
-                            <td className="py-4 px-6 text-right font-black text-slate-800">
-                              ৳{tx.amount.toFixed(2)}
-                            </td>
-                            <td className="py-4 px-6 text-center">
-                              <span
-                                className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
-                                  ${
-                                    tx.status === "unused"
-                                      ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                                      : "bg-blue-50 text-blue-700 border border-blue-100"
-                                  }`}
-                              >
-                                {tx.status}
-                              </span>
-                            </td>
-                            <td className="py-4 px-6 text-center font-mono font-bold text-slate-500">
-                              {tx.orderId ? (
-                                <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs border border-slate-200">
-                                  #{tx.orderId}
-                                </span>
-                              ) : (
-                                <span className="text-slate-300">—</span>
-                              )}
-                            </td>
-                          </tr>
-
-                          {/* Collapsible Details Row */}
-                          {isExpanded && (
-                            <tr className="bg-slate-50/50">
-                              <td colSpan={6} className="py-4 px-6 border-l-2 border-slate-800">
-                                <div className="space-y-2">
-                                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                                    Raw SMS Message Details
-                                  </div>
-                                  <p className="bg-white border border-slate-200 p-4 rounded-xl text-xs font-mono text-slate-600 leading-relaxed shadow-inner">
-                                    {tx.rawMessage}
-                                  </p>
-                                  <div className="flex items-center gap-4 text-xs text-slate-400">
-                                    <span>Sender Address: <strong className="text-slate-600">{tx.senderAddress}</strong></span>
-                                    <span>•</span>
-                                    <span>Received at: <strong className="text-slate-600">{new Date(tx.createdAt).toLocaleString("en-US", { timeZone: "Asia/Dhaka" })}</strong></span>
-                                  </div>
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination Controls */}
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-              {/* Left: entries info + rows-per-page */}
-              <div className="flex items-center gap-3 text-xs text-slate-500">
-                <span>
-                  Showing{" "}
-                  <span className="font-semibold text-slate-700">{filteredTransactions.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}</span>
-                  {" "}–{" "}
-                  <span className="font-semibold text-slate-700">{Math.min(currentPage * itemsPerPage, filteredTransactions.length)}</span>
-                  {" "}of{" "}
-                  <span className="font-semibold text-slate-700">{filteredTransactions.length}</span> entries
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-slate-400">Show:</span>
-                  <select
-                    value={itemsPerPage}
-                    onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                    className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-semibold text-slate-700 focus:outline-none focus:border-slate-400 cursor-pointer"
-                  >
-                    {[10, 20, 30, 50, 100].map((n) => (
-                      <option key={n} value={n}>{n} rows</option>
-                    ))}
-                  </select>
+              <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                <div className="relative w-full sm:w-72">
+                  <Icon name="search" className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search TrxID, sender or order…"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className={`${INPUT_CLS} pl-10`}
+                  />
+                </div>
+                <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200/60 shrink-0">
+                  {[
+                    { v: "all", l: "All" },
+                    { v: "unused", l: "Unused" },
+                    { v: "used", l: "Matched" },
+                  ].map((f) => (
+                    <button
+                      key={f.v}
+                      onClick={() => setStatusFilter(f.v)}
+                      className={`flex-1 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                        statusFilter === f.v ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      {f.l}
+                    </button>
+                  ))}
                 </div>
               </div>
+            </div>
 
-              {/* Right: page navigation with smart ellipsis */}
+            {paginatedTransactions.length === 0 ? (
+              <EmptyState
+                icon="inbox"
+                title="No matching transactions"
+                text={initialTransactions.length === 0 ? "Install the Android app and receive a payment — it will show up here within seconds." : "Try a different search or status filter."}
+              />
+            ) : (
+              <>
+                {/* Desktop table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-slate-50/70 border-b border-slate-100">
+                      <tr className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        <th className="py-3 px-6">Method</th>
+                        <th className="py-3 px-4">Transaction ID</th>
+                        <th className="py-3 px-4">Sender</th>
+                        <th className="py-3 px-4 text-right">Amount</th>
+                        <th className="py-3 px-4 text-center">Status</th>
+                        <th className="py-3 px-4">Order</th>
+                        <th className="py-3 px-6 text-right">Received</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {paginatedTransactions.map((tx) => {
+                        const isExpanded = expandedTxId === tx.id;
+                        return (
+                          <React.Fragment key={tx.id}>
+                            <tr onClick={() => toggleExpand(tx.id)} className={`cursor-pointer transition-colors ${isExpanded ? "bg-emerald-50/40" : "hover:bg-slate-50/80"}`}>
+                              <td className="py-3.5 px-6"><MethodBadge address={tx.senderAddress} /></td>
+                              <td className="py-3.5 px-4">
+                                <span className="inline-flex items-center gap-1.5 font-mono font-bold text-slate-800">
+                                  {tx.trxId}
+                                  <Icon name="chevron" className={`w-3 h-3 text-slate-300 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-4 font-mono text-slate-600">{tx.sender}</td>
+                              <td className="py-3.5 px-4 text-right font-extrabold text-slate-900">৳{tx.amount.toFixed(2)}</td>
+                              <td className="py-3.5 px-4 text-center"><StatusPill status={tx.status} /></td>
+                              <td className="py-3.5 px-4">
+                                {tx.orderId ? (
+                                  <span className="font-mono text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-1 rounded-lg">#{tx.orderId}</span>
+                                ) : (
+                                  <span className="text-slate-300">—</span>
+                                )}
+                              </td>
+                              <td className="py-3.5 px-6 text-right text-xs text-slate-500 whitespace-nowrap">
+                                {new Date(tx.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Dhaka" })}
+                              </td>
+                            </tr>
+                            {isExpanded && (
+                              <tr className="bg-emerald-50/40">
+                                <td colSpan={7} className="px-6 pb-5 pt-1">
+                                  <RawSmsDetails tx={tx} />
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="md:hidden divide-y divide-slate-100">
+                  {paginatedTransactions.map((tx) => {
+                    const isExpanded = expandedTxId === tx.id;
+                    return (
+                      <div key={tx.id} className={`p-4 transition-colors ${isExpanded ? "bg-emerald-50/40" : ""}`}>
+                        <button onClick={() => toggleExpand(tx.id)} className="w-full text-left cursor-pointer">
+                          <div className="flex items-center justify-between gap-3">
+                            <MethodBadge address={tx.senderAddress} />
+                            <span className="text-base font-extrabold text-slate-900">৳{tx.amount.toFixed(2)}</span>
+                          </div>
+                          <div className="mt-2.5 flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="font-mono text-sm font-bold text-slate-800 truncate">{tx.trxId}</p>
+                              <p className="font-mono text-xs text-slate-500">{tx.sender}</p>
+                            </div>
+                            <StatusPill status={tx.status} />
+                          </div>
+                          <p className="mt-2 text-[11px] text-slate-400">
+                            {new Date(tx.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Dhaka" })}
+                            {tx.orderId && <> · Order <span className="font-mono font-semibold text-slate-600">#{tx.orderId}</span></>}
+                          </p>
+                        </button>
+                        {isExpanded && <div className="mt-3"><RawSmsDetails tx={tx} /></div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* Pagination */}
+            <div className="px-5 sm:px-6 py-4 bg-slate-50/70 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-3 text-xs text-slate-500">
+                <span>
+                  Showing <span className="font-semibold text-slate-700">{filteredTransactions.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}</span>–<span className="font-semibold text-slate-700">{Math.min(currentPage * itemsPerPage, filteredTransactions.length)}</span> of{" "}
+                  <span className="font-semibold text-slate-700">{filteredTransactions.length}</span>
+                </span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                  className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-semibold text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer"
+                >
+                  {[10, 20, 30, 50, 100].map((n) => (
+                    <option key={n} value={n}>{n} / page</option>
+                  ))}
+                </select>
+              </div>
+
               {totalPages > 1 && (
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition"
+                    className="h-8 px-3 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition"
                   >
                     Prev
                   </button>
@@ -827,10 +889,8 @@ export default function PaymentGatewayClient({
                         <button
                           key={p}
                           onClick={() => setCurrentPage(p as number)}
-                          className={`w-8 h-8 rounded-lg text-xs font-bold transition ${
-                            currentPage === p
-                              ? "bg-slate-900 text-white"
-                              : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 cursor-pointer"
+                          className={`w-8 h-8 rounded-lg text-xs font-bold transition cursor-pointer ${
+                            currentPage === p ? "bg-emerald-500 text-white shadow-sm shadow-emerald-200" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                           }`}
                         >
                           {p}
@@ -839,9 +899,9 @@ export default function PaymentGatewayClient({
                     );
                   })()}
                   <button
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages || totalPages === 0}
-                    className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition"
+                    className="h-8 px-3 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition"
                   >
                     Next
                   </button>
@@ -853,13 +913,23 @@ export default function PaymentGatewayClient({
       )}
 
       {activeTab === "settings" && (() => {
-        const GATEWAY_META: Record<string, { label: string; currency: string; desc: string; placeholder: string; bg: string; border: string; textColor: string; logoUrl: string; }> = {
-          bkash:   { label: "bKash Personal",   currency: "BDT", desc: "Send Money SMS matching", placeholder: "017XXXXXXXX", bg: "bg-pink-50",     border: "border-pink-200",     textColor: "text-pink-700",     logoUrl: "/logos/bkash.png" },
-          nagad:   { label: "Nagad Personal",   currency: "BDT", desc: "Nagad Wallet matching",    placeholder: "019XXXXXXXX", bg: "bg-orange-50",   border: "border-orange-200",   textColor: "text-orange-700",   logoUrl: "/logos/nagad.png" },
-          rocket:  { label: "Rocket Personal",  currency: "BDT", desc: "Rocket Wallet matching",   placeholder: "01XXXXXXXXXX", bg: "bg-purple-50",   border: "border-purple-200",   textColor: "text-purple-700",   logoUrl: "/logos/rocket.png" },
-          upay:    { label: "Upay Personal",    currency: "BDT", desc: "Upay Wallet matching",     placeholder: "01XXXXXXXXX",  bg: "bg-yellow-50",   border: "border-yellow-200",   textColor: "text-yellow-750",   logoUrl: "/codepay-upay.png" },
-          cellfin: { label: "CellFin Personal", currency: "BDT", desc: "CellFin Wallet matching",  placeholder: "01XXXXXXXXX",  bg: "bg-emerald-50",  border: "border-emerald-250",  textColor: "text-emerald-750",  logoUrl: "/logos/cellfin.png" },
-          tap:     { label: "Tap Personal",     currency: "BDT", desc: "Tap Wallet matching",      placeholder: "01XXXXXXXXX",  bg: "bg-red-50",      border: "border-red-250",      textColor: "text-red-750",      logoUrl: "/logos/tap.png" },
+        const GATEWAY_META: Record<string, { label: string; desc: string; placeholder: string; accent: string; soft: string; logoUrl: string; }> = {
+          bkash:   { label: "bKash",   desc: "Send Money or Merchant Payment", placeholder: "017XXXXXXXX", accent: "#e2136e", soft: "#fdf2f8", logoUrl: "/logos/bkash.png" },
+          nagad:   { label: "Nagad",   desc: "Send Money SMS matching",        placeholder: "019XXXXXXXX", accent: "#ec1c24", soft: "#fff7ed", logoUrl: "/logos/nagad.png" },
+          rocket:  { label: "Rocket",  desc: "Send Money SMS matching",        placeholder: "01XXXXXXXXXX", accent: "#8c3c95", soft: "#faf5ff", logoUrl: "/logos/rocket.png" },
+          upay:    { label: "Upay",    desc: "Send Money SMS matching",        placeholder: "01XXXXXXXXX", accent: "#d99a00", soft: "#fefce8", logoUrl: "/logos/upay.png" },
+          cellfin: { label: "CellFin", desc: "Send Money SMS matching",        placeholder: "01XXXXXXXXX", accent: "#138a4e", soft: "#ecfdf5", logoUrl: "/logos/cellfin.png" },
+          tap:     { label: "Tap",     desc: "Send Money SMS matching",        placeholder: "01XXXXXXXXX", accent: "#1f5bbf", soft: "#eff6ff", logoUrl: "/logos/tap.png" },
+        };
+
+        const BANK_META: Record<string, { name: string; logo: string }> = {
+          ibl: { name: "Islami Bank Bangladesh PLC", logo: "/logos/ibl.png" },
+          abbank: { name: "AB Bank PLC", logo: "/logos/abbank.png" },
+          citybank: { name: "The City Bank PLC", logo: "/logos/citybank.png" },
+          sonali: { name: "Sonali Bank PLC", logo: "/logos/sonali.png" },
+          dbbl: { name: "Dutch-Bangla Bank PLC", logo: "/logos/dbbl.png" },
+          basic: { name: "BASIC Bank PLC", logo: "/logos/basic.png" },
+          ebl: { name: "Eastern Bank PLC", logo: "/logos/ebl.png" },
         };
 
         const configuredGateways = [
@@ -875,97 +945,173 @@ export default function PaymentGatewayClient({
           (p) => !(p === "bkash" ? bkash : p === "nagad" ? nagad : p === "rocket" ? rocket : p === "upay" ? upay : p === "cellfin" ? cellfin : tap)
         );
 
-        return (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
-          {/* Left Column (MFS & Banks) */}
-          <div className="lg:col-span-7 space-y-6">
+        const modalProvider = editingProvider || formProvider;
 
-          {/* ── Add Gateway Modal ── */}
+        return (
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start w-full animate-in fade-in duration-300">
+
+          {/* ── Add / Edit Wallet Modal ── */}
           {showAddForm && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-              <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-7 space-y-6 animate-in fade-in zoom-in-95 duration-200">
-                <div className="flex items-center justify-between">
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm p-0 sm:p-4" onClick={closeGatewayModal}>
+              <div
+                className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-lg max-h-[92dvh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="sticky top-0 z-10 bg-white/95 backdrop-blur px-6 pt-6 pb-4 border-b border-slate-100 flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="text-base font-extrabold text-slate-800">
-                      {editingProvider ? "Edit Gateway" : "Add Payment Gateway"}
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">Configure a receiving wallet number for your checkout page.</p>
+                    <h3 className="text-lg font-extrabold text-slate-900">{editingProvider ? `Edit ${GATEWAY_META[editingProvider].label}` : "Connect a wallet"}</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">The number customers pay to on your checkout page.</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => { setShowAddForm(false); setEditingProvider(null); setFormNumber(""); }}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 text-sm font-bold transition cursor-pointer"
-                  >✕</button>
+                  <button type="button" onClick={closeGatewayModal} aria-label="Close" className="w-9 h-9 shrink-0 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 transition cursor-pointer">
+                    <Icon name="x" className="w-4 h-4" />
+                  </button>
                 </div>
 
-                {!editingProvider && (
+                <form onSubmit={handleGatewaySubmit} className="p-6 space-y-5">
+                  {!editingProvider && (
+                    <div className="space-y-2">
+                      <label className={LABEL_CLS}>Wallet</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {availableToAdd.map((p) => {
+                          const m = GATEWAY_META[p];
+                          const isSelected = formProvider === p;
+                          return (
+                            <button
+                              key={p}
+                              type="button"
+                              onClick={() => setFormProvider(p)}
+                              className="flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition cursor-pointer hover:bg-slate-50"
+                              style={isSelected ? { borderColor: m.accent, backgroundColor: m.soft } : { borderColor: "#e2e8f0" }}
+                            >
+                              <span className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-sm">
+                                <img src={m.logoUrl} alt={m.label} className="w-full h-full object-contain p-1" />
+                              </span>
+                              <span className="text-xs font-bold" style={{ color: isSelected ? m.accent : "#64748b" }}>{m.label}</span>
+                            </button>
+                          );
+                        })}
+                        {availableToAdd.length === 0 && (
+                          <p className="col-span-3 text-xs text-slate-400 text-center py-3">All wallets are already connected.</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* bKash account type */}
+                  {modalProvider === "bkash" && (
+                    <div className="space-y-2">
+                      <label className={LABEL_CLS}>bKash account type</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {([
+                          { v: "personal", t: "Personal", d: "Customers use Send Money" },
+                          { v: "merchant", t: "Merchant", d: "Customers use Payment / scan QR" },
+                        ] as const).map((o) => {
+                          const isSelected = formBkashType === o.v;
+                          return (
+                            <button
+                              key={o.v}
+                              type="button"
+                              onClick={() => setFormBkashType(o.v)}
+                              className={`text-left p-3.5 rounded-2xl border-2 transition cursor-pointer ${isSelected ? "border-pink-500 bg-pink-50/60" : "border-slate-200 hover:bg-slate-50"}`}
+                            >
+                              <span className="flex items-center justify-between">
+                                <span className={`text-sm font-bold ${isSelected ? "text-pink-700" : "text-slate-800"}`}>{o.t}</span>
+                                <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${isSelected ? "border-pink-500" : "border-slate-300"}`}>
+                                  {isSelected && <span className="w-2 h-2 rounded-full bg-pink-500" />}
+                                </span>
+                              </span>
+                              <span className="text-[11px] text-slate-500 mt-1 block leading-snug">{o.d}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">Select Gateway</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {availableToAdd.map((p) => {
-                        const m = GATEWAY_META[p];
-                        return (
-                          <button
-                            key={p}
-                            type="button"
-                            onClick={() => setFormProvider(p)}
-                            className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition cursor-pointer ${
-                              formProvider === p ? `${m.border} ${m.bg}` : "border-slate-200 bg-slate-50 hover:border-slate-300"
-                            }`}
-                          >
-                            <div className="w-10 h-10 rounded-xl overflow-hidden bg-white border border-slate-100 flex items-center justify-center shrink-0 shadow-sm">
-                              <img src={m.logoUrl} alt={m.label} className="w-full h-full object-contain p-1" />
+                    <label className={LABEL_CLS}>{modalProvider === "bkash" && formBkashType === "merchant" ? "Merchant wallet number" : "Wallet number"}</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      required
+                      value={formNumber}
+                      onChange={(e) => setFormNumber(e.target.value)}
+                      placeholder={GATEWAY_META[modalProvider]?.placeholder || "01XXXXXXXXX"}
+                      className={`${INPUT_CLS} font-mono font-bold tracking-wider`}
+                    />
+                  </div>
+
+                  {/* Merchant QR code */}
+                  {modalProvider === "bkash" && formBkashType === "merchant" && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className={LABEL_CLS}>Merchant QR code <span className="normal-case font-medium text-slate-400">(optional)</span></label>
+                        <SegmentedMini
+                          value={qrInputMode}
+                          onChange={(v) => setQrInputMode(v as "upload" | "url")}
+                          options={[{ v: "upload", l: "Upload" }, { v: "url", l: "Image URL" }]}
+                        />
+                      </div>
+
+                      {formQr ? (
+                        <div className="flex items-center gap-4 p-3 rounded-2xl border border-slate-200 bg-slate-50/60">
+                          <div className="w-24 h-24 shrink-0 rounded-xl bg-white border border-slate-200 p-1.5 shadow-sm">
+                            <img src={formQr} alt="Merchant QR preview" className="w-full h-full object-contain" />
+                          </div>
+                          <div className="min-w-0 flex-1 space-y-2">
+                            <p className="text-sm font-bold text-slate-800">QR code ready</p>
+                            <p className="text-[11px] text-slate-500 truncate">{formQrFile ? formQrFile.name : "Shown to customers at checkout"}</p>
+                            <div className="flex gap-2">
+                              {qrInputMode === "upload" && (
+                                <label className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-[11px] font-bold text-slate-700 hover:bg-slate-50 cursor-pointer transition">
+                                  Replace
+                                  <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleQrFileChange} />
+                                </label>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => { setFormQr(""); setFormQrFile(null); }}
+                                className="px-3 py-1.5 rounded-lg bg-white border border-red-100 text-[11px] font-bold text-red-600 hover:bg-red-50 transition cursor-pointer"
+                              >
+                                Remove
+                              </button>
                             </div>
-                            <span className={`text-[10px] font-black uppercase tracking-wide ${formProvider === p ? m.textColor : "text-slate-500"}`}>{p}</span>
-                          </button>
-                        );
-                      })}
-                      {availableToAdd.length === 0 && (
-                        <p className="col-span-3 text-xs text-slate-400 text-center py-3">All gateways are already configured.</p>
+                          </div>
+                        </div>
+                      ) : qrInputMode === "upload" ? (
+                        <label className="flex flex-col items-center justify-center gap-2 w-full py-7 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 hover:bg-emerald-50/40 hover:border-emerald-300 cursor-pointer transition text-center">
+                          <span className="w-11 h-11 rounded-xl bg-white border border-slate-200 text-emerald-600 flex items-center justify-center shadow-sm"><Icon name="qr" className="w-5 h-5" /></span>
+                          <span className="text-sm font-bold text-slate-700">Upload your bKash merchant QR</span>
+                          <span className="text-[11px] text-slate-400">PNG, JPG or WEBP · max 2MB</span>
+                          <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleQrFileChange} />
+                        </label>
+                      ) : null}
+
+                      {qrInputMode === "url" && (
+                        <input
+                          type="url"
+                          value={formQr.startsWith("data:") ? "" : formQr}
+                          onChange={(e) => { setFormQr(e.target.value); setFormQrFile(null); }}
+                          placeholder="https://your-cdn.com/bkash-qr.png"
+                          className={`${INPUT_CLS} font-mono text-xs`}
+                        />
                       )}
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        Download it from the bKash Merchant app (My QR → Save). Customers can scan it instead of typing your number.
+                      </p>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {editingProvider && (
-                  <div className={`flex items-center gap-3 p-3 rounded-2xl ${GATEWAY_META[editingProvider].bg} ${GATEWAY_META[editingProvider].border} border`}>
-                    <div className="w-10 h-10 rounded-xl overflow-hidden bg-white border border-slate-100 flex items-center justify-center shrink-0 shadow-sm">
-                      <img src={GATEWAY_META[editingProvider].logoUrl} alt={GATEWAY_META[editingProvider].label} className="w-full h-full object-contain p-1" />
-                    </div>
-                    <div>
-                      <p className={`text-xs font-black uppercase ${GATEWAY_META[editingProvider].textColor}`}>{GATEWAY_META[editingProvider].label}</p>
-                      <p className="text-[10px] text-slate-500">{GATEWAY_META[editingProvider].desc}</p>
-                    </div>
-                  </div>
-                )}
+                  {modalError && <Notice tone="error">{modalError}</Notice>}
 
-                <form onSubmit={handleGatewaySubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Wallet Number</label>
-                    <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">BD</span>
-                      <input
-                        type="text"
-                        required
-                        value={formNumber}
-                        onChange={(e) => setFormNumber(e.target.value)}
-                        placeholder={GATEWAY_META[editingProvider || formProvider]?.placeholder || "01XXXXXXXXX"}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-sm font-mono font-bold text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
-                      />
-                    </div>
-                  </div>
                   <div className="flex gap-3 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => { setShowAddForm(false); setEditingProvider(null); setFormNumber(""); }}
-                      className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-extrabold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
-                    >Cancel</button>
+                    <button type="button" onClick={closeGatewayModal} className={`${BTN_SECONDARY} flex-1`}>Cancel</button>
                     <button
                       type="submit"
                       disabled={isSavingSettings || (availableToAdd.length === 0 && !editingProvider)}
-                      className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold uppercase tracking-wider transition disabled:opacity-50 cursor-pointer"
+                      className={`${BTN_PRIMARY} flex-1`}
                     >
-                      {isSavingSettings ? "Saving…" : editingProvider ? "Save Changes" : "Add Gateway"}
+                      {isSavingSettings ? "Saving…" : editingProvider ? "Save changes" : "Connect wallet"}
                     </button>
                   </div>
                 </form>
@@ -973,879 +1119,525 @@ export default function PaymentGatewayClient({
             </div>
           )}
 
-          {/* ── Gateway Table Card ── */}
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-100">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Merchant Configuration</p>
-                <h2 className="text-lg font-extrabold text-slate-800">Payment Gateways</h2>
-              </div>
-              <div className="flex items-center gap-2">
-                {saveMessage && (
-                  <span className={`text-xs font-semibold px-3 py-1.5 rounded-lg border ${
-                    saveMessage.type === "success"
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                      : "bg-red-50 text-red-600 border-red-100"
-                  }`}>{saveMessage.text}</span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (availableToAdd.length === 0) return;
-                    setFormProvider(availableToAdd[0]);
-                    setFormNumber("");
-                    setEditingProvider(null);
-                    setShowAddForm(true);
-                  }}
-                  disabled={availableToAdd.length === 0}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white rounded-xl text-xs font-extrabold uppercase tracking-wider transition cursor-pointer shadow-sm"
-                >
-                  <span className="text-base leading-none">+</span> Add Gateway
-                </button>
-              </div>
-            </div>
+          {/* Left column: wallets & banks */}
+          <div className="xl:col-span-7 space-y-6">
 
-            {/* Table */}
-            {configuredGateways.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 px-6 text-center space-y-4">
-                <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center">
-                  <svg className="w-7 h-7 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                </div>
-                <div>
-                  <h4 className="text-sm font-extrabold text-slate-700">No Payment Gateways Yet</h4>
-                  <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto leading-relaxed">Click <strong>Add Gateway</strong> to configure your first receiving number.</p>
-                </div>
-              </div>
-            ) : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100">
-                    <th className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 px-6 py-3">Gateway</th>
-                    <th className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 px-4 py-3">Wallet Number</th>
-                    <th className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 px-4 py-3">Status</th>
-                    <th className="text-right text-[10px] font-black uppercase tracking-widest text-slate-400 px-6 py-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {configuredGateways.map(({ provider, number }) => {
-                    const m = GATEWAY_META[provider];
-                    return (
-                      <tr key={provider} className="hover:bg-slate-50/70 transition-colors group">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 shadow-sm">
-                              <img src={m.logoUrl} alt={m.label} className="w-full h-full object-contain p-1" />
+            {/* ── Mobile wallets ── */}
+            <Card>
+              <CardHeader
+                icon="wallet"
+                eyebrow="Mobile banking"
+                title="MFS wallets"
+                desc={`${configuredGateways.length} of 6 wallets connected. Toggle a wallet off to hide it from checkout.`}
+                action={
+                  <button
+                    type="button"
+                    onClick={() => availableToAdd.length > 0 && openGatewayModal(availableToAdd[0], false)}
+                    disabled={availableToAdd.length === 0}
+                    className={BTN_PRIMARY}
+                  >
+                    <Icon name="plus" className="w-4 h-4" /> Add wallet
+                  </button>
+                }
+              />
+              {saveMessage && (
+                <div className="px-6 pt-4"><Notice tone={saveMessage.type}>{saveMessage.text}</Notice></div>
+              )}
+
+              <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {configuredGateways.map(({ provider, number }) => {
+                  const m = GATEWAY_META[provider];
+                  const isOn = getProviderActive(provider);
+                  const isMerchant = provider === "bkash" && bkashType === "merchant";
+                  return (
+                    <div
+                      key={provider}
+                      className={`relative rounded-2xl border p-4 transition hover:shadow-md ${isOn ? "bg-white border-slate-200" : "bg-slate-50/70 border-slate-200/70"}`}
+                    >
+                      <div className="absolute inset-x-4 top-0 h-0.5 rounded-full" style={{ backgroundColor: isOn ? m.accent : "#cbd5e1" }} />
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className={`w-12 h-12 shrink-0 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-sm ${isOn ? "" : "grayscale opacity-60"}`}>
+                            <img src={m.logoUrl} alt={m.label} className="w-full h-full object-contain p-1.5" />
+                          </span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <p className="text-sm font-extrabold text-slate-900">{m.label}</p>
+                              {provider === "bkash" && (
+                                <span
+                                  className="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
+                                  style={{ backgroundColor: m.soft, color: m.accent }}
+                                >
+                                  {isMerchant ? "Merchant" : "Personal"}
+                                </span>
+                              )}
                             </div>
-                            <div>
-                              <p className="text-sm font-bold text-slate-800">{m.label}</p>
-                              <p className="text-[11px] text-slate-400">{m.desc}</p>
-                            </div>
+                            <p className="text-[11px] text-slate-500 truncate">{provider === "bkash" ? (isMerchant ? "Payment / QR scan" : "Send Money") : m.desc}</p>
                           </div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <span className="font-mono text-sm font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded-lg">{number || "—"}</span>
-                        </td>
-                        <td className="px-4 py-4">
+                        </div>
+                        <Switch checked={isOn} onChange={() => handleToggleGatewayActive(provider)} label={`${m.label} active`} />
+                      </div>
+
+                      <div className="mt-4 flex items-end justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-[11px] text-slate-400">Wallet number</p>
+                          <p className="font-mono text-base font-bold text-slate-800 tracking-wide truncate">{number}</p>
+                        </div>
+                        {isMerchant && bkashQr && (
+                          <span className="w-11 h-11 shrink-0 rounded-lg border border-slate-200 bg-white p-0.5" title="Merchant QR uploaded">
+                            <img src={bkashQr} alt="bKash merchant QR" className="w-full h-full object-contain" />
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold ${isOn ? "text-emerald-600" : "text-slate-400"}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${isOn ? "bg-emerald-500" : "bg-slate-300"}`} />
+                          {isOn ? "Live on checkout" : "Hidden from checkout"}
+                        </span>
+                        <div className="flex items-center gap-1">
                           <button
                             type="button"
-                            onClick={() => handleToggleGatewayActive(provider)}
-                            className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full border transition cursor-pointer ${
-                              getProviderActive(provider)
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                                : "bg-slate-50 text-slate-400 border-slate-200"
-                            }`}
+                            onClick={() => openGatewayModal(provider, true, number || "")}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
                           >
-                            <span className={`w-1.5 h-1.5 rounded-full ${
-                              getProviderActive(provider) ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
-                            }`}></span>
-                            {getProviderActive(provider) ? "Active" : "Inactive"}
+                            <Icon name="edit" className="w-3.5 h-3.5" /> Edit
                           </button>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="inline-flex items-center justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditingProvider(provider);
-                                setFormNumber(number || "");
-                                setShowAddForm(true);
-                              }}
-                              className="w-8 h-8 inline-flex items-center justify-center rounded-xl border border-slate-250 bg-white hover:bg-slate-50 text-slate-500 hover:text-indigo-600 transition cursor-pointer shadow-2xs"
-                              title="Edit"
-                            >
-                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                              </svg>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteGateway(provider)}
-                              disabled={isSavingSettings}
-                              className="w-8 h-8 inline-flex items-center justify-center rounded-xl border border-red-150 bg-red-50 hover:bg-red-100 text-red-600 transition cursor-pointer disabled:opacity-50"
-                              title="Delete"
-                            >
-                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
-
-{/* ── Bank Accounts (Multiple) ── */}
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Offline Channels</p>
-                <h2 className="text-lg font-extrabold text-slate-800">Bank Accounts</h2>
-                <p className="text-xs text-slate-500 mt-0.5">Configure multiple active bank accounts to receive direct bank transfers on checkout.</p>
-              </div>
-            </div>
-
-            {/* List of current bank accounts */}
-            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-              <h3 className="text-xs font-bold text-slate-500 mb-3">Linked Bank Accounts</h3>
-              {bankAccounts.length === 0 ? (
-                <div className="text-center py-6 text-slate-400 text-xs font-medium bg-white rounded-2xl border border-dashed border-slate-200">
-                  No bank accounts configured yet. Use the form below to link your first account.
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {bankAccounts.map((account: any) => {
-                    const logoMap: Record<string, string> = {
-                      ibl: "/logos/ibl.png",
-                      abbank: "/logos/abbank.png",
-                      citybank: "/logos/citybank.png",
-                      sonali: "/logos/sonali.png",
-                      dbbl: "/logos/dbbl.png",
-                      basic: "/logos/basic.png",
-                      ebl: "/logos/ebl.png",
-                    };
-                    const nameMap: Record<string, string> = {
-                      ibl: "Islami Bank Bangladesh PLC",
-                      abbank: "AB Bank PLC",
-                      citybank: "The City Bank PLC",
-                      sonali: "Sonali Bank PLC",
-                      dbbl: "Dutch-Bangla Bank PLC",
-                      basic: "BASIC Bank PLC",
-                      ebl: "Eastern Bank PLC",
-                    };
-                    return (
-                      <div key={account.id} className="bg-white p-4.5 rounded-2xl border border-slate-200 flex items-start gap-4 shadow-2xs hover:border-slate-350 transition relative">
-                        <img src={logoMap[account.bankName] || "/logos/citybank.png"} alt={account.bankName} className="w-10 h-10 object-contain shrink-0 rounded-xl bg-slate-50 p-1 border border-slate-100" />
-                        <div className="flex-1 space-y-1 min-w-0 pr-12">
-                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block truncate">{nameMap[account.bankName] || account.bankName}</span>
-                          <span className="text-xs font-black text-slate-800 block truncate">{account.accountName}</span>
-                          <span className="text-xs font-mono font-black text-indigo-605 block truncate">{account.accountNo}</span>
-                          {account.branch && <span className="text-[9px] text-slate-450 block truncate">Branch: {account.branch}</span>}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteGateway(provider)}
+                            disabled={isSavingSettings}
+                            aria-label={`Remove ${m.label}`}
+                            className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer disabled:opacity-50"
+                          >
+                            <Icon name="trash" className="w-3.5 h-3.5" />
+                          </button>
                         </div>
-                        {/* Toggle & Action buttons on top right */}
-                        <div className="absolute top-4 right-4 flex items-center gap-2">
-                          {/* Toggle active switch */}
-                          <input
-                            type="checkbox"
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {availableToAdd.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => openGatewayModal(availableToAdd[0], false)}
+                    className="min-h-[188px] rounded-2xl border-2 border-dashed border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/40 flex flex-col items-center justify-center gap-3 p-4 text-center transition cursor-pointer group"
+                  >
+                    <span className="w-11 h-11 rounded-xl bg-slate-100 group-hover:bg-emerald-100 text-slate-500 group-hover:text-emerald-600 flex items-center justify-center transition">
+                      <Icon name="plus" className="w-5 h-5" />
+                    </span>
+                    <span>
+                      <span className="block text-sm font-bold text-slate-700">Connect another wallet</span>
+                      <span className="flex items-center justify-center gap-1 mt-2">
+                        {availableToAdd.map((p) => (
+                          <img key={p} src={GATEWAY_META[p].logoUrl} alt={GATEWAY_META[p].label} className="w-6 h-6 object-contain rounded-md bg-white border border-slate-100 p-0.5" />
+                        ))}
+                      </span>
+                    </span>
+                  </button>
+                )}
+              </div>
+            </Card>
+
+            {/* ── Bank accounts ── */}
+            <Card>
+              <CardHeader
+                icon="bank"
+                eyebrow="Offline channel"
+                title="Bank accounts"
+                desc="Receive direct bank transfers. Customers see every active account on checkout."
+                action={
+                  <button type="button" onClick={() => setShowBankForm((v) => !v)} className={showBankForm ? BTN_SECONDARY : BTN_PRIMARY}>
+                    <Icon name={showBankForm ? "x" : "plus"} className="w-4 h-4" /> {showBankForm ? "Close" : "Add bank"}
+                  </button>
+                }
+              />
+
+              {showBankForm && (
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!newBankName || !newAccountName || !newAccountNo) {
+                      alert("Please fill in all required fields.");
+                      return;
+                    }
+                    setIsAddingBank(true);
+                    try {
+                      const fd = new FormData();
+                      fd.append("bankName", newBankName);
+                      fd.append("accountName", newAccountName);
+                      fd.append("accountNo", newAccountNo);
+                      fd.append("branch", newBranch);
+
+                      const res = await addBankAccount(fd);
+                      if (res.success && res.account) {
+                        setBankAccounts((prev: any) => [...prev, res.account]);
+                        setNewBankName("");
+                        setNewAccountName("");
+                        setNewAccountNo("");
+                        setNewBranch("");
+                        setShowBankForm(false);
+                      }
+                    } catch (err: any) {
+                      alert(err.message || "Failed to add bank account.");
+                    } finally {
+                      setIsAddingBank(false);
+                    }
+                  }}
+                  className="mx-6 mt-5 p-5 rounded-2xl bg-slate-50/80 border border-slate-200/70 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className={LABEL_CLS}>Bank *</label>
+                      <select value={newBankName} onChange={(e) => setNewBankName(e.target.value)} className={`${INPUT_CLS} bg-white cursor-pointer`} required>
+                        <option value="">Select bank</option>
+                        {Object.entries(BANK_META).map(([id, b]) => (
+                          <option key={id} value={id}>{b.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className={LABEL_CLS}>Account name *</label>
+                      <input type="text" value={newAccountName} onChange={(e) => setNewAccountName(e.target.value)} placeholder="e.g. Codeblend Ltd." className={`${INPUT_CLS} bg-white`} required />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className={LABEL_CLS}>Account number *</label>
+                      <input type="text" value={newAccountNo} onChange={(e) => setNewAccountNo(e.target.value)} placeholder="e.g. 2050XXXXXXXXXXXXX" className={`${INPUT_CLS} bg-white font-mono`} required />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className={LABEL_CLS}>Branch <span className="normal-case font-medium text-slate-400">(optional)</span></label>
+                      <input type="text" value={newBranch} onChange={(e) => setNewBranch(e.target.value)} placeholder="e.g. Motijheel, Dhaka" className={`${INPUT_CLS} bg-white`} />
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <button type="submit" disabled={isAddingBank} className={BTN_PRIMARY}>
+                      {isAddingBank ? "Adding…" : "Add bank account"}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              <div className="p-6">
+                {bankAccounts.length === 0 ? (
+                  <EmptyState icon="bank" title="No bank accounts yet" text="Add a bank account to let customers pay by direct transfer." compact />
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {bankAccounts.map((account: any) => (
+                      <div key={account.id} className={`rounded-2xl border p-4 transition hover:shadow-md ${account.active ? "bg-white border-slate-200" : "bg-slate-50/70 border-slate-200/70"}`}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className={`w-11 h-11 shrink-0 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-sm ${account.active ? "" : "grayscale opacity-60"}`}>
+                              <img src={BANK_META[account.bankName]?.logo || "/logos/citybank.png"} alt={account.bankName} className="w-full h-full object-contain p-1.5" />
+                            </span>
+                            <div className="min-w-0">
+                              <p className="text-sm font-extrabold text-slate-900 truncate">{account.accountName}</p>
+                              <p className="text-[11px] text-slate-500 truncate">{BANK_META[account.bankName]?.name || account.bankName}</p>
+                            </div>
+                          </div>
+                          <Switch
                             checked={account.active}
-                            onChange={async (e) => {
-                              const checked = e.target.checked;
+                            label={`${account.accountName} active`}
+                            onChange={async () => {
+                              const checked = !account.active;
                               try {
                                 const res = await toggleBankAccountActive(account.id, checked);
                                 if (res.success) {
-                                  setBankAccounts((prev: any) =>
-                                    prev.map((item: any) =>
-                                      item.id === account.id ? { ...item, active: checked } : item
-                                    )
-                                  );
+                                  setBankAccounts((prev: any) => prev.map((item: any) => (item.id === account.id ? { ...item, active: checked } : item)));
                                 }
-                              } catch (err) {
+                              } catch {
                                 alert("Failed to toggle bank active state.");
                               }
                             }}
-                            className="h-3.5 w-3.5 rounded text-indigo-650 focus:ring-indigo-555 cursor-pointer"
-                            title={account.active ? "Deactivate" : "Activate"}
                           />
-                          {/* Delete button */}
+                        </div>
+                        <div className="mt-4 flex items-end justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-mono text-sm font-bold text-slate-800 truncate">{account.accountNo}</p>
+                            <p className="text-[11px] text-slate-400 truncate">{account.branch ? `${account.branch} branch` : "No branch set"}</p>
+                          </div>
                           <button
                             type="button"
                             onClick={async () => {
                               if (!confirm("Are you sure you want to delete this bank account?")) return;
                               try {
                                 const res = await deleteBankAccount(account.id);
-                                if (res.success) {
-                                  setBankAccounts((prev: any) => prev.filter((item: any) => item.id !== account.id));
-                                }
-                              } catch (err) {
+                                if (res.success) setBankAccounts((prev: any) => prev.filter((item: any) => item.id !== account.id));
+                              } catch {
                                 alert("Failed to delete bank account.");
                               }
                             }}
-                            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer"
-                            title="Delete Account"
+                            aria-label="Delete bank account"
+                            className="w-8 h-8 shrink-0 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
                           >
-                            🗑️
+                            <Icon name="trash" className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
 
-            {/* Add Bank Form */}
-            <div className="p-6">
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Add a Bank Account</h3>
+          {/* Right column: branding, verification & sandbox */}
+          <div className="xl:col-span-5 space-y-6">
+            <Card>
+              <CardHeader icon="sparkles" eyebrow="Checkout page" title="Branding & verification" desc="How your business appears to customers and how payments are verified." />
               <form
                 onSubmit={async (e) => {
                   e.preventDefault();
-                  if (!newBankName || !newAccountName || !newAccountNo) {
-                    alert("Please fill in all required fields.");
-                    return;
-                  }
-                  setIsAddingBank(true);
+                  setIsSavingBranding(true);
+                  setBrandSaveMsg(null);
                   try {
                     const fd = new FormData();
-                    fd.append("bankName", newBankName);
-                    fd.append("accountName", newAccountName);
-                    fd.append("accountNo", newAccountNo);
-                    fd.append("branch", newBranch);
+                    fd.append("brandName", brandName);
+                    fd.append("brandColor", "#0f172a");
+                    fd.append("withTrx", String(withTrx));
+                    fd.append("withoutTrx", String(withoutTrx));
 
-                    const res = await addBankAccount(fd);
-                    if (res.success && res.account) {
-                      setBankAccounts((prev: any) => [...prev, res.account]);
-                      setNewBankName("");
-                      setNewAccountName("");
-                      setNewAccountNo("");
-                      setNewBranch("");
+                    fd.append("bkashActive", String(bkashActive));
+                    fd.append("nagadActive", String(nagadActive));
+                    fd.append("rocketActive", String(rocketActive));
+                    fd.append("upayActive", String(upayActive));
+                    fd.append("cellfinActive", String(cellfinActive));
+                    fd.append("tapActive", String(tapActive));
+
+                    if (brandLogo && !brandLogo.startsWith("data:")) {
+                      fd.append("brandLogo", brandLogo);
+                    }
+                    if (logoFile) {
+                      fd.append("logoFile", logoFile);
+                    }
+
+                    const res = await saveBrandingSettings(fd);
+                    if (res.success) {
+                      if (res.brandLogo) {
+                        setBrandLogo(res.brandLogo);
+                      }
+                      setLogoFile(null);
+                      setBrandSaveMsg({ type: "success", text: "Settings saved successfully!" });
                     }
                   } catch (err: any) {
-                    alert(err.message || "Failed to add bank account.");
+                    setBrandSaveMsg({ type: "error", text: err.message || "Failed to save settings." });
                   } finally {
-                    setIsAddingBank(false);
+                    setIsSavingBranding(false);
                   }
                 }}
-                className="space-y-4"
+                className="p-6 space-y-6"
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Bank Name *</label>
-                    <select
-                      value={newBankName}
-                      onChange={(e) => setNewBankName(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 transition"
-                      required
-                    >
-                      <option value="">Select Bank</option>
-                      <option value="ibl">Islami Bank Bangladesh PLC (IBL)</option>
-                      <option value="abbank">AB Bank PLC</option>
-                      <option value="citybank">The City Bank PLC</option>
-                      <option value="sonali">Sonali Bank PLC</option>
-                      <option value="dbbl">Dutch-Bangla Bank PLC (DBBL)</option>
-                      <option value="basic">BASIC Bank PLC</option>
-                      <option value="ebl">Eastern Bank PLC (EBL)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Account Name *</label>
-                    <input
-                      type="text"
-                      value={newAccountName}
-                      onChange={(e) => setNewAccountName(e.target.value)}
-                      placeholder="e.g. John Doe / Company Name"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-750 focus:outline-none focus:border-indigo-500 transition"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Account Number *</label>
-                    <input
-                      type="text"
-                      value={newAccountNo}
-                      onChange={(e) => setNewAccountNo(e.target.value)}
-                      placeholder="e.g. 2050XXXXXXXXXXXXX"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-mono font-bold text-slate-750 focus:outline-none focus:border-indigo-500 transition"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Branch Name (Optional)</label>
-                    <input
-                      type="text"
-                      value={newBranch}
-                      onChange={(e) => setNewBranch(e.target.value)}
-                      placeholder="e.g. Motijheel Branch, Dhaka"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-750 focus:outline-none focus:border-indigo-500 transition"
-                    />
-                  </div>
+                <div className="space-y-1.5">
+                  <label className={LABEL_CLS}>Business / brand name</label>
+                  <input type="text" value={brandName} onChange={(e) => setBrandName(e.target.value)} placeholder="e.g. Marcus Store" className={INPUT_CLS} />
                 </div>
 
-                <div className="flex justify-end pt-2">
-                  <button
-                    type="submit"
-                    disabled={isAddingBank}
-                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-extrabold uppercase tracking-wider transition cursor-pointer"
-                  >
-                    {isAddingBank ? "Adding Account..." : "Add Bank Account"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-          </div>
-
-          {/* Right Column (Branding & Sandbox) */}
-          <div className="lg:col-span-5 space-y-6">
-            {/* ── Merchant Branding ── */}
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="px-6 py-5 border-b border-slate-100">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Checkout Page</p>
-              <h2 className="text-lg font-extrabold text-slate-800">Merchant Branding</h2>
-              <p className="text-xs text-slate-500 mt-0.5">Customise how your business appears on the customer payment screen.</p>
-            </div>
-            <div className="p-6">
-              <form
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    setIsSavingBranding(true);
-                    setBrandSaveMsg(null);
-                    try {
-                      const fd = new FormData();
-                      fd.append("brandName", brandName);
-                      fd.append("brandColor", "#0f172a");
-                      fd.append("withTrx", String(withTrx));
-                      fd.append("withoutTrx", String(withoutTrx));
-
-                      fd.append("bkashActive", String(bkashActive));
-                      fd.append("nagadActive", String(nagadActive));
-                      fd.append("rocketActive", String(rocketActive));
-                      fd.append("upayActive", String(upayActive));
-                      fd.append("cellfinActive", String(cellfinActive));
-                      fd.append("tapActive", String(tapActive));
-
-                      if (brandLogo && !brandLogo.startsWith("data:")) {
-                        fd.append("brandLogo", brandLogo);
-                      }
-                      if (logoFile) {
-                        fd.append("logoFile", logoFile);
-                      }
-
-                      const res = await saveBrandingSettings(fd);
-                      if (res.success) {
-                        if (res.brandLogo) {
-                          setBrandLogo(res.brandLogo);
-                        }
-                        setLogoFile(null);
-                        setBrandSaveMsg({ type: "success", text: "Settings saved successfully!" });
-                      }
-                    } catch (err: any) {
-                      setBrandSaveMsg({ type: "error", text: err.message || "Failed to save settings." });
-                    } finally {
-                      setIsSavingBranding(false);
-                    }
-                  }}
-                className="space-y-5"
-              >
-                <div className="flex flex-col gap-6">
-                  {/* Left: fields */}
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Business / Brand Name</label>
-                      <input
-                        type="text"
-                        value={brandName}
-                        onChange={(e) => setBrandName(e.target.value)}
-                        placeholder="e.g. Marcus Store"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
-                      />
-                      <p className="text-[10px] text-slate-400 mt-1">Shown as &quot;Pay to [Brand Name]&quot; on the checkout page.</p>
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">Logo Image</label>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setLogoInputMode("upload")}
-                            className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md transition cursor-pointer ${
-                              logoInputMode === "upload" ? "bg-indigo-50 text-indigo-700 border border-indigo-100" : "text-slate-400 hover:text-slate-600"
-                            }`}
-                          >
-                            Upload File
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setLogoInputMode("url")}
-                            className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md transition cursor-pointer ${
-                              logoInputMode === "url" ? "bg-indigo-50 text-indigo-700 border border-indigo-100" : "text-slate-400 hover:text-slate-600"
-                            }`}
-                          >
-                            Logo URL
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className={LABEL_CLS}>Logo</label>
+                    <SegmentedMini
+                      value={logoInputMode}
+                      onChange={(v) => setLogoInputMode(v as "upload" | "url")}
+                      options={[{ v: "upload", l: "Upload" }, { v: "url", l: "URL" }]}
+                    />
+                  </div>
+                  {logoInputMode === "upload" ? (
+                    brandLogo ? (
+                      <div className="flex items-center justify-between gap-3 p-3 rounded-2xl border border-slate-200 bg-slate-50/60">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="h-12 w-20 shrink-0 bg-white rounded-xl border border-slate-100 flex items-center justify-center p-1.5 shadow-sm">
+                            <img src={brandLogo} alt="Logo preview" className="max-h-full max-w-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-slate-800">Logo selected</p>
+                            <p className="text-[11px] text-slate-500 truncate">{logoFile ? logoFile.name : "Active brand logo"}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <label className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-[11px] font-bold text-slate-700 hover:bg-slate-50 cursor-pointer transition">
+                            Change
+                            <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                          </label>
+                          <button type="button" onClick={() => { setLogoFile(null); setBrandLogo(""); }} className="px-3 py-1.5 rounded-lg bg-white border border-red-100 text-[11px] font-bold text-red-600 hover:bg-red-50 transition cursor-pointer">
+                            Remove
                           </button>
                         </div>
                       </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center gap-1.5 w-full py-6 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 hover:bg-emerald-50/40 hover:border-emerald-300 cursor-pointer transition text-center">
+                        <Icon name="upload" className="w-5 h-5 text-emerald-600" />
+                        <span className="text-sm font-bold text-slate-700">Click to upload a logo</span>
+                        <span className="text-[11px] text-slate-400">PNG, SVG or JPG · max 2MB · 200×60px recommended</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                      </label>
+                    )
+                  ) : (
+                    <input type="url" value={brandLogo} onChange={(e) => setBrandLogo(e.target.value)} placeholder="https://your-cdn.com/logo.png" className={`${INPUT_CLS} font-mono text-xs`} />
+                  )}
+                </div>
 
-                      {logoInputMode === "upload" ? (
-                        <div className="space-y-2">
+                <div className="space-y-2">
+                  <label className={LABEL_CLS}>Verification mode</label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {[
+                      { on: withTrx, set: () => { setWithTrx(true); setWithoutTrx(false); }, t: "Transaction ID (TrxID)", d: "Customers enter the TrxID from their payment SMS.", icon: "receipt" as IconName },
+                      { on: withoutTrx, set: () => { setWithoutTrx(true); setWithTrx(false); }, t: "Sender number auto-match", d: "We match the customer's number and amount against synced SMS — no TrxID needed.", icon: "bolt" as IconName },
+                    ].map((o) => (
+                      <button
+                        key={o.t}
+                        type="button"
+                        onClick={o.set}
+                        className={`flex items-start gap-3 text-left p-3.5 rounded-2xl border-2 transition cursor-pointer ${o.on ? "border-emerald-500 bg-emerald-50/50" : "border-slate-200 hover:bg-slate-50"}`}
+                      >
+                        <span className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center ${o.on ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-500"}`}>
+                          <Icon name={o.icon} className="w-4 h-4" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-bold text-slate-800">{o.t}</span>
+                          <span className="block text-[11px] text-slate-500 mt-0.5 leading-snug">{o.d}</span>
+                        </span>
+                        <span className={`mt-1 w-4 h-4 shrink-0 rounded-full border-2 flex items-center justify-center ${o.on ? "border-emerald-500" : "border-slate-300"}`}>
+                          {o.on && <span className="w-2 h-2 rounded-full bg-emerald-500" />}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Live preview */}
+                <div className="space-y-2">
+                  <label className={LABEL_CLS}>Live preview</label>
+                  <div className="rounded-3xl bg-slate-700 p-4 sm:p-6">
+                    <div className="mx-auto max-w-[320px] bg-white rounded-[24px] shadow-2xl overflow-hidden select-none">
+                      <div className="px-4 pt-4 pb-3 flex items-center gap-2 border-b border-slate-100">
+                        <div className="flex-1 bg-slate-50 border border-slate-100 rounded-xl px-3 py-1.5 flex items-center gap-2">
+                          <Icon name="search" className="w-3 h-3 text-slate-400" />
+                          <span className="text-[10px] text-slate-400 font-semibold">Search payment method…</span>
+                        </div>
+                        <span className="w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400"><Icon name="x" className="w-3 h-3" /></span>
+                      </div>
+                      <div className="py-4 text-center bg-gradient-to-b from-slate-50/60 to-white">
+                        <div className="relative w-14 h-14 mx-auto rounded-full bg-white border border-slate-200 flex items-center justify-center p-1.5 shadow-sm">
                           {brandLogo ? (
-                            <div className="relative group flex items-center justify-between border border-slate-200 bg-slate-50/50 rounded-2xl p-4 transition">
-                              <div className="flex items-center gap-3">
-                                <div className="h-12 w-20 bg-white rounded-xl border border-slate-100 flex items-center justify-center p-1.5 shadow-2xs">
-                                  <img
-                                    src={brandLogo}
-                                    alt="Logo preview"
-                                    className="max-h-full max-w-full object-contain"
-                                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                                  />
-                                </div>
-                                <div>
-                                  <p className="text-xs font-semibold text-slate-700">Logo Selected</p>
-                                  <p className="text-[10px] text-slate-400">
-                                    {logoFile ? `File: ${logoFile.name}` : "Active brand logo"}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex gap-2">
-                                <label className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 bg-white border border-slate-200 px-3 py-1.5 rounded-xl cursor-pointer shadow-3xs transition">
-                                  Change
-                                  <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                                </label>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setLogoFile(null);
-                                    setBrandLogo("");
-                                  }}
-                                  className="text-[10px] font-bold text-red-600 hover:text-red-700 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-3xs transition cursor-pointer"
-                                >
-                                  Remove
-                                </button>
-                              </div>
-                            </div>
+                            <img src={brandLogo} alt={brandName || "Brand"} className="max-h-full max-w-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                           ) : (
-                            <div className="flex items-center justify-center w-full">
-                              <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-slate-200 border-dashed rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100/50 transition">
-                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                  <p className="text-xs text-slate-500 font-semibold px-4 text-center truncate w-full">
-                                    Click to select a logo file
-                                  </p>
-                                  <p className="text-[10px] text-slate-400 mt-0.5">PNG, SVG, or JPG (max 2MB)</p>
-                                </div>
-                                <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                              </label>
-                            </div>
+                            <span className="w-full h-full rounded-full bg-slate-900 text-white flex items-center justify-center text-sm font-black">{(brandName || "Y").charAt(0).toUpperCase()}</span>
                           )}
+                          <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-white"><Icon name="check" className="w-2 h-2" /></span>
                         </div>
-                      ) : (
-                        <input
-                          type="url"
-                          value={brandLogo}
-                          onChange={(e) => setBrandLogo(e.target.value)}
-                          placeholder="https://your-cdn.com/logo.png"
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
-                        />
-                      )}
-                      <p className="text-[10px] text-slate-400 mt-1">Recommended: 200×60px transparent logo.</p>
-                    </div>
-
-
-                    <div className="border-t border-slate-100 pt-4 space-y-3">
-                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">Checkout Verification Modes</label>
-                      <div className="space-y-2">
-                        <label className="flex items-start gap-3 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="verificationMode"
-                            checked={withTrx}
-                            onChange={() => {
-                              setWithTrx(true);
-                              setWithoutTrx(false);
-                            }}
-                            className="mt-1 h-4 w-4 border-slate-350 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                          />
-                          <div>
-                            <span className="text-xs font-bold text-slate-700 block">Transaction ID (TrxID) Verification</span>
-                            <span className="text-[10px] text-slate-455 leading-relaxed block mt-0.5">Requires customers to enter the TrxID from their SMS receipt.</span>
-                          </div>
-                        </label>
-                        <label className="flex items-start gap-3 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="verificationMode"
-                            checked={withoutTrx}
-                            onChange={() => {
-                              setWithoutTrx(true);
-                              setWithTrx(false);
-                            }}
-                            className="mt-1 h-4 w-4 border-slate-350 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                          />
-                          <div>
-                            <span className="text-xs font-bold text-slate-700 block">Sender Number Matching (Without TrxID)</span>
-                            <span className="text-[10px] text-slate-450 leading-relaxed block mt-0.5">Customers enter their mobile number, and we match it automatically against synced SMS.</span>
-                          </div>
-                        </label>
+                        <p className="text-xs font-extrabold text-slate-800 mt-2">{brandName || "Your Brand"}</p>
                       </div>
+                      <div className="px-4">
+                        <div className="flex p-0.5 bg-slate-100 rounded-xl text-[9px] font-bold">
+                          <span className="flex-1 text-center py-1.5 bg-white rounded-lg shadow-sm text-slate-800">Mobile Banking</span>
+                          <span className="flex-1 text-center py-1.5 text-slate-400">Bank Transfer</span>
+                        </div>
+                      </div>
+                      <div className="p-4 grid grid-cols-4 gap-1.5">
+                        {(["bkash", "nagad", "rocket", "upay", "cellfin", "tap"] as const).map((p) => {
+                          const live = configuredGateways.some((g) => g.provider === p) && getProviderActive(p);
+                          return (
+                            <span key={p} className={`h-9 rounded-lg border border-slate-200/70 bg-white flex items-center justify-center p-1 ${live ? "" : "opacity-30"}`}>
+                              <img src={GATEWAY_META[p].logoUrl} alt={p} className="max-h-full max-w-full object-contain" />
+                            </span>
+                          );
+                        })}
+                      </div>
+                      <p className="py-2.5 bg-slate-50 border-t border-slate-100 text-center text-[8px] font-bold tracking-widest text-slate-400 uppercase">Powered by CodePay</p>
                     </div>
                   </div>
+                </div>
 
-                  {/* Right: live preview */}
+                <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-100">
+                  {brandSaveMsg ? <Notice tone={brandSaveMsg.type} inline>{brandSaveMsg.text}</Notice> : <span />}
+                  <button type="submit" disabled={isSavingBranding} className={BTN_PRIMARY}>
+                    {isSavingBranding ? "Saving…" : "Save settings"}
+                  </button>
+                </div>
+              </form>
+            </Card>
+
+            {/* ── Sandbox ── */}
+            <div className="relative overflow-hidden rounded-3xl bg-slate-900 p-6 text-white shadow-lg">
+              <div className="absolute -top-20 -right-20 w-56 h-56 bg-emerald-500/20 rounded-full blur-3xl" />
+              <div className="absolute -bottom-20 -left-10 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl" />
+              <div className="relative space-y-5">
+                <div className="flex items-start gap-3">
+                  <span className="w-10 h-10 shrink-0 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center"><Icon name="beaker" className="w-5 h-5" /></span>
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Live Preview</p>
-                    {/* Simulated dark checkout background */}
-                    <div className="bg-[#2d3748] rounded-[32px] p-3.5 flex flex-col items-center justify-center min-h-[500px] shadow-inner relative">
-                      
-                      {/* Floating Checkout Card Mockup */}
-                      <div className="w-full max-w-[360px] h-[465px] bg-white rounded-[28px] p-5 flex flex-col justify-between shadow-2xl relative border border-slate-100/10 select-none">
-                        
-                        {/* Top: Header, Logo, Details */}
-                        <div className="space-y-4">
-                          {/* Search Bar Row */}
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 bg-slate-50 border border-slate-100 rounded-xl px-3 py-1.5 flex items-center gap-2">
-                              <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                              </svg>
-                              <span className="text-[9px] text-slate-400 font-semibold">Search payment method...</span>
-                            </div>
-                            <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 text-xs font-bold pointer-events-none">✕</div>
-                          </div>
+                    <h2 className="text-base font-extrabold">Sandbox simulator</h2>
+                    <p className="text-xs text-slate-400 mt-0.5">Generate a test checkout to try the full payment &amp; redirect flow.</p>
+                  </div>
+                </div>
 
-                          {/* Merchant Info Area */}
-                          <div className="text-center pt-1">
-                            {/* Circular Brand Logo */}
-                            <div className="w-16 h-16 rounded-full bg-white border border-slate-100 flex items-center justify-center p-1.5 relative mx-auto shadow-sm">
-                              {brandLogo ? (
-                                <img src={brandLogo} alt={brandName || "Brand"} className="max-h-full max-w-full object-contain rounded-full" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                              ) : (
-                                <div className="w-full h-full rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-black">
-                                  {brandName ? brandName.substring(0, 2).toUpperCase() : "CP"}
-                                </div>
-                              )}
-                              {/* Green checkmark badge */}
-                              <div className="absolute bottom-0 right-0 bg-emerald-500 text-white w-4.5 h-4.5 rounded-full flex items-center justify-center text-[8px] font-black border-2 border-white shadow-sm">
-                                ✓
-                              </div>
-                            </div>
+                <form onSubmit={handleCreateSandboxPayment} className="flex gap-2">
+                  <div className="relative flex-1">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-bold pointer-events-none">৳</span>
+                    <input
+                      type="number"
+                      required
+                      value={sandboxAmount}
+                      onChange={(e) => setSandboxAmount(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 pl-8 pr-3 text-sm font-mono font-bold focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/20 transition"
+                      placeholder="Amount"
+                    />
+                  </div>
+                  <button type="submit" disabled={isSimulating} className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-bold disabled:opacity-50 transition cursor-pointer whitespace-nowrap shadow-lg shadow-emerald-500/20">
+                    {isSimulating ? "Generating…" : "Generate link"}
+                  </button>
+                </form>
 
-                            {/* Brand Name */}
-                            <h4 className="text-xs font-extrabold text-slate-800 mt-2.5">{brandName || "Your Brand"}</h4>
+                {sandboxMessage && (
+                  <div className={`p-3 rounded-xl text-xs font-medium border ${sandboxMessage.type === "success" ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" : "bg-red-500/10 text-red-300 border-red-500/20"}`}>
+                    {sandboxMessage.text}
+                  </div>
+                )}
 
-                            {/* View Details Pill */}
-                            <div className="inline-flex items-center justify-center gap-1 mt-1.5 px-3 py-0.5 bg-sky-50 text-sky-600 rounded-full text-[9px] font-bold border border-sky-100/85">
-                              View Details ▾
-                            </div>
-                          </div>
-
-                          {/* Tab Selectors */}
-                          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-1 flex gap-1 mt-1">
-                            <div className="bg-white text-slate-700 shadow-3xs border border-slate-100/40 rounded-xl flex-1 text-center py-1.5 text-[9px] font-black tracking-wide uppercase">
-                              Mobile Banking
-                            </div>
-                            <div className="text-slate-400 flex-1 text-center py-1.5 text-[9px] font-black tracking-wide uppercase pointer-events-none">
-                              Bank Transfer
-                            </div>
-                          </div>
-
-                          {/* Payment Methods Grid Mock */}
-                          <div className="grid grid-cols-4 gap-2 mt-2">
-                            {[
-                              { name: "bkash", logo: "/logos/bkash.png" },
-                              { name: "nagad", logo: "/logos/nagad.png" },
-                              { name: "rocket", logo: "/logos/rocket.png" },
-                              { name: "upay", logo: "/codepay-upay.png" },
-                              { name: "cellfin", logo: "/logos/cellfin.png" },
-                              { name: "tap", logo: "/logos/tap.png" },
-                            ].map((m) => (
-                              <div key={m.name} className="bg-white rounded-xl border border-slate-200/60 p-1.5 flex items-center justify-center h-10 shadow-3xs hover:border-slate-300 transition">
-                                <img src={m.logo} alt={m.name} className="max-h-full max-w-full object-contain h-7" />
-                              </div>
-                            ))}
-                          </div>
+                {generatedSandboxUrl && (
+                  <div className="rounded-2xl bg-white/5 border border-white/10 p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">Checkout URL</span>
+                      <a href={generatedSandboxUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold transition no-underline">
+                        Launch <Icon name="external" className="w-3 h-3" />
+                      </a>
+                    </div>
+                    <div className="flex gap-2">
+                      <input type="text" readOnly value={generatedSandboxUrl.replace(window.location.origin, "https://pay.codeblend.co")} className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-slate-300 focus:outline-none" />
+                      <button type="button" onClick={() => copyToClipboard(generatedSandboxUrl.replace(window.location.origin, "https://pay.codeblend.co"), "sandbox_url")} className="px-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition cursor-pointer shrink-0">
+                        {copiedField === "sandbox_url" ? "Copied" : "Copy"}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      {[
+                        { l: "Channel", v: "Any wallet" },
+                        { l: "Sender", v: "Any number" },
+                        { l: "Test TrxID", v: "SANDBOX123", hl: true },
+                      ].map((i) => (
+                        <div key={i.l} className="rounded-xl bg-black/30 border border-white/5 p-2.5">
+                          <span className="block text-[10px] text-slate-500 font-semibold">{i.l}</span>
+                          <strong className={`block mt-0.5 truncate ${i.hl ? "text-emerald-400 font-mono select-all" : "text-white"}`}>{i.v}</strong>
                         </div>
-
-                        {/* Bottom: Footer */}
-                        <div className="text-center text-[7px] font-black tracking-widest text-slate-400 uppercase pt-3 border-t border-slate-100">
-                          POWERED BY CODEPAY SECURED GATEWAY
-                        </div>
-                      </div>
-
+                      ))}
                     </div>
                   </div>
-                </div>
-
-                {/* Save row */}
-                <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                  {brandSaveMsg ? (
-                    <span className={`text-xs font-semibold px-3 py-1.5 rounded-lg border ${
-                      brandSaveMsg.type === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-red-50 text-red-600 border-red-100"
-                    }`}>{brandSaveMsg.text}</span>
-                  ) : <span />}
-                  <button
-                    type="submit"
-                    disabled={isSavingBranding}
-                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-extrabold uppercase tracking-wider transition cursor-pointer"
-                  >
-                    {isSavingBranding ? "Saving…" : "Save Branding"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-
-          {/* ── Sandbox Simulator ── */}
-          <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-lg w-full">
-            {/* Header row */}
-            <div className="flex flex-col gap-4 mb-5">
-              <div>
-                <h2 className="text-sm font-extrabold text-white uppercase tracking-wider">CodePay Sandbox Simulator</h2>
-                <p className="text-[11px] text-slate-400 mt-0.5">Generate a mock checkout to test redirection &amp; verification flow.</p>
+                )}
               </div>
-              {/* Sidebar form */}
-              <form onSubmit={handleCreateSandboxPayment} className="flex items-center gap-2 w-full">
-                <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold pointer-events-none">৳</span>
-                  <input
-                    type="number"
-                    required
-                    value={sandboxAmount}
-                    onChange={(e) => setSandboxAmount(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl py-2.5 pl-7 pr-3 text-sm font-mono font-bold focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
-                    placeholder="Amount"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={isSimulating}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-wider disabled:opacity-50 transition cursor-pointer whitespace-nowrap"
-                >
-                  {isSimulating ? "Generating…" : "Generate Link"}
-                </button>
-              </form>
             </div>
-
-            {/* Feedback */}
-            {sandboxMessage && (
-              <div className={`mb-4 p-3 rounded-xl text-xs font-semibold border ${
-                sandboxMessage.type === "success" ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" : "bg-red-500/10 text-red-300 border-red-500/20"
-              }`}>{sandboxMessage.text}</div>
-            )}
-
-            {/* Generated URL panel */}
-            {generatedSandboxUrl && (
-              <div className="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl space-y-4">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Generated Checkout URL</span>
-                  <a
-                    href={generatedSandboxUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition"
-                  >
-                    Launch ↗
-                  </a>
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={generatedSandboxUrl.replace(window.location.origin, "https://pay.codeblend.co")}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs font-mono text-slate-300 focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(generatedSandboxUrl.replace(window.location.origin, "https://pay.codeblend.co"), "sandbox_url")}
-                    className="px-4 bg-slate-700 hover:bg-slate-600 rounded-xl text-xs font-semibold cursor-pointer text-white transition shrink-0"
-                  >
-                    {copiedField === "sandbox_url" ? "Copied" : "Copy"}
-                  </button>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                    <span className="text-slate-500 block text-[9px] font-bold uppercase mb-0.5">Payment Channel</span>
-                    <strong className="text-white text-xs">Any configured</strong>
-                  </div>
-                  <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                    <span className="text-slate-500 block text-[9px] font-bold uppercase mb-0.5">Sender Phone</span>
-                    <strong className="text-white text-xs">Any number</strong>
-                  </div>
-                  <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                    <span className="text-slate-500 block text-[9px] font-bold uppercase mb-0.5">Sandbox TrxID</span>
-                    <strong className="text-emerald-400 font-mono select-all text-xs">SANDBOX123</strong>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
           </div>
         </div>
         );
       })()}
 
-      {activeTab === "api" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Key Generation and Sandbox Simulator */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Credentials Card */}
-            <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-6">
-              <div>
-                <h2 className="text-lg font-bold text-slate-800">API Credentials</h2>
-                <p className="text-sm text-slate-500 mt-1">
-                  Authenticate your PHP, JS, or other server requests securely.
-                </p>
-              </div>
-
-              {!apiKey ? (
-                <div className="text-center py-6 space-y-3">
-                  <div className="flex items-center justify-center text-slate-400">
-                    <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
-                  </div>
-                  <p className="text-xs text-slate-400">No API Keys generated yet.</p>
-                  <button
-                    onClick={handleGenerateKeys}
-                    disabled={isGeneratingKeys}
-                    className="px-4 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-extrabold uppercase tracking-wider hover:bg-slate-800 transition cursor-pointer"
-                  >
-                    Generate Keys
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-1">
-                      API Key
-                    </label>
-                    <div className="flex gap-1.5">
-                      <input
-                        type="text"
-                        readOnly
-                        value={apiKey}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono select-all text-slate-600 focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => copyToClipboard(apiKey, "key")}
-                        className="px-3 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl text-xs transition font-semibold cursor-pointer"
-                      >
-                        {copiedField === "key" ? "Copied" : "Copy"}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-1">
-                      API Secret
-                    </label>
-                    <div className="flex gap-1.5">
-                      <input
-                        type={showSecret ? "text" : "password"}
-                        readOnly
-                        value={apiSecret || ""}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono select-all text-slate-600 focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowSecret(!showSecret)}
-                        className="px-3 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl text-xs font-semibold cursor-pointer"
-                      >
-                        {showSecret ? "Hide" : "Show"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => copyToClipboard(apiSecret || "", "secret")}
-                        className="px-3 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl text-xs transition font-semibold cursor-pointer"
-                      >
-                        {copiedField === "secret" ? "Copied" : "Copy"}
-                      </button>
-                    </div>
-                  </div>
-
-                  <hr className="border-slate-100" />
-
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-1">
-                      Gateway Endpoint
-                    </label>
-                    <div className="flex gap-1.5">
-                      <input
-                        type="text"
-                        readOnly
-                        value="https://codeblend.co/api/v1/codepay/checkout"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-600 focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => copyToClipboard("https://codeblend.co/api/v1/codepay/checkout", "endpoint")}
-                        className="px-3 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl text-xs transition font-semibold cursor-pointer"
-                      >
-                        {copiedField === "endpoint" ? "Copied" : "Copy"}
-                      </button>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleGenerateKeys}
-                    disabled={isGeneratingKeys}
-                    className="w-full py-2.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl text-xs font-extrabold uppercase tracking-wider transition cursor-pointer"
-                  >
-                    Regenerate API Keys
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Quick Integration Guides */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-slate-950 rounded-3xl p-6 text-white shadow-lg space-y-6 border border-slate-800/80">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                <div>
-                  <h3 className="font-bold text-white">API Integration Guide</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">How to request checkouts & verify payments</p>
-                </div>
-                <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800">
-                  <button
-                    onClick={() => setSelectedLang("php")}
-                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
-                      selectedLang === "php" ? "bg-white text-slate-950 shadow-sm" : "text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    PHP
-                  </button>
-                  <button
-                    onClick={() => setSelectedLang("node")}
-                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
-                      selectedLang === "node" ? "bg-white text-slate-950 shadow-sm" : "text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    NodeJS
-                  </button>
-                  <button
-                    onClick={() => setSelectedLang("curl")}
-                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
-                      selectedLang === "curl" ? "bg-white text-slate-950 shadow-sm" : "text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    Curl
-                  </button>
-                </div>
-              </div>
-
-              {selectedLang === "php" && (
-                <div className="space-y-4">
-                  <p className="text-xs text-slate-400">
-                    Use this script to initialize a checkout payment. It will return a <code>payment_url</code> which you redirect your customer to.
-                  </p>
-                  <pre className="bg-slate-900 p-4 rounded-2xl border border-slate-850 font-mono text-[11px] text-emerald-400 overflow-x-auto leading-relaxed max-h-96">
-{`<?php
-$apiKey = "${apiKey || "YOUR_API_KEY"}";
-$apiSecret = "${apiSecret || "YOUR_API_SECRET"}";
+      {activeTab === "api" && (() => {
+        const shownKey = apiKey || "YOUR_API_KEY";
+        const shownSecret = apiSecret || "YOUR_API_SECRET";
+        const snippets: Record<"php" | "node" | "curl", { label: string; intro: string; code: string }> = {
+          php: {
+            label: "PHP",
+            intro: "Initialize a checkout and redirect your customer to the returned payment_url.",
+            code: `<?php
+$apiKey = "${shownKey}";
+$apiSecret = "${shownSecret}";
 
 $curl = curl_init();
 curl_setopt_array($curl, [
@@ -1875,23 +1667,17 @@ if (isset($response['payment_url'])) {
     exit;
 } else {
     echo "Payment Error: " . $response['message'];
-}`}
-                  </pre>
-                </div>
-              )}
-
-              {selectedLang === "node" && (
-                <div className="space-y-4">
-                  <p className="text-xs text-slate-400">
-                    Create payment checkouts dynamically in your Express/Next.js/Node API backend:
-                  </p>
-                  <pre className="bg-slate-900 p-4 rounded-2xl border border-slate-850 font-mono text-[11px] text-emerald-400 overflow-x-auto leading-relaxed max-h-96">
-{`const response = await fetch("https://codeblend.co/api/v1/codepay/checkout", {
+}`,
+          },
+          node: {
+            label: "Node.js",
+            intro: "Create checkouts from your Express / Next.js / Node backend.",
+            code: `const response = await fetch("https://codeblend.co/api/v1/codepay/checkout", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
-    "X-CodePay-API-Key": "${apiKey || "YOUR_API_KEY"}",
-    "X-CodePay-API-Secret": "${apiSecret || "YOUR_API_SECRET"}"
+    "X-CodePay-API-Key": "${shownKey}",
+    "X-CodePay-API-Secret": "${shownSecret}"
   },
   body: JSON.stringify({
     amount: 1200,
@@ -1908,123 +1694,401 @@ if (data.payment_url) {
   res.redirect(data.payment_url);
 } else {
   console.error("Payment failed", data.message);
-}`}
-                  </pre>
-                </div>
-              )}
-
-              {selectedLang === "curl" && (
-                <div className="space-y-4">
-                  <p className="text-xs text-slate-400">
-                    Quickly test checkout payment creation using curl directly in terminal:
-                  </p>
-                  <pre className="bg-slate-900 p-4 rounded-2xl border border-slate-850 font-mono text-[11px] text-emerald-400 overflow-x-auto leading-relaxed max-h-96">
-{`curl -X POST https://codeblend.co/api/v1/codepay/checkout \\
+}`,
+          },
+          curl: {
+            label: "cURL",
+            intro: "Quickly test checkout creation from your terminal.",
+            code: `curl -X POST https://codeblend.co/api/v1/codepay/checkout \\
   -H "Content-Type: application/json" \\
-  -H "X-CodePay-API-Key: ${apiKey || "YOUR_API_KEY"}" \\
-  -H "X-CodePay-API-Secret: ${apiSecret || "YOUR_API_SECRET"}" \\
+  -H "X-CodePay-API-Key: ${shownKey}" \\
+  -H "X-CodePay-API-Secret: ${shownSecret}" \\
   -d '{
     "amount": 1200,
     "order_id": "ORDER_1001",
     "customer_name": "John Doe",
     "customer_email": "customer@email.com",
     "redirect_url": "https://yourwebsite.com/payment/callback"
-  }'`}
-                  </pre>
+  }'`,
+          },
+        };
+        const snippet = snippets[selectedLang];
+
+        return (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start animate-in fade-in duration-300">
+          {/* Credentials */}
+          <Card className="xl:col-span-1">
+            <CardHeader icon="key" eyebrow="Authentication" title="API credentials" desc="Send these headers with every server-side request." />
+            <div className="p-6">
+              {!apiKey ? (
+                <EmptyState
+                  icon="key"
+                  title="No API keys yet"
+                  text="Generate a key pair to start creating checkouts from your website."
+                  compact
+                  action={
+                    <button onClick={handleGenerateKeys} disabled={isGeneratingKeys} className={BTN_PRIMARY}>
+                      {isGeneratingKeys ? "Generating…" : "Generate keys"}
+                    </button>
+                  }
+                />
+              ) : (
+                <div className="space-y-4">
+                  <CopyField label="API key" value={apiKey} copied={copiedField === "key"} onCopy={() => copyToClipboard(apiKey, "key")} />
+                  <CopyField
+                    label="API secret"
+                    value={apiSecret || ""}
+                    masked={!showSecret}
+                    copied={copiedField === "secret"}
+                    onCopy={() => copyToClipboard(apiSecret || "", "secret")}
+                    extra={
+                      <button type="button" onClick={() => setShowSecret(!showSecret)} aria-label={showSecret ? "Hide secret" : "Show secret"} className="w-9 h-9 shrink-0 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-slate-800 flex items-center justify-center transition cursor-pointer">
+                        <Icon name={showSecret ? "eyeOff" : "eye"} className="w-4 h-4" />
+                      </button>
+                    }
+                  />
+                  <CopyField
+                    label="Checkout endpoint"
+                    value="https://codeblend.co/api/v1/codepay/checkout"
+                    copied={copiedField === "endpoint"}
+                    onCopy={() => copyToClipboard("https://codeblend.co/api/v1/codepay/checkout", "endpoint")}
+                  />
+                  <div className="pt-4 border-t border-slate-100">
+                    <Notice tone="warning">Regenerating keys immediately breaks existing integrations.</Notice>
+                    <button onClick={handleGenerateKeys} disabled={isGeneratingKeys} className="mt-3 w-full py-2.5 rounded-xl border border-red-200 bg-white text-red-600 hover:bg-red-50 text-sm font-bold transition cursor-pointer disabled:opacity-50">
+                      {isGeneratingKeys ? "Regenerating…" : "Regenerate API keys"}
+                    </button>
+                  </div>
                 </div>
               )}
+            </div>
+          </Card>
 
-              <hr className="border-slate-800" />
-
-              <div className="space-y-2">
-                <h4 className="text-sm font-bold text-white">How Payment Verification Works</h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Upon manual payment completion on the checkout screen, the customer submits their <strong>TrxID</strong>. CodePay immediately matches it with the sync log of incoming financial SMS parsed on your merchant's smartphone.
-                  Once matched, the customer is redirected to your <code>redirect_url</code> with query params <code>?payment_id=[id]&status=completed&order_id=[order_id]</code>.
-                </p>
+          {/* Integration guide */}
+          <div className="xl:col-span-2 space-y-6">
+            <div className="rounded-3xl bg-slate-950 border border-slate-800 shadow-lg overflow-hidden">
+              <div className="px-5 sm:px-6 py-4 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-extrabold text-white">Integration guide</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">{snippet.intro}</p>
+                </div>
+                <div className="inline-flex p-1 rounded-xl bg-white/5 border border-white/10 self-start">
+                  {(["php", "node", "curl"] as const).map((l) => (
+                    <button
+                      key={l}
+                      onClick={() => setSelectedLang(l)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${selectedLang === l ? "bg-white text-slate-950 shadow-sm" : "text-slate-400 hover:text-white"}`}
+                    >
+                      {snippets[l].label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="relative">
+                <div className="flex items-center gap-1.5 px-5 pt-4">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-400/80" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/80" />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(snippet.code, "snippet")}
+                  className="absolute top-3 right-4 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] font-semibold text-white transition cursor-pointer"
+                >
+                  <Icon name={copiedField === "snippet" ? "check" : "copy"} className="w-3.5 h-3.5" />
+                  {copiedField === "snippet" ? "Copied" : "Copy"}
+                </button>
+                <pre className="px-5 pb-5 pt-3 font-mono text-[12px] text-emerald-300 overflow-x-auto leading-relaxed max-h-[420px]">{snippet.code}</pre>
               </div>
             </div>
+
+            <Card>
+              <CardHeader icon="flow" eyebrow="Under the hood" title="How payment verification works" />
+              <ol className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { t: "Customer pays", d: "They pay to your wallet and submit the TrxID (or their number) on the hosted checkout." },
+                  { t: "SMS is matched", d: "CodePay matches it against payment SMS synced from your phone by the Android app." },
+                  { t: "Redirect back", d: "The customer returns to your redirect_url with ?payment_id=…&status=completed&order_id=…" },
+                ].map((s, i) => (
+                  <li key={s.t} className="relative rounded-2xl border border-slate-200/70 bg-slate-50/60 p-4">
+                    <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white text-sm font-extrabold flex items-center justify-center shadow-sm shadow-emerald-200">{i + 1}</span>
+                    <p className="mt-3 text-sm font-bold text-slate-900">{s.t}</p>
+                    <p className="mt-1 text-xs text-slate-500 leading-relaxed">{s.d}</p>
+                  </li>
+                ))}
+              </ol>
+            </Card>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {activeTab === "app" && (
-        <div className="space-y-6 animate-in fade-in duration-300">
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-xs">
-            <div className="border-b border-slate-100 pb-6 mb-6">
-              <h2 className="text-lg font-bold text-slate-800">অ্যান্ড্রয়েড ট্র্যাকার অ্যাপ ডাউনলোড (Companion App Download)</h2>
-              <p className="text-sm text-slate-500 mt-1">
-                পেমেন্ট ভেরিফিকেশন অটোমেশন সফলভাবে সচল রাখতে আমাদের অফিশিয়াল অ্যান্ড্রয়েড অ্যাপটি আপনার পেমেন্ট রিসিভিং ফোনে ইনস্টল করুন।
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start animate-in fade-in duration-300">
+          <Card className="xl:col-span-2">
+            <CardHeader icon="phone" eyebrow="Companion app" title="অ্যান্ড্রয়েড ট্র্যাকার অ্যাপ" desc="পেমেন্ট ভেরিফিকেশন অটোমেশন সচল রাখতে অ্যাপটি আপনার পেমেন্ট রিসিভিং ফোনে ইনস্টল করুন।" />
+            <div className="p-6 space-y-3">
               {apkLinks.length === 0 ? (
-                <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl text-center text-slate-500 shadow-inner">
-                  এই মুহূর্তে কোনো অ্যাপ ভার্সন আপলোড করা হয়নি।
-                </div>
+                <EmptyState icon="phone" title="No app version yet" text="এই মুহূর্তে কোনো অ্যাপ ভার্সন আপলোড করা হয়নি।" compact />
               ) : (
                 apkLinks.map((link) => (
-                  <div 
-                    key={link.id} 
-                    className={`bg-white border text-left flex flex-col md:flex-row items-center justify-between border-slate-200 p-6 rounded-2xl transition-all group hover:shadow-md ${link.isLatest ? 'hover:border-indigo-300' : 'opacity-80 hover:opacity-100 hover:border-slate-300'}`}
+                  <div
+                    key={link.id}
+                    className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border transition ${
+                      link.isLatest ? "border-emerald-200 bg-gradient-to-r from-emerald-50/80 to-cyan-50/40 shadow-sm" : "border-slate-200 bg-white hover:bg-slate-50/60"
+                    }`}
                   >
-                    <div className="flex items-center gap-4 mb-4 md:mb-0">
-                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors ${link.isLatest ? 'bg-slate-100 text-slate-400 group-hover:text-indigo-500 group-hover:bg-indigo-50' : 'bg-slate-50 text-slate-300'}`}>
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                      </div>
-                      <div>
-                        <h4 className="text-base font-bold text-slate-800">{link.name || "CodePay Tracker"}</h4>
-                        <p className="text-xs text-slate-500 flex items-center gap-2 mt-1">
-                          {link.isLatest && (
-                            <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[0.6rem] font-bold">LATEST</span> 
-                          )}
-                          {link.version && <span className="font-mono text-xs">v{link.version}</span>}
-                          {link.isLatest && <span>সকল নতুন আপডেট এবং বাগ ফিক্স অন্তর্ভুক্ত।</span>}
-                          {!link.isLatest && <span>পুরোনো রিলিজ।</span>}
-                        </p>
+                    <div className="flex items-center gap-4 min-w-0">
+                      <span className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center ${link.isLatest ? "bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-200" : "bg-slate-100 text-slate-400"}`}>
+                        <Icon name="phone" className="w-6 h-6" />
+                      </span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-base font-extrabold text-slate-900 truncate">{link.name || "CodePay Tracker"}</h4>
+                          {link.version && <span className="font-mono text-xs text-slate-500">v{link.version}</span>}
+                          {link.isLatest && <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-wider">Latest</span>}
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">{link.isLatest ? "সকল নতুন আপডেট এবং বাগ ফিক্স অন্তর্ভুক্ত।" : "পুরোনো রিলিজ।"}</p>
                       </div>
                     </div>
 
                     {link.link && downloadAllowed !== false ? (
-                      <a 
+                      <a
                         href={link.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`w-full md:w-auto px-6 py-3 font-semibold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shrink-0 no-underline ${link.isLatest ? 'bg-slate-900 text-white hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
+                        className={`${link.isLatest ? BTN_PRIMARY : BTN_SECONDARY} shrink-0 no-underline`}
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                        ডাউনলোড করুন (Download)
+                        <Icon name="download" className="w-4 h-4" />
+                        ডাউনলোড করুন
                       </a>
                     ) : (
-                      <button 
-                        disabled
-                        className="w-full md:w-auto px-6 py-3 font-semibold text-xs rounded-xl cursor-not-allowed flex items-center justify-center gap-2 shrink-0 transition bg-slate-100 text-slate-400 border border-slate-200"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                      <span className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-100 text-slate-400 border border-slate-200 text-sm font-semibold cursor-not-allowed shrink-0">
+                        <Icon name="lock" className="w-4 h-4" />
                         ডাউনলোড অ্যাক্সেস সীমাবদ্ধ
-                      </button>
+                      </span>
                     )}
                   </div>
                 ))
               )}
             </div>
+          </Card>
 
-            <div className="mt-8 p-5 bg-indigo-50/50 border border-indigo-100 rounded-xl flex gap-3 text-indigo-900 text-xs">
-              <svg className="w-5 h-5 shrink-0 text-indigo-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              <div className="leading-relaxed space-y-1">
-                <p className="font-bold">কীভাবে কনফিগার করবেন:</p>
-                <ol className="list-decimal list-inside space-y-1 pl-1">
-                  <li>আপনার ফোন থেকে APK ফাইলটি ডাউনলোড ও ইনস্টল করুন।</li>
-                  <li>অ্যাপ্লিকেশনটি ওপেন করে আপনার CodePay API ক্রেডেনশিয়াল ব্যবহার করে লগইন করুন।</li>
-                  <li>অ্যাপ্লিকেশনটিকে SMS রিড করার প্রয়োজনীয় পারমিশন প্রদান করুন।</li>
-                  <li>ব্যাকগ্রাউন্ড সার্ভিস রান করে রাখুন যাতে প্রতিবার SMS আসার সাথে সাথে ট্র্যাকারটি ডাটাবেজে সিঙ্ক করতে পারে।</li>
-                </ol>
-              </div>
-            </div>
-          </div>
+          <Card>
+            <CardHeader icon="list" eyebrow="Setup" title="কীভাবে কনফিগার করবেন" />
+            <ol className="p-6 space-y-4">
+              {[
+                "আপনার ফোন থেকে APK ফাইলটি ডাউনলোড ও ইনস্টল করুন।",
+                "অ্যাপ্লিকেশনটি ওপেন করে আপনার CodePay API ক্রেডেনশিয়াল ব্যবহার করে লগইন করুন।",
+                "অ্যাপ্লিকেশনটিকে SMS রিড করার প্রয়োজনীয় পারমিশন প্রদান করুন।",
+                "ব্যাকগ্রাউন্ড সার্ভিস রান করে রাখুন যাতে প্রতিবার SMS আসার সাথে সাথে ট্র্যাকারটি ডাটাবেজে সিঙ্ক করতে পারে।",
+              ].map((step, i, arr) => (
+                <li key={i} className="relative flex gap-3">
+                  {i < arr.length - 1 && <span className="absolute left-4 top-9 bottom-[-12px] w-px bg-emerald-100" />}
+                  <span className="relative w-8 h-8 shrink-0 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-sm font-extrabold flex items-center justify-center">{i + 1}</span>
+                  <p className="text-[13px] text-slate-600 leading-relaxed pt-1">{step}</p>
+                </li>
+              ))}
+            </ol>
+          </Card>
         </div>
       )}
     </div>
+  );
+}
+
+/* ─────────────────────────── Shared UI ─────────────────────────── */
+
+const INPUT_CLS = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition";
+const LABEL_CLS = "block text-xs font-semibold text-slate-600";
+const BTN_PRIMARY = "inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold shadow-md shadow-emerald-200/70 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none";
+const BTN_SECONDARY = "inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-bold transition cursor-pointer";
+
+function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <div className={`rounded-3xl border border-slate-200/70 bg-white shadow-sm overflow-hidden ${className}`}>{children}</div>;
+}
+
+function CardHeader({ icon, eyebrow, title, desc, action }: { icon: IconName; eyebrow?: string; title: string; desc?: string; action?: React.ReactNode }) {
+  return (
+    <div className="px-6 py-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex items-start gap-3 min-w-0">
+        <span className="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-emerald-50 to-cyan-50 border border-emerald-100 text-emerald-600 flex items-center justify-center">
+          <Icon name={icon} className="w-5 h-5" />
+        </span>
+        <div className="min-w-0">
+          {eyebrow && <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-600">{eyebrow}</p>}
+          <h2 className="text-base sm:text-lg font-extrabold text-slate-900 leading-tight">{title}</h2>
+          {desc && <p className="text-xs text-slate-500 mt-1 leading-relaxed">{desc}</p>}
+        </div>
+      </div>
+      {action && <div className="shrink-0">{action}</div>}
+    </div>
+  );
+}
+
+function Switch({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={onChange}
+      className={`relative w-11 h-6 shrink-0 rounded-full transition-colors cursor-pointer ${checked ? "bg-emerald-500" : "bg-slate-200"}`}
+    >
+      <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-5" : ""}`} />
+    </button>
+  );
+}
+
+function SegmentedMini({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: { v: string; l: string }[] }) {
+  return (
+    <div className="inline-flex p-0.5 rounded-lg bg-slate-100">
+      {options.map((o) => (
+        <button
+          key={o.v}
+          type="button"
+          onClick={() => onChange(o.v)}
+          className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition cursor-pointer ${value === o.v ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+        >
+          {o.l}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Notice({ tone, children, inline }: { tone: "success" | "error" | "warning"; children: React.ReactNode; inline?: boolean }) {
+  const styles = {
+    success: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    error: "bg-red-50 text-red-700 border-red-100",
+    warning: "bg-amber-50 text-amber-800 border-amber-100",
+  }[tone];
+  return (
+    <div className={`${inline ? "inline-flex" : "flex"} items-start gap-2 px-3 py-2 rounded-xl border text-xs font-medium ${styles}`}>
+      <Icon name={tone === "success" ? "check" : "alert"} className="w-4 h-4 shrink-0 mt-px" />
+      <span>{children}</span>
+    </div>
+  );
+}
+
+function EmptyState({ icon, title, text, compact, action }: { icon: IconName; title: string; text: string; compact?: boolean; action?: React.ReactNode }) {
+  return (
+    <div className={`flex flex-col items-center justify-center text-center ${compact ? "py-8" : "py-16 px-6"}`}>
+      <span className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-50 to-cyan-50 border border-emerald-100 text-emerald-500 flex items-center justify-center">
+        <Icon name={icon} className="w-6 h-6" />
+      </span>
+      <h4 className="mt-4 text-sm font-extrabold text-slate-800">{title}</h4>
+      <p className="mt-1 text-xs text-slate-500 max-w-xs leading-relaxed">{text}</p>
+      {action && <div className="mt-4">{action}</div>}
+    </div>
+  );
+}
+
+function CopyField({ label, value, copied, onCopy, masked, extra }: { label: string; value: string; copied: boolean; onCopy: () => void; masked?: boolean; extra?: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <label className={LABEL_CLS}>{label}</label>
+      <div className="flex gap-1.5">
+        <input type={masked ? "password" : "text"} readOnly value={value} className={`${INPUT_CLS} font-mono text-xs select-all`} />
+        {extra}
+        <button
+          type="button"
+          onClick={onCopy}
+          aria-label={`Copy ${label}`}
+          className={`w-9 h-9 shrink-0 self-center rounded-lg border flex items-center justify-center transition cursor-pointer ${copied ? "bg-emerald-500 border-emerald-500 text-white" : "bg-white border-slate-200 text-slate-500 hover:text-slate-800"}`}
+        >
+          <Icon name={copied ? "check" : "copy"} className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const METHOD_BADGES: { match: string[]; label: string; logo: string }[] = [
+  { match: ["bkash", "16247"], label: "bKash", logo: "/logos/bkash.png" },
+  { match: ["nagad", "16167"], label: "Nagad", logo: "/logos/nagad.png" },
+  { match: ["rocket", "16216", "dbbl"], label: "Rocket", logo: "/logos/rocket.png" },
+  { match: ["upay"], label: "Upay", logo: "/logos/upay.png" },
+  { match: ["cellfin"], label: "CellFin", logo: "/logos/cellfin.png" },
+  { match: ["tap"], label: "Tap", logo: "/logos/tap.png" },
+];
+
+function MethodBadge({ address }: { address: string }) {
+  const normalized = (address || "").toLowerCase();
+  const found = METHOD_BADGES.find((b) => b.match.some((m) => normalized.includes(m)));
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span className="w-8 h-8 shrink-0 rounded-lg bg-white border border-slate-200 flex items-center justify-center p-1">
+        {found ? <img src={found.logo} alt={found.label} className="max-h-full max-w-full object-contain" /> : <Icon name="inbox" className="w-4 h-4 text-slate-400" />}
+      </span>
+      <span className="text-xs font-semibold text-slate-700">{found?.label || address || "SMS"}</span>
+    </span>
+  );
+}
+
+function StatusPill({ status }: { status: string }) {
+  const isUnused = status === "unused";
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold capitalize border ${isUnused ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-cyan-50 text-cyan-700 border-cyan-100"}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${isUnused ? "bg-emerald-500" : "bg-cyan-500"}`} />
+      {isUnused ? "Unused" : "Matched"}
+    </span>
+  );
+}
+
+function RawSmsDetails({ tx }: { tx: BkashSmsTx }) {
+  return (
+    <div className="rounded-2xl border border-emerald-100 bg-white p-4 space-y-2">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Raw SMS</p>
+      <p className="text-xs font-mono text-slate-700 leading-relaxed break-words">{tx.rawMessage}</p>
+      <p className="text-[11px] text-slate-400">
+        From <strong className="text-slate-600">{tx.senderAddress}</strong> · {new Date(tx.createdAt).toLocaleString("en-US", { timeZone: "Asia/Dhaka" })}
+      </p>
+    </div>
+  );
+}
+
+const ICON_PATHS = {
+  list: "M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z",
+  settings: "M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75",
+  code: "M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5",
+  phone: "M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3",
+  download: "M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3",
+  upload: "M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5",
+  lock: "M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z",
+  check: "M4.5 12.75l6 6 9-13.5",
+  x: "M6 18L18 6M6 6l12 12",
+  plus: "M12 4.5v15m7.5-7.5h-15",
+  edit: "M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z",
+  trash: "M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0",
+  wallet: "M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3",
+  bank: "M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z",
+  shield: "M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z",
+  key: "M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z",
+  inbox: "M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 00-2.15-1.588H6.911a2.25 2.25 0 00-2.15 1.588L2.35 13.177a2.25 2.25 0 00-.1.661z",
+  bolt: "M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z",
+  cash: "M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z",
+  search: "M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z",
+  chevron: "M19.5 8.25l-7.5 7.5-7.5-7.5",
+  qr: "M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5zM6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z",
+  sparkles: "M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z",
+  receipt: "M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0c1.1.128 1.907 1.077 1.907 2.185z",
+  beaker: "M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5",
+  external: "M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25",
+  copy: "M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75",
+  eye: "M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178zM15 12a3 3 0 11-6 0 3 3 0 016 0z",
+  eyeOff: "M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88",
+  alert: "M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z",
+  flow: "M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z",
+} as const;
+
+type IconName = keyof typeof ICON_PATHS;
+
+function Icon({ name, className = "w-5 h-5" }: { name: IconName; className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d={ICON_PATHS[name]} />
+    </svg>
   );
 }

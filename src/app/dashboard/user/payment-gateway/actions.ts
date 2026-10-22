@@ -83,6 +83,45 @@ export async function saveBrandingSettings(formData: FormData) {
   return { success: true, brandLogo };
 }
 
+const MAX_QR_BYTES = 2 * 1024 * 1024;
+
+export async function saveBkashMerchantSettings(formData: FormData) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const bkashType = formData.get("bkashType") === "merchant" ? "merchant" : "personal";
+  let bkashQr = ((formData.get("bkashQr") as string) || "").trim();
+
+  const qrFile = formData.get("qrFile") as File | null;
+  if (qrFile && qrFile.size > 0) {
+    if (!qrFile.type.startsWith("image/")) {
+      throw new Error("QR code must be an image file (PNG, JPG or WEBP).");
+    }
+    if (qrFile.size > MAX_QR_BYTES) {
+      throw new Error("QR code image must be 2MB or smaller.");
+    }
+    try {
+      const buffer = Buffer.from(await qrFile.arrayBuffer());
+      bkashQr = await uploadToImageKit(buffer.toString("base64"), `bkash-qr-${userId}-${qrFile.name}`);
+    } catch (err: any) {
+      throw new Error(`Failed to upload QR code: ${err.message || err}`);
+    }
+  } else if (bkashQr && !/^https:\/\//i.test(bkashQr)) {
+    throw new Error("QR code URL must start with https://");
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      codepayBkashType: bkashType,
+      codepayBkashQr: bkashQr || null,
+    },
+  });
+
+  revalidatePath("/dashboard/user/payment-gateway");
+  return { success: true, bkashType, bkashQr };
+}
+
 export async function generateGatewayKeys() {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
