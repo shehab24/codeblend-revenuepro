@@ -1,103 +1,122 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
+import { ChevronDownIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import { MobileMenu } from "./MobileMenu";
+import { LocaleSwitcher } from "./marketing/LocaleSwitcher";
+import { BTN, BrandMark, IconBadge, PILLAR_TONE, PRODUCT_TONE } from "./marketing/ui";
+import { PILLAR_HREF, PILLAR_ICONS, PILLAR_KEYS, PRODUCT_HREF, PRODUCT_ICONS, PRODUCT_KEYS } from "./marketing/icons";
+import { getI18n } from "@/lib/i18n/server";
+
+function Dropdown({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="relative group py-2">
+      <button className="flex items-center gap-1 text-sm font-medium text-slate-600 transition-colors hover:text-slate-900 group-focus-within:text-slate-900 cursor-pointer">
+        {label}
+        <ChevronDownIcon className="h-3.5 w-3.5 text-slate-400 transition-transform duration-200 group-hover:rotate-180" strokeWidth={2.5} />
+      </button>
+      <div className="pointer-events-none absolute left-1/2 top-full z-50 -translate-x-1/2 translate-y-2 pt-2 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+        <div className="w-72 rounded-2xl border border-slate-100 bg-white p-2 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function DropdownItem({
+  href,
+  title,
+  desc,
+  icon,
+}: {
+  href: string;
+  title: string;
+  desc: string;
+  icon: React.ReactNode;
+}) {
+  return (
+    <Link href={href} className="flex items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-slate-50">
+      {icon}
+      <span>
+        <span className="block text-sm font-semibold text-slate-800">{title}</span>
+        <span className="mt-0.5 block text-xs text-slate-500">{desc}</span>
+      </span>
+    </Link>
+  );
+}
 
 export async function MarketingNavbar() {
   const { userId } = await auth();
+  const { t } = await getI18n();
+  const c = t.common;
 
   return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-slate-100">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        {/* Logo */}
+    <header className="sticky top-0 z-50 border-b border-slate-200/60 bg-white/75 backdrop-blur-xl backdrop-saturate-150">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
         <Link href="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-emerald-200">
-            C
-          </div>
-          <div>
-            <span className="text-xl font-bold text-slate-900">CodeBlend</span>
-            <span className="block text-xs text-slate-400 -mt-1">Digital Solutions</span>
-          </div>
+          <BrandMark />
+          <span>
+            <span className="block text-lg font-semibold leading-tight tracking-tight text-slate-950">CodeBlend</span>
+            <span className="block text-[11px] leading-tight text-slate-400">{c.brandTagline}</span>
+          </span>
         </Link>
 
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-8">
-          {/* Products Dropdown */}
-          <div className="relative group py-2">
-            <button className="flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors cursor-pointer focus:outline-none">
-              Products
-              <svg
-                className="w-3.5 h-3.5 transition-transform duration-200 group-hover:rotate-180 text-slate-400 group-hover:text-emerald-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            <div className="absolute left-1/2 -translate-x-1/2 top-full pt-2 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200 ease-out z-50">
-              <div className="w-64 bg-white rounded-2xl border border-slate-100/90 shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-2 grid gap-1">
-                <Link
-                  href="/revenuepro"
-                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-emerald-50/60 transition-all group/item"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100/50 flex items-center justify-center text-base shrink-0 group-hover/item:scale-105 transition-transform duration-150">
-                    🛡️
-                  </div>
-                  <div>
-                    <span className="block text-sm font-semibold text-slate-800 group-hover/item:text-emerald-700 transition-colors">Revenue Pro</span>
-                    <span className="block text-[10px] text-slate-400 mt-0.5">WooCommerce Fraud Blocker</span>
-                  </div>
-                </Link>
+        <nav className="hidden items-center gap-7 lg:flex">
+          <Dropdown label={c.nav.services}>
+            {PILLAR_KEYS.map((key) => {
+              const Icon = PILLAR_ICONS[key];
+              return (
+                <DropdownItem
+                  key={key}
+                  href={PILLAR_HREF[key]}
+                  title={c.serviceMenu[key].title}
+                  desc={c.serviceMenu[key].desc}
+                  icon={<IconBadge tone={PILLAR_TONE[key]} size="sm"><Icon className="h-4 w-4" /></IconBadge>}
+                />
+              );
+            })}
+            <Link href="/services" className="mt-1 flex items-center justify-between rounded-xl border-t border-slate-100 px-3 py-2.5 text-xs font-semibold text-slate-600 hover:text-slate-900">
+              {c.serviceMenu.all}
+              <ArrowRightIcon className="h-3.5 w-3.5" />
+            </Link>
+          </Dropdown>
 
-                <Link
-                  href="/codepay"
-                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-teal-50/60 transition-all group/item"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-teal-50 border border-teal-100/50 flex items-center justify-center text-base shrink-0 group-hover/item:scale-105 transition-transform duration-150">
-                    💳
-                  </div>
-                  <div>
-                    <span className="block text-sm font-semibold text-slate-800 group-hover/item:text-emerald-700 transition-colors">Code Pay</span>
-                    <span className="block text-[10px] text-slate-400 mt-0.5">MFS Payment Gateway</span>
-                  </div>
-                </Link>
+          <Dropdown label={c.nav.products}>
+            {PRODUCT_KEYS.map((key) => {
+              const Icon = PRODUCT_ICONS[key];
+              return (
+                <DropdownItem
+                  key={key}
+                  href={PRODUCT_HREF[key]}
+                  title={c.productMenu[key].title}
+                  desc={c.productMenu[key].desc}
+                  icon={<IconBadge tone={PRODUCT_TONE[key]} size="sm"><Icon className="h-4 w-4" /></IconBadge>}
+                />
+              );
+            })}
+            <Link href="/features" className="mt-1 flex items-center justify-between rounded-xl border-t border-slate-100 px-3 py-2.5 text-xs font-semibold text-slate-600 hover:text-slate-900">
+              {c.nav.features}
+              <ArrowRightIcon className="h-3.5 w-3.5" />
+            </Link>
+          </Dropdown>
 
-                <Link
-                  href="/expense-tracker"
-                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-indigo-50/60 transition-all group/item"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100/50 flex items-center justify-center text-base shrink-0 group-hover/item:scale-105 transition-transform duration-150">
-                    📊
-                  </div>
-                  <div>
-                    <span className="block text-sm font-semibold text-slate-800 group-hover/item:text-emerald-700 transition-colors">Expense Tracker</span>
-                    <span className="block text-[10px] text-slate-400 mt-0.5">Automated Cashflow Ledger</span>
-                  </div>
-                </Link>
-              </div>
-            </div>
-          </div>
-          <Link href="/services" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Services</Link>
-          <Link href="/features" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Features</Link>
-          <Link href="/pricing" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Pricing</Link>
-          <Link href="/fraud-check" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Fraud Check</Link>
+          <Link href="/pricing" className="text-sm font-medium text-slate-600 transition-colors hover:text-slate-900">
+            {c.nav.pricing}
+          </Link>
+          <Link href="/fraud-check" className="text-sm font-medium text-slate-600 transition-colors hover:text-slate-900">
+            {c.nav.fraudCheck}
+          </Link>
         </nav>
 
-        {/* Desktop CTA */}
-        <div className="hidden md:flex items-center gap-3">
-          {!userId ? (
-            <Link href="/sign-in" className="px-5 py-2.5 bg-emerald-500 text-white rounded-full text-sm font-semibold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-200 hover:shadow-emerald-300">
-              Get Started →
-            </Link>
-          ) : (
-            <Link href="/dashboard" className="px-5 py-2.5 bg-emerald-500 text-white rounded-full text-sm font-semibold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-200 hover:shadow-emerald-300">
-              Dashboard →
-            </Link>
-          )}
+        <div className="hidden items-center gap-3 lg:flex">
+          <LocaleSwitcher />
+          <Link
+            href={userId ? "/dashboard" : "/sign-in"}
+            className={`${BTN.primary} !px-5 !py-2.5`}
+          >
+            {userId ? c.nav.dashboard : c.nav.getStarted}
+            <ArrowRightIcon className="h-3.5 w-3.5" />
+          </Link>
         </div>
 
-        {/* Mobile Hamburger + Slide Drawer */}
         <MobileMenu isLoggedIn={!!userId} />
       </div>
     </header>

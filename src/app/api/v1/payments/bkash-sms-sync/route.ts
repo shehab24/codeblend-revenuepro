@@ -8,6 +8,20 @@ interface SmsMessage {
   sender: string;
   body: string;
   timestamp?: number;
+  // Pre-parsed bKash format sent by the Android app: "money_received" | "payment_received" | "payment_sent"
+  kind?: string;
+}
+
+const INCOMING_KINDS = ["money_received", "payment_received"];
+
+/**
+ * Only money the merchant RECEIVED can verify a CodePay order.
+ * Outgoing SMS (Send Money, Cash Out, "Payment of Tk X to MERCHANT") must never be saved,
+ * otherwise the recipient number/TrxID of the merchant's own spending could verify an order.
+ */
+function isIncomingSms(sms: SmsMessage): boolean {
+  if (sms.kind) return INCOMING_KINDS.includes(sms.kind);
+  return /receiv|cash\s*in/i.test(sms.body);
 }
 
 export async function POST(request: Request) {
@@ -78,6 +92,11 @@ export async function POST(request: Request) {
       const isAllowed = allowedSenders.some(allowed => normalizedSender.includes(allowed));
       if (!isAllowed) {
         console.log(`[SMS Sync] Skipping non-allowed sender address: ${sender}`);
+        continue;
+      }
+
+      if (!isIncomingSms(sms)) {
+        console.log(`[SMS Sync] Skipping outgoing transaction SMS (kind: ${sms.kind || "detected from body"}) from ${sender}`);
         continue;
       }
 
@@ -234,7 +253,10 @@ function parseFinancialSms(message: string, senderName: string) {
   let sender = "";
 
   // 1. Find TrxID (alphanumeric, typically 6-20 characters, e.g. 8N34KJL98S or Ref id)
-  const trxMatch = message.match(/(?:TrxID|TxnID|TxID|TnxID|Txn\s*ID|Tx\s*ID|Tnx\s*ID|Transaction\s*ID|Ref\s*ID|Ref|Txn|Trx)\s*:?\s*([A-Z0-9]{6,20})/i);
+  // Explicit transaction ID labels are checked first so a customer-typed "Ref order12" isn't taken as the TrxID
+  const trxMatch =
+    message.match(/(?:TrxID|TxnID|TxID|TnxID|Txn\s*ID|Tx\s*ID|Tnx\s*ID|Transaction\s*ID)\s*:?\s*([A-Z0-9]{6,20})/i) ||
+    message.match(/(?:Ref\s*ID|Ref|Txn|Trx)\s*:?\s*([A-Z0-9]{6,20})/i);
   if (trxMatch) {
     trxId = trxMatch[1].toUpperCase().trim();
   }

@@ -1,9 +1,18 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { CheckIcon, XMarkIcon, ClipboardDocumentCheckIcon } from "@heroicons/react/24/outline";
 import { submitLead } from "@/actions/leadActions";
 import { trackFBEvent } from "@/components/FacebookPixel";
+import { useLocale } from "@/components/marketing/LocaleProvider";
+
+// Service types that also ask for the customer's website.
+const NEEDS_WEBSITE = ["Free Trial", "Monthly Plan", "Quarterly Plan", "Get Started"];
+
+const inputClass =
+  "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/10";
 
 export function LeadCTAButton({
   children,
@@ -14,6 +23,8 @@ export function LeadCTAButton({
   className?: string;
   serviceType?: string;
 }) {
+  const { common } = useLocale();
+  const t = common.lead;
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -25,14 +36,6 @@ export function LeadCTAButton({
     document.body.style.overflow = isOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
-
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleClose();
-    };
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -63,123 +66,71 @@ export function LeadCTAButton({
     }, 300);
   };
 
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, []);
+
   const modal = isOpen ? (
     <>
-      {/* Full-screen Backdrop */}
-      <div
-        onClick={handleClose}
-        style={{
-          position: "fixed", inset: 0,
-          backgroundColor: "rgba(15, 23, 42, 0.6)",
-          backdropFilter: "blur(4px)", zIndex: 99998,
-        }}
-      />
+      <div onClick={handleClose} className="fixed inset-0 z-[99998] bg-slate-900/60 backdrop-blur-sm" />
 
-      {/* Centered Modal */}
-      <div
-        style={{
-          position: "fixed", inset: 0, zIndex: 99999,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          padding: "16px", pointerEvents: "none",
-        }}
-      >
+      <div className="pointer-events-none fixed inset-0 z-[99999] flex items-center justify-center p-4">
         <div
-          style={{
-            pointerEvents: "auto", backgroundColor: "white",
-            borderRadius: "24px",
-            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-            width: "100%", maxWidth: "480px", maxHeight: "90vh",
-            overflowY: "auto", position: "relative",
-          }}
+          role="dialog"
+          aria-modal="true"
+          className="pointer-events-auto relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white shadow-2xl"
         >
-          {/* Close */}
           <button
             onClick={handleClose}
-            style={{
-              position: "absolute", top: "16px", right: "16px",
-              width: "32px", height: "32px", display: "flex",
-              alignItems: "center", justifyContent: "center",
-              borderRadius: "50%", border: "none", background: "transparent",
-              color: "#94a3b8", fontSize: "18px", cursor: "pointer",
-            }}
+            aria-label={t.close}
+            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 cursor-pointer"
           >
-            ✕
+            <XMarkIcon className="h-5 w-5" />
           </button>
 
-          <div style={{ padding: "32px" }}>
-            {/* ── SUCCESS ── */}
-            {status === "success" && (
-              <div style={{ textAlign: "center", padding: "20px 0" }}>
-                <div style={{
-                  width: "64px", height: "64px", backgroundColor: "#d1fae5",
-                  color: "#10b981", borderRadius: "50%", display: "flex",
-                  alignItems: "center", justifyContent: "center",
-                  margin: "0 auto 16px", fontSize: "28px",
-                }}>
-                  ✓
+          <div className="p-7 sm:p-8">
+            {status === "success" ? (
+              <div className="py-4 text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                  <CheckIcon className="h-8 w-8" strokeWidth={2.5} />
                 </div>
-                <h3 style={{ fontSize: "20px", fontWeight: 700, color: "#0f172a", marginBottom: "12px" }}>
-                  আপনার আবেদনটি সফল হয়েছে
-                </h3>
-                <p style={{ color: "#64748b", fontSize: "14px", lineHeight: 1.7, marginBottom: "6px" }}>
-                  আপনার ইমেইলে একটি ইমেইল পাঠানো হয়েছে। অনুগ্রহ করে ইনবক্স চেক করুন এবং আবেদন-এর স্ট্যাটাস জানতে লগইন করুন।
+                <h3 className="mb-3 text-xl font-bold text-slate-900">{t.successTitle}</h3>
+                <p className="mb-2 text-sm leading-relaxed text-slate-500">{t.successBody}</p>
+                <p className="mb-7 text-xs text-slate-400">
+                  {t.service}: <strong className="text-slate-700">{serviceType}</strong>
                 </p>
-                <p style={{ color: "#94a3b8", fontSize: "13px", marginBottom: "28px" }}>
-                  সার্ভিস: <strong style={{ color: "#334155" }}>{serviceType}</strong>
-                </p>
-                <a
+                <Link
                   href="/sign-in"
-                  style={{
-                    display: "block", width: "100%",
-                    backgroundColor: "#10b981", color: "white",
-                    padding: "14px 32px", borderRadius: "12px",
-                    fontWeight: 700, fontSize: "15px", textAlign: "center",
-                    textDecoration: "none", marginBottom: "12px",
-                    boxSizing: "border-box",
-                  }}
+                  className="mb-3 block w-full rounded-xl bg-emerald-600 py-3.5 text-center text-sm font-bold text-white hover:bg-emerald-700"
                 >
-                  🚀 লগইন করুন
-                </a>
+                  {t.signIn}
+                </Link>
                 <button
                   onClick={handleClose}
-                  style={{
-                    width: "100%", backgroundColor: "transparent",
-                    color: "#64748b", padding: "10px", borderRadius: "12px",
-                    fontWeight: 600, border: "1px solid #e2e8f0",
-                    cursor: "pointer", fontSize: "14px",
-                  }}
+                  className="w-full rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
                 >
-                  বন্ধ করুন
+                  {t.close}
                 </button>
               </div>
-            )}
-
-            {/* ── FORM ── */}
-            {(status === "idle" || status === "loading" || status === "error") && (
+            ) : (
               <>
-                <div style={{ textAlign: "center", marginBottom: "28px" }}>
-                  <h2 style={{ fontSize: "22px", fontWeight: 800, color: "#0f172a", marginBottom: "8px", marginTop: "8px", lineHeight: 1.3 }}>
-                    আপনার ই-কমার্স লস আজই বন্ধ করুন
-                  </h2>
-                  <p style={{ color: "#64748b", fontWeight: 500, fontSize: "14px" }}>
-                    আপনার ব্যবসার জন্য সঠিক Automation Solution জানুন
-                  </p>
+                <div className="mb-6 pr-6">
+                  <h2 className="text-xl font-extrabold leading-snug text-slate-900 sm:text-2xl">{t.title}</h2>
+                  <p className="mt-1.5 text-sm text-slate-500">{t.subtitle}</p>
                 </div>
 
-                {/* Show which service they're requesting */}
-                <div style={{
-                  backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0",
-                  borderRadius: "12px", padding: "10px 16px", marginBottom: "20px",
-                  display: "flex", alignItems: "center", gap: "8px",
-                }}>
-                  <span style={{ fontSize: "16px" }}>📋</span>
-                  <span style={{ color: "#166534", fontSize: "13px", fontWeight: 600 }}>
-                    সার্ভিস: {serviceType}
+                <div className="mb-5 flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-2.5">
+                  <ClipboardDocumentCheckIcon className="h-4 w-4 text-emerald-600" />
+                  <span className="text-xs font-semibold text-emerald-800">
+                    {t.service}: {serviceType}
                   </span>
                 </div>
 
-                <form onSubmit={handleSubmit}>
-                  {/* Hidden serviceType field */}
+                <form onSubmit={handleSubmit} className="space-y-4">
                   <input type="hidden" name="serviceType" value={serviceType} />
 
                   {/* ── ANTI-SPAM HONEYPOT ── */}
@@ -188,78 +139,45 @@ export function LeadCTAButton({
                     <input type="text" id="website_url" name="website_url" tabIndex={-1} autoComplete="off" />
                   </div>
 
-                  <div style={{ marginBottom: "16px" }}>
-                    <label style={{ display: "block", color: "#334155", fontWeight: 500, marginBottom: "6px", fontSize: "14px" }}>
-                      পুরো নাম <span style={{ color: "#f43f5e" }}>*</span>
+                  <label className="block">
+                    <span className="mb-1.5 block text-sm font-medium text-slate-700">
+                      {t.name} <span className="text-rose-500">*</span>
+                    </span>
+                    <input type="text" name="name" required placeholder={t.namePlaceholder} className={inputClass} />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1.5 block text-sm font-medium text-slate-700">
+                      {t.email} <span className="text-rose-500">*</span>
+                    </span>
+                    <input type="email" name="email" required placeholder="you@company.com" className={inputClass} />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1.5 block text-sm font-medium text-slate-700">
+                      {t.phone} <span className="text-rose-500">*</span>
+                    </span>
+                    <input type="tel" name="phone" required placeholder="+880 1XXX-XXXXXX" className={inputClass} />
+                  </label>
+                  {NEEDS_WEBSITE.includes(serviceType) && (
+                    <label className="block">
+                      <span className="mb-1.5 block text-sm font-medium text-slate-700">
+                        {t.website} <span className="text-rose-500">*</span>
+                      </span>
+                      <input type="url" name="websiteUrl" required placeholder="https://yourwebsite.com" className={inputClass} />
                     </label>
-                    <input
-                      type="text" name="name" required
-                      placeholder="আপনার পুরো নাম লিখুন"
-                      style={{ width: "100%", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "12px 16px", color: "#1e293b", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
-                    />
-                  </div>
-                  <div style={{ marginBottom: "16px" }}>
-                    <label style={{ display: "block", color: "#334155", fontWeight: 500, marginBottom: "6px", fontSize: "14px" }}>
-                      ইমেইল <span style={{ color: "#f43f5e" }}>*</span>
-                    </label>
-                    <input
-                      type="email" name="email" required
-                      placeholder="your@email.com"
-                      style={{ width: "100%", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "12px 16px", color: "#1e293b", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
-                    />
-                  </div>
-                   <div style={{ marginBottom: "16px" }}>
-                    <label style={{ display: "block", color: "#334155", fontWeight: 500, marginBottom: "6px", fontSize: "14px" }}>
-                      ফোন নম্বর <span style={{ color: "#f43f5e" }}>*</span>
-                    </label>
-                    <input
-                      type="tel" name="phone" required
-                      placeholder="+880 1XXX-XXXXXX"
-                      style={{ width: "100%", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "12px 16px", color: "#1e293b", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
-                    />
-                  </div>
-                  {["Free Trial", "Monthly Plan", "Quarterly Plan", "Get Started"].includes(serviceType) && (
-                    <div style={{ marginBottom: "16px" }}>
-                      <label style={{ display: "block", color: "#334155", fontWeight: 500, marginBottom: "6px", fontSize: "14px" }}>
-                        Website URL <span style={{ color: "#f43f5e" }}>*</span>
-                      </label>
-                      <input
-                        type="url" name="websiteUrl" required
-                        placeholder="https://yourwebsite.com"
-                        style={{ width: "100%", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "12px 16px", color: "#1e293b", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
-                      />
-                    </div>
                   )}
-                  <div style={{ marginBottom: "16px" }}>
-                    <label style={{ display: "block", color: "#334155", fontWeight: 500, marginBottom: "6px", fontSize: "14px" }}>
-                      মেসেজ
-                    </label>
-                    <textarea
-                      name="message" rows={3}
-                      placeholder="আপনার মেসেজ পাঠান"
-                      style={{ width: "100%", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "12px 16px", color: "#1e293b", fontSize: "14px", outline: "none", resize: "none", boxSizing: "border-box" }}
-                    />
-                  </div>
+                  <label className="block">
+                    <span className="mb-1.5 block text-sm font-medium text-slate-700">{t.message}</span>
+                    <textarea name="message" rows={3} placeholder={t.messagePlaceholder} className={`${inputClass} resize-none`} />
+                  </label>
 
-                  {status === "error" && (
-                    <div style={{ color: "#f43f5e", fontSize: "13px", fontWeight: 500, marginBottom: "8px" }}>
-                      {errorMessage}
-                    </div>
-                  )}
+                  {status === "error" && <p className="text-sm font-medium text-rose-500">{errorMessage}</p>}
 
                   <button
                     type="submit"
                     disabled={status === "loading"}
-                    style={{
-                      backgroundColor: status === "loading" ? "#cbd5e1" : "#ff4e00",
-                      color: "white", padding: "14px 24px", borderRadius: "12px",
-                      fontWeight: 700, border: "none",
-                      cursor: status === "loading" ? "not-allowed" : "pointer",
-                      marginTop: "8px", fontSize: "15px",
-                      width: "auto", minWidth: "180px",
-                    }}
+                    className="w-full rounded-xl bg-slate-900 py-3.5 text-sm font-bold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300 cursor-pointer"
                   >
-                    {status === "loading" ? "অপেক্ষা করুন..." : "আবেদন জমা দিন"}
+                    {status === "loading" ? t.submitting : t.submit}
                   </button>
                 </form>
               </>

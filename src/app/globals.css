@@ -146,3 +146,77 @@
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+
+/* ═══════════════════════════════════════════════
+   Marketing design system helpers
+   ═══════════════════════════════════════════════ */
+
+/* Scroll-reveal using scroll-driven animations. Browsers without support
+   (or users preferring reduced motion) simply see the content. */
+@keyframes cb-reveal {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .cb-reveal {
+      animation: cb-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+  }
+}
+
+/* Fine grid background, faded towards the edges */
+.cb-grid {
+  background-image:
+    linear-gradient(to right, rgb(15 23 42 / 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(15 23 42 / 0.06) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 40%, transparent 100%);
+}
+.cb-grid-dark {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 60% 70% at 50% 0%, #000 30%, transparent 100%);
+}
+
+/* 1px gradient border for highlighted cards */
+.cb-gradient-border {
+  position: relative;
+  isolation: isolate;
+}
+.cb-gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgb(52 211 153 / 0.7), rgb(255 255 255 / 0.08) 40%, rgb(56 189 248 / 0.5));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Soft fade at both ends of a horizontal marquee */
+.cb-fade-x {
+  mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+}
+
+/* Bangla headings: Anek Bangla display face at a heavier weight, normal tracking
+   (Bengali conjuncts collide with negative tracking) and a slightly taller line. */
+:lang(bn) :is(h1, h2, h3, h4, dt) {
+  font-family: var(--font-geist-sans), var(--font-bangla-display), var(--font-bangla), sans-serif;
+  letter-spacing: normal;
+  line-height: 1.18;
+}
+:lang(bn) :is(h1, h2) {
+  font-weight: 700;
+}
+:lang(bn) :is(h3, h4, dt) {
+  font-weight: 650;
+}
