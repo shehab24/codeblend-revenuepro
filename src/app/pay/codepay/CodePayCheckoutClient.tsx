@@ -543,84 +543,96 @@ export default function CodePayCheckoutClient({ payment, merchant }: CodePayChec
           {/* Step 3: Send Money / Merchant Payment instructions & verification inputs */}
           {step === 3 && (
             <div className="space-y-5">
-              <ol className="space-y-2.5 text-[13px] text-slate-600 leading-snug">
-                {(isBkashMerchant
-                  ? [
-                      <>Open your <strong className="text-slate-900">bKash</strong> app.</>,
-                      merchantQr
-                        ? <>Tap <strong className="text-slate-900">Scan QR</strong> and scan the code below, or choose <strong className="text-slate-900">Payment</strong> and enter the merchant number.</>
-                        : <>Choose <strong className="text-slate-900">Payment</strong> and enter the merchant number below.</>,
-                      <>Pay exactly <strong className="text-slate-900">৳{payment.amount.toFixed(2)}</strong> and confirm with your PIN.</>,
-                    ]
-                  : [
-                      <>Open your <strong className="text-slate-900">{activeMethodConfig.label}</strong> app or dial the USSD code.</>,
-                      <>Choose <strong className="text-slate-900">Send Money</strong>.</>,
-                      <>Send exactly <strong className="text-slate-900">৳{payment.amount.toFixed(2)}</strong> to the number below.</>,
-                    ]
-                ).map((content, i) => (
-                  <li key={i} className="flex gap-3 items-start">
-                    <span
-                      className="w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-[10px] font-black"
-                      style={{ backgroundColor: activeMethodConfig.soft, color: activeMethodConfig.accent }}
-                    >
-                      {i + 1}
-                    </span>
-                    <span className="pt-px">{content}</span>
-                  </li>
-                ))}
-              </ol>
+              {merchantQr ? (
+                /* bKash merchant with QR: one short instruction, large QR, compact actions */
+                <div className="text-center">
+                  <p className="text-sm font-extrabold text-slate-900">Scan with your bKash app</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Pay exactly <strong className="text-slate-900">৳{payment.amount.toFixed(2)}</strong>
+                    {isWithTrxMode && ", then enter the TrxID below"}
+                  </p>
 
-              {/* Merchant QR code (bKash merchant accounts only) */}
-              {merchantQr && (
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm text-center">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Scan to pay</span>
-                    <span
-                      className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                  <div className="mt-4 mx-auto w-full max-w-[280px] aspect-square rounded-3xl bg-white p-2 ring-1 ring-slate-200 shadow-[0_12px_30px_-12px_rgba(15,23,42,0.25)]">
+                    <img src={merchantQr} alt={`${displayName} bKash merchant QR code`} className="w-full h-full object-cover rounded-2xl" />
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-center gap-2">
+                    <a
+                      href={qrDownloadUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download
+                      title="Save the QR, then use “Scan from gallery” in the bKash app"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition hover:brightness-95"
                       style={{ backgroundColor: activeMethodConfig.soft, color: activeMethodConfig.accent }}
                     >
-                      bKash Merchant
-                    </span>
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Save QR
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(activeMethodNumber || "", "number")}
+                      className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold ring-1 transition cursor-pointer ${
+                        copiedField === "number" ? "bg-emerald-500 text-white ring-emerald-500" : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      <span className="font-mono tracking-wide">{copiedField === "number" ? "Copied!" : activeMethodNumber}</span>
+                      {copiedField !== "number" && (
+                        <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      )}
+                    </button>
                   </div>
+                </div>
+              ) : (
+                <>
+                  <ol className="space-y-2.5 text-[13px] text-slate-600 leading-snug">
+                    {(isBkashMerchant
+                      ? [
+                          <>Open your <strong className="text-slate-900">bKash</strong> app and choose <strong className="text-slate-900">Payment</strong>.</>,
+                          <>Enter the merchant number below.</>,
+                          <>Pay exactly <strong className="text-slate-900">৳{payment.amount.toFixed(2)}</strong> and confirm with your PIN.</>,
+                        ]
+                      : [
+                          <>Open your <strong className="text-slate-900">{activeMethodConfig.label}</strong> app or dial the USSD code.</>,
+                          <>Choose <strong className="text-slate-900">Send Money</strong>.</>,
+                          <>Send exactly <strong className="text-slate-900">৳{payment.amount.toFixed(2)}</strong> to the number below.</>,
+                        ]
+                    ).map((content, i) => (
+                      <li key={i} className="flex gap-3 items-start">
+                        <span
+                          className="w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-[10px] font-black"
+                          style={{ backgroundColor: activeMethodConfig.soft, color: activeMethodConfig.accent }}
+                        >
+                          {i + 1}
+                        </span>
+                        <span className="pt-px">{content}</span>
+                      </li>
+                    ))}
+                  </ol>
+
+                  {/* Recipient wallet number to copy */}
                   <div
-                    className="mx-auto w-44 h-44 max-w-full rounded-2xl p-2 bg-white"
-                    style={{ boxShadow: `0 0 0 2px ${activeMethodConfig.accent}` }}
+                    className="rounded-2xl border border-dashed p-4 flex items-center justify-between gap-3"
+                    style={{ borderColor: activeMethodConfig.accent, backgroundColor: activeMethodConfig.soft }}
                   >
-                    <img src={merchantQr} alt={`${displayName} bKash merchant QR code`} className="w-full h-full object-contain" />
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                        {isBkashMerchant ? "Merchant number" : "Send money to"}
+                      </span>
+                      <span className="text-xl font-black text-slate-900 font-mono tracking-wider break-all">{activeMethodNumber}</span>
+                    </div>
+                    <CopyButton
+                      theme={activeMethodConfig}
+                      copied={copiedField === "number"}
+                      onCopy={() => copyToClipboard(activeMethodNumber || "", "number")}
+                    />
                   </div>
-                  <a
-                    href={qrDownloadUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    download
-                    className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-bold transition hover:opacity-80"
-                    style={{ color: activeMethodConfig.accent }}
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    On this phone? Save QR → &quot;Scan from gallery&quot;
-                  </a>
-                </div>
+                </>
               )}
-
-              {/* Recipient wallet number to copy */}
-              <div
-                className="rounded-2xl border border-dashed p-4 flex items-center justify-between gap-3"
-                style={{ borderColor: activeMethodConfig.accent, backgroundColor: activeMethodConfig.soft }}
-              >
-                <div className="min-w-0">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
-                    {isBkashMerchant ? "Merchant number" : "Send money to"}
-                  </span>
-                  <span className="text-xl font-black text-slate-900 font-mono tracking-wider break-all">{activeMethodNumber}</span>
-                </div>
-                <CopyButton
-                  theme={activeMethodConfig}
-                  copied={copiedField === "number"}
-                  onCopy={() => copyToClipboard(activeMethodNumber || "", "number")}
-                />
-              </div>
 
               {isWithTrxMode && (
                 <div className="space-y-2">
