@@ -4,81 +4,99 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
+import {
+  ArrowLeftStartOnRectangleIcon,
+  ArrowTopRightOnSquareIcon,
+  Bars3Icon,
+  BuildingStorefrontIcon,
+  ChartPieIcon,
+  ChatBubbleLeftRightIcon,
+  ChevronDoubleLeftIcon,
+  ChevronDoubleRightIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  ClipboardDocumentListIcon,
+  CloudArrowDownIcon,
+  Cog6ToothIcon,
+  CreditCardIcon,
+  DevicePhoneMobileIcon,
+  DocumentTextIcon,
+  ExclamationTriangleIcon,
+  KeyIcon,
+  MagnifyingGlassIcon,
+  PlayCircleIcon,
+  PlusIcon,
+  ShieldCheckIcon,
+  Squares2X2Icon,
+  UserCircleIcon,
+  UsersIcon,
+  WalletIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 
-type NavLink = { href: string; label: string; icon: React.ReactNode };
+type IconType = React.ComponentType<{ className?: string }>;
+type NavLink = { href: string; label: string; icon: IconType; exact?: boolean };
+type NavSection = { section: string; links: NavLink[] };
 
-/* ── SVG Icons ── */
-const Icon = {
-  Dashboard: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" /></svg>,
-  Users: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>,
-  Key: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" /></svg>,
-  Shield: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>,
-  Search: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>,
-  CreditCard: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>,
-  Settings: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93s.844.083 1.17-.188l.672-.558a1.123 1.123 0 011.563.06l.774.774a1.123 1.123 0 01.06 1.563l-.558.672c-.271.326-.305.776-.188 1.17s.506.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.384-.93.78s-.083.844.188 1.17l.558.672a1.123 1.123 0 01-.06 1.563l-.774.774a1.123 1.123 0 01-1.563.06l-.672-.558c-.326-.271-.776-.305-1.17-.188s-.71.506-.78.93l-.15.894c-.09.542-.56.94-1.109.94h-1.094c-.55 0-1.02-.398-1.11-.94l-.148-.894c-.071-.424-.385-.764-.781-.93s-.844-.083-1.17.188l-.672.558a1.123 1.123 0 01-1.563-.06l-.774-.774a1.123 1.123 0 01-.06-1.563l.558-.672c.271-.326.305-.776.188-1.17s-.506-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.764-.383.93-.78s.083-.843-.188-1.17l-.558-.671a1.123 1.123 0 01.06-1.563l.774-.774a1.123 1.123 0 011.563-.06l.672.558c.325.271.776.305 1.17.188s.71-.506.78-.93l.148-.894z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-  Collapse: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" /></svg>,
-  Expand: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" /></svg>,
-  Help: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" /></svg>,
-  Profile: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>,
-  Bug: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 12.75c1.148 0 2.278.08 3.383.237 1.037.146 1.866.966 1.866 2.013 0 3.728-2.35 6.75-5.25 6.75S6.75 18.728 6.75 15c0-1.046.83-1.867 1.866-2.013A24.204 24.204 0 0112 12.75zm0 0c2.883 0 5.647.508 8.207 1.44a23.91 23.91 0 01-1.152-6.135 3.31 3.31 0 00-.538-.515A8.962 8.962 0 0012 5.25a8.962 8.962 0 00-6.517 2.79 3.31 3.31 0 00-.538.515 23.91 23.91 0 01-1.152 6.135A24.087 24.087 0 0112 12.75z" /></svg>,
-  Logout: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></svg>,
-  ChevronDown: <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>,
-  ClipboardList: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>,
-  PlusCircle: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
-  CloudDownload: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" /></svg>,
-  PlayCircle: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" /></svg>,
-  ExpenseTracker: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" /><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" /></svg>,
-  Showcase: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v16.5m10.5-12a3 3 0 11-6 0 3 3 0 016 0zm-3 7.5A6.75 6.75 0 005.25 15h13.5A6.75 6.75 0 0012 10.5z" /></svg>,
-  PaymentGateway: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v14a2 2 0 01-2 2z" /></svg>,
-  Invoices: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5-3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>,
-};
-
-const adminLinks: { section: string; links: NavLink[] }[] = [
+const adminSections: NavSection[] = [
   {
-    section: "YOUR WORKSPACE",
+    section: "Overview",
+    links: [{ href: "/dashboard/admin", label: "Dashboard", icon: Squares2X2Icon, exact: true }],
+  },
+  {
+    section: "Customers & billing",
     links: [
-      { href: "/dashboard/admin", label: "Dashboard", icon: Icon.Dashboard },
-      { href: "/dashboard/admin/users", label: "System Users", icon: Icon.Users },
-      { href: "/dashboard/admin/licenses", label: "Licenses", icon: Icon.Key },
-      { href: "/dashboard/admin/invoices", label: "Guest Billing", icon: Icon.Invoices },
-      { href: "/dashboard/admin/requests", label: "Service Requests", icon: Icon.ClipboardList },
-      { href: "/dashboard/admin/transactions", label: "Transactions", icon: Icon.CreditCard },
+      { href: "/dashboard/admin/users", label: "System Users", icon: UsersIcon },
+      { href: "/dashboard/admin/licenses", label: "Licenses", icon: KeyIcon },
+      { href: "/dashboard/admin/requests", label: "Service Requests", icon: ClipboardDocumentListIcon },
+      { href: "/dashboard/admin/invoices", label: "Guest Billing", icon: DocumentTextIcon },
+      { href: "/dashboard/admin/transactions", label: "Transactions", icon: CreditCardIcon },
     ],
   },
   {
-    section: "ADVANCED TOOLS",
+    section: "Tools",
     links: [
-      { href: "/dashboard/admin/fraud-stats", label: "Fraud Statistics", icon: Icon.Shield },
-      { href: "/dashboard/admin/search", label: "Search Number", icon: Icon.Search },
-      { href: "/dashboard/admin/showcase", label: "Showcase Customers", icon: Icon.Showcase },
+      { href: "/dashboard/admin/fraud-stats", label: "Fraud Statistics", icon: ShieldCheckIcon },
+      { href: "/dashboard/admin/search", label: "Search Number", icon: MagnifyingGlassIcon },
+      { href: "/dashboard/admin/showcase", label: "Showcase Customers", icon: BuildingStorefrontIcon },
     ],
   },
   {
-    section: "SETTINGS",
-    links: [
-      { href: "/dashboard/admin/settings", label: "Settings", icon: Icon.Settings },
-    ],
+    section: "System",
+    links: [{ href: "/dashboard/admin/settings", label: "Settings", icon: Cog6ToothIcon }],
   },
 ];
 
-const userSections: { section: string; links: NavLink[] }[] = [
+const userSections: NavSection[] = [
   {
-    section: "YOUR WORKSPACE",
+    section: "Workspace",
     links: [
-      { href: "/dashboard/user", label: "Dashboard", icon: Icon.Dashboard },
-      { href: "/dashboard/user/requests", label: "My Services", icon: Icon.ClipboardList },
-      { href: "/dashboard/user/services", label: "Get Service", icon: Icon.PlusCircle },
-      { href: "/dashboard/user/transactions", label: "Billing & Payments", icon: Icon.CreditCard },
+      { href: "/dashboard/user", label: "Dashboard", icon: Squares2X2Icon, exact: true },
+      { href: "/dashboard/user/requests", label: "My Services", icon: ClipboardDocumentListIcon },
+      { href: "/dashboard/user/services", label: "Get Service", icon: PlusIcon },
+      { href: "/dashboard/user/transactions", label: "Billing & Payments", icon: WalletIcon },
     ],
   },
   {
-    section: "PRODUCTS",
+    section: "Products",
     links: [
-      { href: "/dashboard/user/revenuepro", label: "Revenue Pro", icon: Icon.CloudDownload },
-      { href: "/dashboard/user/tutorials", label: "Tutorials", icon: Icon.PlayCircle },
+      { href: "/dashboard/user/revenuepro", label: "Revenue Pro", icon: CloudArrowDownIcon },
+      { href: "/dashboard/user/expense-tracker", label: "Expense Tracker", icon: ChartPieIcon },
+      { href: "/dashboard/user/payment-gateway", label: "CodePay", icon: DevicePhoneMobileIcon },
+      { href: "/dashboard/user/tutorials", label: "Tutorials", icon: PlayCircleIcon },
     ],
+  },
+  {
+    section: "Account",
+    links: [{ href: "/dashboard/user/profile", label: "Profile", icon: UserCircleIcon }],
   },
 ];
+
+const HELP_URL = "https://wa.me/8801570296656";
+
+function isActive(link: NavLink, pathname: string) {
+  return link.exact ? pathname === link.href : pathname === link.href || pathname.startsWith(`${link.href}/`);
+}
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -92,43 +110,36 @@ interface DashboardShellProps {
   revenueProAllowed?: boolean;
 }
 
-export function DashboardShell({ 
-  children, 
-  isAdmin, 
-  userName, 
-  userEmail, 
-  userImageUrl, 
+function Avatar({ name, imageUrl, size = 36 }: { name: string; imageUrl?: string; size?: number }) {
+  return (
+    <span
+      style={{ width: size, height: size }}
+      className="flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 ring-2 ring-white/10"
+    >
+      {imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- Clerk-hosted avatar
+        <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+      ) : (
+        <span className="text-sm font-semibold text-white">{name.charAt(0).toUpperCase()}</span>
+      )}
+    </span>
+  );
+}
+
+export function DashboardShell({
+  children,
+  isAdmin,
+  userName,
+  userEmail,
+  userImageUrl,
   hasPhone = true,
-  expenseTrackerAllowed = false,
-  bkashTrackerAllowed = false,
-  revenueProAllowed = true
 }: DashboardShellProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  
-  const sections = isAdmin ? adminLinks : [
-    {
-      section: "YOUR WORKSPACE",
-      links: [
-        { href: "/dashboard/user", label: "Dashboard", icon: Icon.Dashboard },
-        { href: "/dashboard/user/requests", label: "My Services", icon: Icon.ClipboardList },
-        { href: "/dashboard/user/services", label: "Get Service", icon: Icon.PlusCircle },
-        { href: "/dashboard/user/transactions", label: "Billing & Payments", icon: Icon.CreditCard },
-      ],
-    },
-    {
-      section: "PRODUCTS",
-      links: [
-        { href: "/dashboard/user/revenuepro", label: "Revenue Pro", icon: Icon.CloudDownload },
-        { href: "/dashboard/user/expense-tracker", label: "Expense Tracker", icon: Icon.ExpenseTracker },
-        { href: "/dashboard/user/payment-gateway", label: "CodePay", icon: Icon.PaymentGateway },
-        { href: "/dashboard/user/tutorials", label: "Tutorials", icon: Icon.PlayCircle },
-      ],
-    },
-  ];
+  const sections = isAdmin ? adminSections : userSections;
 
   const profileRef = useRef<HTMLDivElement>(null);
   const { signOut } = useClerk();
@@ -150,25 +161,29 @@ export function DashboardShell({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  // Breadcrumb: the deepest nav link matching the current path.
+  const allLinks = sections.flatMap((s) => s.links);
+  const current = allLinks.filter((l) => isActive(l, pathname)).sort((a, b) => b.href.length - a.href.length)[0];
+  const isSubPage = current && pathname !== current.href;
+  const homeHref = isAdmin ? "/dashboard/admin" : "/dashboard/user";
+
   const isBlocked = !isAdmin && !hasPhone && pathname !== "/dashboard/user/profile";
 
   if (isBlocked) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl border border-slate-200 p-8 max-w-md w-full text-center space-y-6 shadow-xl">
-          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-600 mx-auto animate-bounce">
-            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+        <div className="w-full max-w-md space-y-6 rounded-3xl bg-white p-8 text-center shadow-xl ring-1 ring-slate-200">
+          <div className="mx-auto flex h-16 w-16 animate-bounce items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600">
+            <ExclamationTriangleIcon className="h-8 w-8" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-xl font-black text-slate-800">মোবাইল নম্বর যোগ করা আবশ্যক</h3>
+            <h3 className="text-xl font-semibold text-slate-900">মোবাইল নম্বর যোগ করা আবশ্যক</h3>
             <p className="text-sm text-slate-500">
               আপনার অ্যাকাউন্টের নিরাপত্তা এবং আমাদের সার্ভিস প্রদানের সুবিধার্থে একটি সচল মোবাইল নম্বর যোগ করা আবশ্যক। আপনাকে প্রোফাইল পেজে রিডাইরেক্ট করা হচ্ছে...
             </p>
           </div>
-          <div className="flex items-center justify-center gap-2 text-xs font-semibold text-emerald-600 bg-emerald-50 py-2.5 rounded-xl">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+          <div className="flex items-center justify-center gap-2 rounded-xl bg-emerald-50 py-2.5 text-xs font-semibold text-emerald-600">
+            <span className="h-2 w-2 animate-ping rounded-full bg-emerald-500"></span>
             প্রোফাইলে রিডাইরেক্ট হচ্ছে
           </div>
         </div>
@@ -176,171 +191,243 @@ export function DashboardShell({
     );
   }
 
+  const navItem = (link: NavLink) => {
+    const active = isActive(link, pathname);
+    const Icon = link.icon;
+    return (
+      <li key={link.href}>
+        <Link
+          href={link.href}
+          title={collapsed ? link.label : undefined}
+          onClick={() => setMobileMenuOpen(false)}
+          className={`group relative flex items-center gap-3 rounded-xl px-3 py-2 text-[13.5px] transition-all ${
+            active ? "bg-white/[0.08] font-medium text-white" : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-100"
+          } ${collapsed ? "md:justify-center md:px-2" : ""}`}
+        >
+          {active && <span className="absolute -left-3 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-emerald-400" />}
+          <Icon className={`h-[18px] w-[18px] shrink-0 ${active ? "text-emerald-300" : "text-slate-500 group-hover:text-slate-300"}`} />
+          <span className={collapsed ? "md:hidden" : ""}>{link.label}</span>
+        </Link>
+      </li>
+    );
+  };
+
   return (
-    <div className="dashboard-light-vars flex min-h-[100dvh] bg-slate-50 print:bg-white print:block overflow-x-hidden print:min-h-auto print:overflow-visible relative">
+    <div className="dashboard-light-vars relative flex min-h-[100dvh] overflow-x-hidden bg-[#f6f7f9] print:block print:min-h-0 print:overflow-visible print:bg-white">
       {/* ── MOBILE BACKDROP ── */}
       {mobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 md:hidden transition-opacity" 
-          onClick={() => setMobileMenuOpen(false)}
-        />
+        <div className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm md:hidden" onClick={() => setMobileMenuOpen(false)} />
       )}
 
       {/* ── SIDEBAR ── */}
-      <aside className={`
-        fixed md:sticky md:top-0 inset-y-0 left-0 z-50 h-[100dvh] md:h-screen flex flex-col bg-white border-r border-slate-100 transition-all duration-300 shrink-0 
-        ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
-        ${collapsed ? "md:w-[68px] w-[240px]" : "w-[240px]"} 
-        print:hidden
-      `}>
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex h-[100dvh] shrink-0 flex-col overflow-hidden bg-slate-950 text-white transition-all duration-300 md:sticky md:top-0 md:h-screen print:hidden
+          ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+          ${collapsed ? "w-[264px] md:w-[76px]" : "w-[264px]"}`}
+      >
+        <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-emerald-500/15 blur-3xl" />
 
-        {/* Logo — exact same h-14 as header */}
-        <div className="h-14 flex items-center px-4 border-b border-slate-100 shrink-0">
-          <Link href="/" className="flex items-center gap-2.5 no-underline">
-            <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center text-white font-extrabold text-sm shrink-0">
-              C
-            </div>
-            {!collapsed && (
-              <div className="overflow-hidden">
-                <div className="font-bold text-[0.85rem] text-slate-800 leading-tight">CodeBlend</div>
-                <div className="text-[0.6rem] text-slate-400 font-medium">Digital Solutions</div>
-              </div>
-            )}
+        {/* Brand */}
+        <div className="relative flex h-16 shrink-0 items-center justify-between gap-2 px-4">
+          <Link href="/" className="flex min-w-0 items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-base font-semibold ring-1 ring-white/15">
+              <span className="bg-gradient-to-br from-emerald-300 to-teal-400 bg-clip-text text-transparent">C</span>
+            </span>
+            <span className={`min-w-0 ${collapsed ? "md:hidden" : ""}`}>
+              <span className="block truncate text-[15px] font-semibold leading-tight tracking-tight">CodeBlend</span>
+              <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-emerald-400/10 px-1.5 py-px text-[10px] font-medium text-emerald-300 ring-1 ring-emerald-400/20">
+                {isAdmin ? "Admin console" : "Client portal"}
+              </span>
+            </span>
           </Link>
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-white/10 md:hidden"
+            aria-label="Close menu"
+          >
+            <XMarkIcon className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-2 py-3 overflow-y-auto">
+        <nav className="relative flex-1 overflow-y-auto px-3 pb-4 pt-2">
           {sections.map((section) => (
-            <div key={section.section} className="mb-1">
-              {!collapsed && (
-                <div className="px-3 pt-4 pb-2 text-[0.6rem] font-semibold text-slate-400 uppercase tracking-[1.2px] select-none">
-                  {section.section}
-                </div>
-              )}
-              <ul className="flex flex-col gap-1 list-none p-0 m-0">
-                {section.links.map((link) => {
-                  const isActive = pathname === link.href;
-                  return (
-                    <li key={link.href}>
-                      <Link
-                        href={link.href}
-                        className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm no-underline transition-all
-                          ${isActive ? "bg-emerald-50 text-emerald-700 font-semibold" : "text-slate-500 hover:bg-slate-50 hover:text-slate-700 font-normal"}
-                          ${collapsed ? "justify-center !px-2" : ""}
-                        `}
-                        title={collapsed ? link.label : undefined}
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        <span className="shrink-0 text-current">{link.icon}</span>
-                        {!collapsed && link.label}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
+            <div key={section.section} className="mt-4 first:mt-1">
+              <div className={`mb-1.5 px-3 text-[10.5px] font-medium uppercase tracking-[0.14em] text-slate-500 ${collapsed ? "md:hidden" : ""}`}>
+                {section.section}
+              </div>
+              {collapsed && <div className="mx-3 mb-2 hidden h-px bg-white/10 md:block" />}
+              <ul className="flex flex-col gap-0.5">{section.links.map(navItem)}</ul>
             </div>
           ))}
         </nav>
 
-        {/* Bottom */}
-        <div className="hidden md:flex border-t border-slate-100 p-2 flex-col gap-px">
+        {/* Help card */}
+        <div className={`relative px-3 pb-3 ${collapsed ? "md:hidden" : ""}`}>
+          <a
+            href={HELP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 rounded-2xl bg-gradient-to-br from-emerald-500/15 to-teal-500/5 p-3.5 ring-1 ring-emerald-400/20 transition hover:ring-emerald-400/40"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-400/15">
+              <ChatBubbleLeftRightIcon className="h-5 w-5 text-emerald-300" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[13px] font-semibold">Need help?</span>
+              <span className="block truncate text-[11px] text-slate-400">Chat with us on WhatsApp</span>
+            </span>
+          </a>
+        </div>
+
+        {/* User + collapse */}
+        <div className="relative border-t border-white/10 p-3">
+          <div className={`flex items-center gap-3 rounded-xl p-1.5 ${collapsed ? "md:justify-center" : ""}`}>
+            <Avatar name={userName} imageUrl={userImageUrl} />
+            <div className={`min-w-0 flex-1 ${collapsed ? "md:hidden" : ""}`}>
+              <p className="truncate text-[13px] font-medium">{userName}</p>
+              <p className="truncate text-[11px] text-slate-500">{userEmail}</p>
+            </div>
+            <button
+              onClick={() => signOut({ redirectUrl: "/" })}
+              title="Log out"
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white/10 hover:text-rose-300 cursor-pointer ${collapsed ? "md:hidden" : ""}`}
+            >
+              <ArrowLeftStartOnRectangleIcon className="h-[18px] w-[18px]" />
+            </button>
+          </div>
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[0.82rem] text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all cursor-pointer border-none bg-transparent w-full ${collapsed ? "justify-center !px-2" : "text-left"}`}
+            className="mt-1 hidden w-full items-center justify-center gap-2 rounded-lg py-1.5 text-[11px] font-medium text-slate-500 transition hover:bg-white/5 hover:text-slate-300 md:flex cursor-pointer"
           >
-            <span className="shrink-0">{collapsed ? Icon.Expand : Icon.Collapse}</span>
-            {!collapsed && "Collapse"}
+            {collapsed ? <ChevronDoubleRightIcon className="h-4 w-4" /> : <><ChevronDoubleLeftIcon className="h-4 w-4" /> Collapse</>}
           </button>
-          <Link
-            href="https://wa.me/8801570296656"
-            target="_blank"
-            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[0.82rem] text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all no-underline ${collapsed ? "justify-center !px-2" : ""}`}
-            title="Help Center"
-          >
-            <span className="shrink-0">{Icon.Help}</span>
-            {!collapsed && "Help Center"}
-          </Link>
         </div>
       </aside>
 
       {/* ── MAIN ── */}
-      <main className="flex-1 flex flex-col min-w-0 md:pb-0 relative pt-14 md:pt-0 h-[100dvh] md:h-screen overflow-y-auto print:h-auto print:overflow-visible w-full">
-        {/* Header — exact same h-14 as sidebar logo */}
-        <header className="fixed md:relative top-0 left-0 right-0 md:left-auto md:right-auto md:w-full h-14 flex items-center justify-between px-4 sm:px-6 bg-white/95 backdrop-blur-sm border-b md:bg-white border-slate-100 shrink-0 z-30 print:hidden">
-          <div className="flex items-center gap-2.5">
-            <button 
-              type="button" 
-              className="md:hidden p-2 -ml-2 text-slate-500 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer border-none bg-transparent"
+      <main className="relative flex h-[100dvh] w-full min-w-0 flex-1 flex-col overflow-y-auto pt-16 md:h-screen md:pt-0 print:h-auto print:overflow-visible print:pt-0">
+        {/* Header */}
+        <header className="fixed left-0 right-0 top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-slate-200/70 bg-white/80 px-4 backdrop-blur-xl backdrop-saturate-150 sm:px-6 md:sticky md:left-auto md:right-auto print:hidden">
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              className="-ml-1 flex h-9 w-9 items-center justify-center rounded-xl text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 md:hidden cursor-pointer"
               onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open menu"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+              <Bars3Icon className="h-5 w-5" />
             </button>
-            <div className="w-7 h-7 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex md:hidden items-center justify-center text-white font-extrabold text-xs shrink-0">
-              C
-            </div>
-            <span className="text-[1rem] font-bold text-slate-800 md:hidden">CodeBlend</span>
-            <span className="hidden md:block text-slate-400 font-medium text-sm">Dashboard</span>
+            <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-sm">
+              <Link href={homeHref} className="hidden shrink-0 text-slate-400 hover:text-slate-700 sm:inline">
+                {isAdmin ? "Admin" : "Portal"}
+              </Link>
+              {current && (
+                <>
+                  <ChevronRightIcon className="hidden h-3.5 w-3.5 shrink-0 text-slate-300 sm:block" />
+                  {isSubPage ? (
+                    <Link href={current.href} className="truncate text-slate-400 hover:text-slate-700">{current.label}</Link>
+                  ) : (
+                    <span className="truncate font-semibold text-slate-900">{current.label}</span>
+                  )}
+                </>
+              )}
+              {isSubPage && (
+                <>
+                  <ChevronRightIcon className="h-3.5 w-3.5 shrink-0 text-slate-300" />
+                  <span className="truncate font-semibold text-slate-900">Details</span>
+                </>
+              )}
+            </nav>
           </div>
 
-          {/* Profile */}
-          <div ref={profileRef} className="relative">
-            <button
-              onClick={() => setProfileOpen(!profileOpen)}
-              className="flex items-center gap-2 cursor-pointer border-none bg-transparent p-0"
+          <div className="flex items-center gap-2">
+            <Link
+              href="/"
+              className="hidden items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 lg:inline-flex"
             >
-              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center overflow-hidden shrink-0 ring-2 ring-emerald-500/20">
-                {userImageUrl ? (
-                  <img src={userImageUrl} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-emerald-700 font-bold text-sm">{userName.charAt(0).toUpperCase()}</span>
-                )}
-              </div>
-              <span className="text-slate-400">{Icon.ChevronDown}</span>
-            </button>
-
-            {profileOpen && (
-              <div className="absolute right-0 top-11 w-52 bg-white rounded-xl border border-slate-100 shadow-xl shadow-slate-200/50 z-50 py-1.5">
-                <Link href="/dashboard/user/profile" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 no-underline transition">
-                  <span className="text-slate-400">{Icon.Profile}</span> Profile
-                </Link>
-                <Link href="https://wa.me/8801570296656" target="_blank" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 no-underline transition">
-                  <span className="text-slate-400">{Icon.Help}</span> Help Center
-                </Link>
-
-                <div className="border-t border-slate-100 my-1" />
-                <div className="px-4 py-1 text-[0.6rem] text-slate-300">Version 1.0.0</div>
-                <button
-                  onClick={() => signOut({ redirectUrl: "/" })}
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 w-full border-none bg-transparent cursor-pointer text-left transition"
-                >
-                  <span>{Icon.Logout}</span> Logout
-                </button>
-              </div>
+              <ArrowTopRightOnSquareIcon className="h-4 w-4" /> View website
+            </Link>
+            {isAdmin ? (
+              <Link
+                href="/dashboard/admin/search"
+                className="hidden items-center gap-2 rounded-xl bg-slate-100/80 px-3 py-2 text-[13px] text-slate-500 ring-1 ring-slate-200/70 transition hover:bg-white hover:text-slate-800 sm:inline-flex"
+              >
+                <MagnifyingGlassIcon className="h-4 w-4" /> Search number
+              </Link>
+            ) : (
+              <Link
+                href="/dashboard/user/services"
+                className="hidden items-center gap-1.5 rounded-xl bg-slate-950 px-3.5 py-2 text-[13px] font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.12)] transition hover:bg-slate-800 sm:inline-flex"
+              >
+                <PlusIcon className="h-4 w-4" /> New request
+              </Link>
             )}
+
+            {/* Profile */}
+            <div ref={profileRef} className="relative">
+              <button
+                onClick={() => setProfileOpen(!profileOpen)}
+                className="flex items-center gap-2 rounded-full p-1 pr-2 transition hover:bg-slate-100 cursor-pointer"
+                aria-expanded={profileOpen}
+              >
+                <Avatar name={userName} imageUrl={userImageUrl} size={32} />
+                <ChevronDownIcon className={`h-3.5 w-3.5 text-slate-400 transition ${profileOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {profileOpen && (
+                <div className="absolute right-0 top-12 z-50 w-64 overflow-hidden rounded-2xl bg-white shadow-2xl shadow-slate-900/10 ring-1 ring-slate-200">
+                  <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/70 p-4">
+                    <Avatar name={userName} imageUrl={userImageUrl} />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-slate-900">{userName}</p>
+                      <p className="truncate text-xs text-slate-500">{userEmail}</p>
+                    </div>
+                  </div>
+                  <div className="p-1.5">
+                    <Link href="/dashboard/user/profile" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-600 transition hover:bg-slate-50">
+                      <UserCircleIcon className="h-[18px] w-[18px] text-slate-400" /> Profile
+                    </Link>
+                    <a href={HELP_URL} target="_blank" rel="noopener noreferrer" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-600 transition hover:bg-slate-50">
+                      <ChatBubbleLeftRightIcon className="h-[18px] w-[18px] text-slate-400" /> Help Center
+                    </a>
+                    <Link href="/" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-600 transition hover:bg-slate-50">
+                      <ArrowTopRightOnSquareIcon className="h-[18px] w-[18px] text-slate-400" /> View website
+                    </Link>
+                  </div>
+                  <div className="border-t border-slate-100 p-1.5">
+                    <button
+                      onClick={() => signOut({ redirectUrl: "/" })}
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-rose-600 transition hover:bg-rose-50 cursor-pointer"
+                    >
+                      <ArrowLeftStartOnRectangleIcon className="h-[18px] w-[18px]" /> Log out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
         {/* Content */}
-        <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+        <div className="mx-auto w-full max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
           {!hasPhone && pathname !== "/dashboard/user/profile" && (
-            <div className="bg-gradient-to-r from-amber-500/10 via-amber-600/5 to-transparent border border-amber-200/80 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-fade-in">
+            <div className="flex flex-col items-start justify-between gap-4 rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200 sm:flex-row sm:items-center sm:p-5">
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 shrink-0">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
+                  <ExclamationTriangleIcon className="h-5 w-5" />
+                </span>
                 <div>
-                  <h4 className="font-bold text-slate-800 text-sm sm:text-base">আপনার প্রোফাইলে ফোন নম্বর সেট করা নেই!</h4>
-                  <p className="text-xs sm:text-sm text-slate-600 mt-0.5">নিরাপত্তা ও ভেরিফিকেশনের জন্য প্রোফাইল সেকশনে একটি সচল ফোন নম্বর যোগ করা আবশ্যিক।</p>
+                  <h4 className="text-sm font-semibold text-slate-800 sm:text-base">আপনার প্রোফাইলে ফোন নম্বর সেট করা নেই!</h4>
+                  <p className="mt-0.5 text-xs text-slate-600 sm:text-sm">নিরাপত্তা ও ভেরিফিকেশনের জন্য প্রোফাইল সেকশনে একটি সচল ফোন নম্বর যোগ করা আবশ্যিক।</p>
                 </div>
               </div>
-              <Link 
+              <Link
                 href="/dashboard/user/profile"
-                className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-md shadow-amber-600/10 transition-all cursor-pointer no-underline shrink-0"
+                className="inline-flex w-full shrink-0 items-center justify-center rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-amber-700 sm:w-auto"
               >
-                📱 ফোন নম্বর সেট করুন
+                ফোন নম্বর সেট করুন
               </Link>
             </div>
           )}

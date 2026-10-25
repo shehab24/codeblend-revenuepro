@@ -2,62 +2,9 @@ import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-
-function getLicenseFinancials(
-  license: { id: string; tier?: string | null; paymentStatus: string },
-  transactions: Array<{ licenseId?: string | null; amount: number; status: string }> = []
-) {
-  const tier = license.tier || "";
-  const tLower = tier.toLowerCase();
-
-  const isFreeOrTrial =
-    tLower.includes("trial") ||
-    tLower.includes("free") ||
-    tLower.includes("dev") ||
-    tLower.includes("test") ||
-    tLower.includes("1 day") ||
-    tLower.includes("2 min") ||
-    tLower.includes("5 min") ||
-    tLower.includes("5 day") ||
-    tLower.includes("15 day") ||
-    tLower.includes("lifetime") ||
-    tier === "0";
-
-  let payableAmount = 0;
-  if (!isFreeOrTrial) {
-    if (tLower.includes("yearly") || tLower.includes("elite") || tLower.includes("1 year") || tLower.includes("12 month")) {
-      payableAmount = 2999;
-    } else if (tLower.includes("biannual") || tLower.includes("6 month") || tLower.includes("6m")) {
-      payableAmount = 1499;
-    } else if (tLower.includes("quarterly") || tLower.includes("3 month")) {
-      payableAmount = 749;
-    } else if (tLower.includes("2 month")) {
-      payableAmount = 499;
-    } else if (tLower.includes("monthly") || tLower.includes("basic") || tLower.includes("1 month")) {
-      payableAmount = 249;
-    } else {
-      payableAmount = 249;
-    }
-  }
-
-  const txPaid = transactions
-    .filter((tx) => tx.licenseId === license.id && (tx.status === "verified" || tx.status === "completed"))
-    .reduce((sum, tx) => sum + tx.amount, 0);
-
-  let totalPaid = txPaid;
-  if (license.paymentStatus === "paid" && totalPaid < payableAmount) {
-    totalPaid = payableAmount;
-  }
-
-  const balanceDue = isFreeOrTrial ? 0 : Math.max(0, payableAmount - totalPaid);
-
-  return {
-    isFreeOrTrial,
-    payableAmount,
-    totalPaid,
-    balanceDue,
-  };
-}
+import { ArrowDownTrayIcon, BanknotesIcon, ClipboardDocumentListIcon, ServerStackIcon, WalletIcon } from "@heroicons/react/24/outline";
+import { getLicenseFinancials } from "@/lib/licenseFinancials";
+import { DASH_BTN, PageHeader, StatCard } from "@/components/dashboard/ui";
 
 export default async function UserRequestsPage() {
   const { userId } = await auth();
@@ -111,64 +58,30 @@ export default async function UserRequestsPage() {
   const totalOverallPaid = totalLicensePaid + totalServicePaid;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 font-sans text-slate-800 pb-12">
-      {/* 1. Header Card (Matching RevenuePro Theme) */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 leading-tight">My Services & Billing</h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Track your enrolled servers, custom service requests, due balances, and download official invoices.
-          </p>
-        </div>
+    <div className="space-y-6 pb-12 text-slate-800">
+      <PageHeader
+        eyebrow="Workspace"
+        title="My services & billing"
+        description="Your enrolled servers, custom service requests, balances and official invoices."
+        icon={<ClipboardDocumentListIcon className="h-6 w-6" />}
+        actions={
+          <Link href={`/dashboard/admin/users/${userId}/invoice?type=statement`} className={DASH_BTN.primary}>
+            <ArrowDownTrayIcon className="h-4 w-4" /> Statement invoice
+          </Link>
+        }
+      />
 
-        <Link
-          href={`/dashboard/admin/users/${userId}/invoice?type=statement`}
-          className="whitespace-nowrap inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-sm transition-all no-underline shrink-0"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <span>Statement Invoice</span>
-        </Link>
-      </div>
-
-      {/* 2. Financial Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-md hover:border-emerald-200 transition-all flex flex-col justify-between">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Enrolled Servers</span>
-          <div className="mt-3">
-            <div className="text-3xl font-extrabold text-slate-900">{licenses.length}</div>
-            <p className="text-xs text-slate-400 mt-1">Active subscriptions</p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-md hover:border-emerald-200 transition-all flex flex-col justify-between">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Service Orders</span>
-          <div className="mt-3">
-            <div className="text-3xl font-extrabold text-slate-900">{requests.length}</div>
-            <p className="text-xs text-slate-400 mt-1">Custom tickets</p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-md hover:border-emerald-200 transition-all flex flex-col justify-between">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Due Balance</span>
-          <div className="mt-3">
-            <div className={`text-3xl font-extrabold ${totalOverallDue > 0 ? "text-red-600" : "text-slate-900"}`}>
-              ৳{totalOverallDue.toFixed(2)}
-            </div>
-            <p className="text-xs text-slate-400 mt-1">
-              {totalOverallDue > 0 ? "Remaining balance" : "Account clear"}
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-md hover:border-emerald-200 transition-all flex flex-col justify-between">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Total Paid</span>
-          <div className="mt-3">
-            <div className="text-3xl font-extrabold text-emerald-600">৳{totalOverallPaid.toFixed(2)}</div>
-            <p className="text-xs text-slate-400 mt-1">Cleared payments</p>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <StatCard label="Enrolled servers" value={licenses.length} hint="License subscriptions" icon={<ServerStackIcon className="h-5 w-5" />} tone="emerald" />
+        <StatCard label="Service orders" value={requests.length} hint="Custom requests" icon={<ClipboardDocumentListIcon className="h-5 w-5" />} tone="sky" />
+        <StatCard
+          label="Balance due"
+          value={<span className={totalOverallDue > 0 ? "text-rose-600" : ""}>৳{totalOverallDue.toFixed(2)}</span>}
+          hint={totalOverallDue > 0 ? "Remaining balance" : "Account clear"}
+          icon={<WalletIcon className="h-5 w-5" />}
+          tone={totalOverallDue > 0 ? "rose" : "slate"}
+        />
+        <StatCard label="Total paid" value={`৳${totalOverallPaid.toFixed(2)}`} hint="Cleared payments" icon={<BanknotesIcon className="h-5 w-5" />} tone="violet" />
       </div>
 
       {/* 3. Enrolled Server Subscriptions */}

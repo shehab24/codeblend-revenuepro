@@ -5,6 +5,8 @@ import Link from "next/link";
 import { RevenueProClient } from "@/components/RevenueProClient";
 import { PluginVersion } from "../../admin/settings/client";
 import { AccessRestricted } from "@/components/AccessRestricted";
+import { BoltIcon } from "@heroicons/react/24/outline";
+import { DASH_CARD, PageHeader } from "@/components/dashboard/ui";
 
 export const metadata = {
   title: "Revenue Pro | CodeBlend",
@@ -83,40 +85,27 @@ export default async function RevenueProPage() {
   const activeCount = licenses.filter(l => l.status === "active").length;
 
   return (
-    <div className="max-w-7xl mx-auto w-full pb-12">
-      <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm mt-4">
-        {/* Header */}
-        <div className="p-8 md:p-10 border-b border-slate-100 bg-gradient-to-br from-slate-50 to-white">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-6 justify-between">
-            <div>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center border border-emerald-200">
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-slate-800">রেভিনিউ প্রো (Revenue Pro)</h1>
-                  <p className="text-xs text-slate-400 mt-0.5">আপনার সকল সাইটের লাইসেন্স এখানে ম্যানেজ করুন</p>
-                </div>
-              </div>
-              <p className="text-slate-500 max-w-lg text-sm leading-relaxed">
-                আপনার ই-কমার্স বিজনেস অটোমেট করার সেরা মাধ্যম। ফ্রড ট্র্যাকিং, কুরিয়ার ইন্টিগ্রেশন এবং স্বয়ংক্রিয় এসএমএস ব্যবস্থা থেকে শুরু করে সব কিছুই একত্রে।
-              </p>
+    <div className="space-y-6 pb-12">
+      <PageHeader
+        eyebrow="Products"
+        title="রেভিনিউ প্রো (Revenue Pro)"
+        description="আপনার সকল সাইটের লাইসেন্স, প্লাগইন ডাউনলোড ও পেমেন্ট এখানে ম্যানেজ করুন।"
+        icon={<BoltIcon className="h-6 w-6" />}
+        actions={
+          <div className="flex items-center gap-3 rounded-2xl bg-white px-5 py-2.5 ring-1 ring-slate-200 shadow-sm">
+            <div className="text-center">
+              <div className="text-lg font-semibold text-emerald-600">{activeCount}</div>
+              <div className="text-[10px] font-medium uppercase tracking-wider text-slate-400">অ্যাক্টিভ</div>
             </div>
-
-            {/* Quick Stats Pill */}
-            <div className="shrink-0 flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-slate-100 shadow-sm">
-              <div className="text-center">
-                <div className="text-lg font-bold text-emerald-600">{activeCount}</div>
-                <div className="text-[0.6rem] font-bold text-slate-400 uppercase tracking-wider">অ্যাক্টিভ</div>
-              </div>
-              <div className="w-px h-8 bg-slate-100"></div>
-              <div className="text-center">
-                <div className="text-lg font-bold text-slate-700">{licenses.length}</div>
-                <div className="text-[0.6rem] font-bold text-slate-400 uppercase tracking-wider">মোট সাইট</div>
-              </div>
+            <div className="h-8 w-px bg-slate-100"></div>
+            <div className="text-center">
+              <div className="text-lg font-semibold text-slate-800">{licenses.length}</div>
+              <div className="text-[10px] font-medium uppercase tracking-wider text-slate-400">মোট সাইট</div>
             </div>
           </div>
-        </div>
+        }
+      />
+      <div className={`${DASH_CARD} overflow-hidden`}>
 
         {/* Features + Pricing Banner */}
         <div className="p-8 md:p-10 border-b border-slate-100 bg-slate-50/30">

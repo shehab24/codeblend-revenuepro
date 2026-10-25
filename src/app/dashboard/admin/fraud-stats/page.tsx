@@ -1,6 +1,8 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { ShieldCheckIcon } from "@heroicons/react/24/outline";
 import { prisma } from "@/lib/prisma";
+import { EmptyState, PageHeader, Panel } from "@/components/dashboard/ui";
 import { ClientFraudStatsTable } from "./ClientFraudStatsTable";
 
 export default async function AdminFraudStatsPage() {
@@ -16,23 +18,27 @@ export default async function AdminFraudStatsPage() {
   });
 
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <h2 style={{ fontSize: "1.25rem", margin: 0 }}>Courier Fraud Statistics</h2>
-        <span style={{ 
-          padding: "0.3rem 0.8rem", borderRadius: "9999px", fontSize: "0.8rem", fontWeight: "bold",
-          background: "rgba(16, 185, 129, 0.1)", color: "var(--primary)" 
-        }}>
-          {fraudStats.length} Records
-        </span>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Tools"
+        title="Courier fraud statistics"
+        description="Cached delivery history for customer phone numbers across all couriers."
+        icon={<ShieldCheckIcon className="h-6 w-6" />}
+        actions={
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+            {fraudStats.length.toLocaleString()} records
+          </span>
+        }
+      />
 
       {fraudStats.length === 0 ? (
-        <div className="card text-center" style={{ padding: "3rem" }}>
-          <div style={{ color: "var(--text-muted)", fontSize: "1.2rem" }}>
-            No fraud statistics synced yet. Connect your WordPress plugin to start receiving data.
-          </div>
-        </div>
+        <Panel>
+          <EmptyState
+            icon={<ShieldCheckIcon className="h-6 w-6" />}
+            title="No fraud statistics synced yet"
+            description="Connect your WordPress plugin to start receiving data."
+          />
+        </Panel>
       ) : (
         <ClientFraudStatsTable initialStats={fraudStats} />
       )}

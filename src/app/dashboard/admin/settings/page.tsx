@@ -2,6 +2,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { AdminSettingsClient, PluginVersion } from "./client";
+import { Cog6ToothIcon } from "@heroicons/react/24/outline";
+import { PageHeader } from "@/components/dashboard/ui";
 
 export default async function AdminSettingsPage() {
   const user = await currentUser();
@@ -146,8 +148,14 @@ export default async function AdminSettingsPage() {
   };
   
   return (
-    <div className="max-w-5xl">
-      <AdminSettingsClient 
+    <div className="max-w-5xl space-y-6">
+      <PageHeader
+        eyebrow="System"
+        title="Settings"
+        description="Courier APIs, payments, tracking pixels, downloads, tutorials and automated reminders."
+        icon={<Cog6ToothIcon className="h-6 w-6" />}
+      />
+      <AdminSettingsClient
         currentKey={bdCourierKeySetting?.value || ""} 
         currentAlertEmail={adminAlertEmailSetting?.value || ""} 
         currentRevenueProLinks={parsedLinks}

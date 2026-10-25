@@ -2,6 +2,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ShowcaseAdminClient } from "./client";
+import { BuildingStorefrontIcon } from "@heroicons/react/24/outline";
+import { PageHeader } from "@/components/dashboard/ui";
 
 export default async function ShowcaseAdminPage() {
   const user = await currentUser();
@@ -14,11 +16,13 @@ export default async function ShowcaseAdminPage() {
   });
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-black text-slate-800 tracking-tight">Showcase Customers</h1>
-        <p className="text-sm text-slate-500 mt-1">Manage the clients and companies displayed on the CodeBlend front page.</p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Tools"
+        title="Showcase customers"
+        description="Manage the client logos shown on the CodeBlend website and client portal."
+        icon={<BuildingStorefrontIcon className="h-6 w-6" />}
+      />
       <ShowcaseAdminClient initialCustomers={customers} />
     </div>
   );

@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { AdminCreateLicenseForm } from "@/components/AdminCreateLicenseForm";
 import { AdminLicenseList } from "@/components/AdminLicenseList";
+import { CheckBadgeIcon, ClockIcon, KeyIcon, NoSymbolIcon } from "@heroicons/react/24/outline";
+import { PageHeader, StatCard } from "@/components/dashboard/ui";
 
 export default async function AdminLicensesPage() {
   const user = await currentUser();
@@ -53,24 +55,19 @@ export default async function AdminLicensesPage() {
 
   return (
     <div className="space-y-6">
+      <PageHeader
+        eyebrow="Customers"
+        title="Licenses"
+        description="Generate keys, bind them to domains and control renewals, payments and suspensions."
+        icon={<KeyIcon className="h-6 w-6" />}
+      />
+
       {/* Stats Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 p-4 text-center">
-          <div className="text-2xl font-bold text-slate-800">{totalCount}</div>
-          <div className="text-xs text-slate-400 font-semibold mt-1">Total Licenses</div>
-        </div>
-        <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-4 text-center">
-          <div className="text-2xl font-bold text-emerald-600">{activeCount}</div>
-          <div className="text-xs text-emerald-500 font-semibold mt-1">Active</div>
-        </div>
-        <div className="bg-amber-50 rounded-xl border border-amber-200 p-4 text-center">
-          <div className="text-2xl font-bold text-amber-600">{pendingCount}</div>
-          <div className="text-xs text-amber-500 font-semibold mt-1">Pending</div>
-        </div>
-        <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 text-center">
-          <div className="text-2xl font-bold text-slate-500">{totalCount - activeCount - pendingCount}</div>
-          <div className="text-xs text-slate-400 font-semibold mt-1">Suspended/Revoked</div>
-        </div>
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <StatCard label="Total licenses" value={totalCount} icon={<KeyIcon className="h-5 w-5" />} tone="slate" />
+        <StatCard label="Active" value={activeCount} icon={<CheckBadgeIcon className="h-5 w-5" />} tone="emerald" />
+        <StatCard label="Pending" value={pendingCount} icon={<ClockIcon className="h-5 w-5" />} tone="amber" />
+        <StatCard label="Suspended / revoked" value={totalCount - activeCount - pendingCount} icon={<NoSymbolIcon className="h-5 w-5" />} tone="rose" />
       </div>
 
       {/* Create Form (collapsible at top) */}

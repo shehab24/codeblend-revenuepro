@@ -2,6 +2,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { DocumentTextIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { DASH_BTN, PageHeader, Panel } from "@/components/dashboard/ui";
 import { ClientInvoicesTable } from "./ClientInvoicesTable";
 
 export default async function AdminInvoicesPage() {
@@ -24,26 +26,22 @@ export default async function AdminInvoicesPage() {
   });
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-6 border-b border-slate-100">
-        <div>
-          <h3 className="text-lg font-bold text-slate-900">Guest Billing & Quotations</h3>
-          <p className="text-sm text-slate-500 mt-1">
-            Build and manage invoices and quotations for non-registered users.
-          </p>
-        </div>
-        <Link
-          href="/dashboard/admin/invoices/create"
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer no-underline shrink-0"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-          </svg>
-          Build Document
-        </Link>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Billing"
+        title="Guest billing & quotations"
+        description="Build and manage invoices and quotations for clients without an account."
+        icon={<DocumentTextIcon className="h-6 w-6" />}
+        actions={
+          <Link href="/dashboard/admin/invoices/create" className={DASH_BTN.primary}>
+            <PlusIcon className="h-4 w-4" /> Build document
+          </Link>
+        }
+      />
 
-      <ClientInvoicesTable initialInvoices={invoices} />
+      <Panel title="Documents" description={`${invoices.length} invoices and quotations`}>
+        <ClientInvoicesTable initialInvoices={invoices} />
+      </Panel>
     </div>
   );
 }

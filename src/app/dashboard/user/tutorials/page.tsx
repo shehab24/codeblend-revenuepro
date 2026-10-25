@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { PlayCircleIcon } from "@heroicons/react/24/outline";
+import { DASH_CARD } from "@/components/dashboard/ui";
 
 function getYouTubeEmbedUrl(url: string): string | null {
   if (!url) return null;
@@ -37,17 +39,23 @@ export default async function TutorialsPage() {
   const embedUrl = getYouTubeEmbedUrl(rawVideoUrl);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 py-6">
-      <div className="flex flex-col space-y-2">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+    <div className="max-w-5xl space-y-6">
+      <div className="flex items-start gap-4">
+        <span className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-emerald-300 sm:flex">
+          <PlayCircleIcon className="h-6 w-6" />
+        </span>
+        <div>
+        <p className="text-xs font-medium uppercase tracking-[0.16em] text-emerald-600">Products</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950 sm:text-[1.75rem]">
           প্লাগইন টিউটোরিয়াল ও সেটআপ গাইড
         </h1>
-        <p className="text-lg text-slate-500">
+        <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-slate-500">
           আপনার ওয়ার্ডপ্রেস সাইটে RevenuePro প্লাগইন এবং bKash পেমেন্ট গেটওয়ে কনফিগার করার সম্পূর্ণ গাইডলাইন ভিডিওটি দেখুন।
         </p>
+        </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+      <div className={`${DASH_CARD} space-y-6 p-6 sm:p-8`}>
         {embedUrl ? (
           <div className="aspect-video w-full rounded-2xl overflow-hidden shadow-md border border-slate-100 bg-slate-900 relative">
             <iframe

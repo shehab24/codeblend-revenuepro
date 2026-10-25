@@ -2,6 +2,8 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { ArrowDownTrayIcon, BanknotesIcon, CheckCircleIcon, ClockIcon, WalletIcon } from "@heroicons/react/24/outline";
+import { EmptyState, PageHeader, Panel, StatCard, StatusBadge, TABLE, formatBdt } from "@/components/dashboard/ui";
 
 export const metadata = {
   title: "Billing & Payments | CodeBlend",
@@ -20,77 +22,69 @@ export default async function UserTransactionsPage() {
     }
   });
 
-  return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm mt-4 p-8 md:p-10">
-        <h1 className="text-2xl font-bold text-slate-800 mb-2 flex items-center gap-2">
-          <span className="text-3xl">💳</span> Billing & Payments
-        </h1>
-        <p className="text-slate-500 text-sm">View your payment history and transaction status.</p>
+  const verified = transactions.filter((t) => t.status === "verified" || t.status === "completed");
+  const pending = transactions.filter((t) => t.status === "pending");
 
-        <div className="mt-8 overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-600">
-            <thead className="text-xs text-slate-400 uppercase tracking-wider border-b border-slate-100">
-              <tr>
-                <th className="py-3 px-4">Date</th>
-                <th className="py-3 px-4">Transaction ID</th>
-                <th className="py-3 px-4">Method</th>
-                <th className="py-3 px-4">For</th>
-                <th className="py-3 px-4">Amount</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4 text-center">Invoice</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {transactions.length === 0 ? (
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Workspace"
+        title="Billing & payments"
+        description="Your payment history, verification status and downloadable receipts."
+        icon={<WalletIcon className="h-6 w-6" />}
+      />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard label="Total paid" value={formatBdt(verified.reduce((s, t) => s + t.amount, 0))} icon={<BanknotesIcon className="h-5 w-5" />} tone="emerald" />
+        <StatCard label="Verified payments" value={verified.length} icon={<CheckCircleIcon className="h-5 w-5" />} tone="sky" />
+        <StatCard label="Awaiting verification" value={pending.length} icon={<ClockIcon className="h-5 w-5" />} tone="amber" />
+      </div>
+
+      <Panel title="Payment history" description={`${transactions.length} transactions`} bodyClassName="">
+        {transactions.length === 0 ? (
+          <EmptyState icon={<WalletIcon className="h-6 w-6" />} title="No payment history found" description="Payments for licenses and services will appear here." />
+        ) : (
+          <div className={TABLE.wrap}>
+            <table className={TABLE.table}>
+              <thead className="bg-slate-50/70">
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
-                    No payment history found.
-                  </td>
+                  <th className={TABLE.th}>Date</th>
+                  <th className={TABLE.th}>Transaction ID</th>
+                  <th className={TABLE.th}>Method</th>
+                  <th className={TABLE.th}>For</th>
+                  <th className={`${TABLE.th} text-right`}>Amount</th>
+                  <th className={TABLE.th}>Status</th>
+                  <th className={`${TABLE.th} text-center`}>Receipt</th>
                 </tr>
-              ) : (
-                transactions.map((trx) => (
-                  <tr key={trx.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-4 px-4 font-medium">{trx.createdAt.toLocaleDateString("bn-BD")}</td>
-                    <td className="py-4 px-4 font-mono">{trx.transactionId || "N/A"}</td>
-                    <td className="py-4 px-4 uppercase text-xs font-bold text-slate-400">
-                      {trx.paymentMethod.replace("_", " ")}
+              </thead>
+              <tbody>
+                {transactions.map((trx) => (
+                  <tr key={trx.id} className={TABLE.tr}>
+                    <td className={`${TABLE.td} whitespace-nowrap font-medium`}>{trx.createdAt.toLocaleDateString("bn-BD")}</td>
+                    <td className={`${TABLE.td} font-mono text-xs`}>{trx.transactionId || "—"}</td>
+                    <td className={`${TABLE.td} text-xs font-semibold uppercase text-slate-500`}>{trx.paymentMethod.replace(/_/g, " ")}</td>
+                    <td className={TABLE.td}>
+                      {trx.license && <span className="font-medium text-slate-900">{trx.license.domain}</span>}
+                      {trx.serviceRequest && <span className="font-medium text-slate-900">{trx.serviceRequest.serviceType}</span>}
+                      {!trx.license && !trx.serviceRequest && <span className="italic text-slate-400">General payment</span>}
                     </td>
-                    <td className="py-4 px-4">
-                      {trx.license && <span className="font-semibold">{trx.license.domain}</span>}
-                      {trx.serviceRequest && <span className="font-semibold">{trx.serviceRequest.serviceType}</span>}
-                      {!trx.license && !trx.serviceRequest && <span className="text-slate-400 italic">General Payment</span>}
-                    </td>
-                    <td className="py-4 px-4 font-bold text-slate-800">
-                      ৳{trx.amount.toFixed(2)}
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className={`inline-flex px-2 py-1 rounded text-[0.6rem] font-bold uppercase tracking-wider
-                        ${trx.status === "verified" || trx.status === "completed" ? "bg-emerald-100 text-emerald-700" :
-                          trx.status === "pending" ? "bg-amber-100 text-amber-700" :
-                            "bg-red-100 text-red-700"}`}
-                      >
-                        {trx.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4 text-center">
+                    <td className={`${TABLE.td} whitespace-nowrap text-right font-semibold text-slate-900`}>৳{trx.amount.toFixed(2)}</td>
+                    <td className={TABLE.td}><StatusBadge status={trx.status} /></td>
+                    <td className={`${TABLE.td} text-center`}>
                       <Link
                         href={`/dashboard/admin/users/${userId}/invoice?type=transaction&itemId=${trx.id}`}
-                        className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold transition-all shadow-xs no-underline inline-flex items-center gap-1.5 justify-center mx-auto"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50"
                       >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <span>Invoice</span>
+                        <ArrowDownTrayIcon className="h-3.5 w-3.5" /> Receipt
                       </Link>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
     </div>
   );
 }

@@ -1,143 +1,301 @@
-import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import {
+  ArrowRightIcon,
+  BanknotesIcon,
+  ChartPieIcon,
+  ChatBubbleLeftRightIcon,
+  ClipboardDocumentListIcon,
+  CloudArrowDownIcon,
+  DevicePhoneMobileIcon,
+  KeyIcon,
+  PlayCircleIcon,
+  PlusIcon,
+  WalletIcon,
+} from "@heroicons/react/24/outline";
 import { prisma } from "@/lib/prisma";
+import { getLicenseFinancials } from "@/lib/licenseFinancials";
+import {
+  DASH_CARD,
+  EmptyState,
+  Panel,
+  PanelLink,
+  QuickAction,
+  StatusBadge,
+  formatBdt,
+  timeAgo,
+  toneClasses,
+  type DashTone,
+} from "@/components/dashboard/ui";
 
 export default async function UserDashboard() {
   const { userId } = await auth();
-  
+
   if (!userId) return null;
 
-  const dbUser = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      revenueProAllowed: true,
-      bkashTrackerAllowed: true,
-    }
-  });
+  const [clerkUser, dbUser, requests, licenses] = await Promise.all([
+    currentUser(),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { revenueProAllowed: true, bkashTrackerAllowed: true, expenseTrackerAllowed: true },
+    }),
+    prisma.serviceRequest.findMany({
+      where: { applicantId: userId },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, serviceType: true, status: true, totalAmount: true, paidAmount: true, createdAt: true },
+    }),
+    prisma.license.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        tier: true,
+        status: true,
+        paymentStatus: true,
+        expirationDate: true,
+        transactions: { select: { licenseId: true, amount: true, status: true } },
+      },
+    }),
+  ]);
+
+  const customers = await prisma.showcaseCustomer.findMany({ orderBy: { order: "asc" } });
 
   const revenueProAllowed = dbUser?.revenueProAllowed ?? true;
   const bkashTrackerAllowed = dbUser?.bkashTrackerAllowed ?? false;
+  const expenseTrackerAllowed = dbUser?.expenseTrackerAllowed ?? false;
 
-  const totalRequests = await prisma.serviceRequest.count({
-    where: { applicantId: userId }
-  });
+  const activeRequests = requests.filter((r) => r.status === "pending" || r.status === "in_progress").length;
+  const now = new Date();
+  const activeLicenses = licenses.filter((l) => l.status === "active" && (!l.expirationDate || l.expirationDate > now)).length;
 
-  const customers = await prisma.showcaseCustomer.findMany({
-    orderBy: { order: "asc" }
-  });
+  // Same maths as "My Services & Billing" so both pages show identical totals.
+  let balanceDue = 0;
+  let totalPaid = 0;
+  for (const lic of licenses) {
+    const fin = getLicenseFinancials(lic, lic.transactions);
+    balanceDue += fin.balanceDue;
+    totalPaid += fin.totalPaid;
+  }
+  for (const req of requests) {
+    balanceDue += (req.totalAmount || 0) - (req.paidAmount || 0);
+    totalPaid += req.paidAmount || 0;
+  }
+  const firstName = clerkUser?.firstName || clerkUser?.fullName?.split(" ")[0] || "there";
+
+  const stats = [
+    { label: "Active requests", value: activeRequests, href: "/dashboard/user/requests", icon: ClipboardDocumentListIcon },
+    { label: "Active licenses", value: activeLicenses, href: "/dashboard/user/revenuepro", icon: KeyIcon },
+    { label: "Balance due", value: formatBdt(balanceDue), href: "/dashboard/user/requests", icon: WalletIcon },
+    { label: "Total paid", value: formatBdt(totalPaid), href: "/dashboard/user/transactions", icon: BanknotesIcon },
+  ];
+
+  const products: { show: boolean; href: string; title: string; desc: string; cta: string; icon: typeof KeyIcon; tone: DashTone }[] = [
+    {
+      show: revenueProAllowed,
+      href: "/dashboard/user/revenuepro",
+      title: "Revenue Pro",
+      desc: "Licenses, plugin downloads and live order insights for your WooCommerce store.",
+      cta: "Open Revenue Pro",
+      icon: CloudArrowDownIcon,
+      tone: "emerald",
+    },
+    {
+      show: bkashTrackerAllowed,
+      href: "/dashboard/user/payment-gateway",
+      title: "CodePay Gateway",
+      desc: "Accept bKash, Nagad and bank payments with automatic TrxID verification.",
+      cta: "Open CodePay",
+      icon: DevicePhoneMobileIcon,
+      tone: "teal",
+    },
+    {
+      show: expenseTrackerAllowed,
+      href: "/dashboard/user/expense-tracker",
+      title: "Expense Tracker",
+      desc: "Your MFS inflows and outflows, synced automatically from SMS.",
+      cta: "Open tracker",
+      icon: ChartPieIcon,
+      tone: "indigo",
+    },
+  ].filter((p) => p.show);
 
   return (
-    <div>
-      <p className="text-slate-500 mb-8 border-b border-slate-100 pb-4">
-        Welcome to your CodeBlend Client Portal. Select an action below to get started.
-      </p>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
-        
-        {/* Request Service Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:border-emerald-200 transition-all">
-          <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600 mb-4 shrink-0">
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+    <div className="space-y-8">
+      {/* Welcome hero */}
+      <section className="relative overflow-hidden rounded-3xl bg-slate-950 p-6 text-white sm:p-8">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgb(255_255_255/0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgb(255_255_255/0.05)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_70%_80%_at_80%_0%,#000_30%,transparent_100%)]" />
+        <div className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full bg-emerald-500/25 blur-3xl" />
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.16em] text-emerald-300">Client portal</p>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Welcome back, {firstName} 👋</h1>
+            <p className="mt-2 max-w-lg text-sm leading-relaxed text-slate-400">
+              Track your projects, manage licenses and payments, and request new work — all in one place.
+            </p>
           </div>
-          <h3 className="text-lg font-bold text-slate-800 mb-2">Need a Service?</h3>
-          <p className="text-sm text-slate-500 mb-6">Request custom development, support, or design from our team.</p>
-          <Link href="/dashboard/user/services" className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-6 py-2.5 rounded-xl transition w-full mt-auto">
-            Get Service
-          </Link>
-        </div>
-
-        {/* My Requests Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:border-blue-200 transition-all">
-          <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 mb-4 shrink-0">
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-          </div>
-          <h3 className="text-lg font-bold text-slate-800 mb-2">My Requests</h3>
-          <p className="text-sm text-slate-500 mb-6">You have <strong>{totalRequests}</strong> active or past service requests tracked.</p>
-          <Link href="/dashboard/user/requests" className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-6 py-2.5 rounded-xl transition w-full mt-auto">
-            View Requests
-          </Link>
-        </div>
-
-        {/* Revenue Pro Card */}
-        {revenueProAllowed && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:border-indigo-200 transition-all">
-            <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 mb-4 shrink-0">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" /></svg>
-            </div>
-            <h3 className="text-lg font-bold text-slate-800 mb-2">Downloads</h3>
-            <p className="text-sm text-slate-500 mb-6">Access and download your purchased Revenue Pro plugins.</p>
-            <Link href="/dashboard/user/revenuepro" className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold px-6 py-2.5 rounded-xl transition w-full mt-auto">
-              View Downloads
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/dashboard/user/services"
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgb(16_185_129/0.8)] transition hover:bg-emerald-400"
+            >
+              <PlusIcon className="h-4 w-4" /> Request a service
+            </Link>
+            <Link
+              href="/dashboard/user/requests"
+              className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-white/20 transition hover:bg-white/10"
+            >
+              My services
             </Link>
           </div>
-        )}
+        </div>
 
-        {/* CodePay Gateway Card */}
-        {bkashTrackerAllowed && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:border-violet-200 transition-all">
-            <div className="w-12 h-12 bg-violet-50 rounded-full flex items-center justify-center text-violet-600 mb-4 shrink-0">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-            </div>
-            <h3 className="text-lg font-bold text-slate-800 mb-2">CodePay Gateway</h3>
-            <p className="text-sm text-slate-500 mb-6">Configure automated payments and download tracker companion APK.</p>
-            <Link href="/dashboard/user/payment-gateway?tab=app" className="bg-violet-50 hover:bg-violet-100 text-violet-700 font-semibold px-6 py-2.5 rounded-xl transition w-full mt-auto">
-              Open CodePay
+        <dl className="relative mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl bg-white/10 ring-1 ring-white/10 lg:grid-cols-4">
+          {stats.map((s) => (
+            <Link key={s.label} href={s.href} className="group bg-slate-950/80 p-4 transition hover:bg-slate-900 sm:p-5">
+              <dt className="flex items-center gap-2 text-xs text-slate-400">
+                <s.icon className="h-4 w-4 text-slate-500 group-hover:text-emerald-300" />
+                {s.label}
+              </dt>
+              <dd className="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">{s.value}</dd>
             </Link>
-          </div>
-        )}
+          ))}
+        </dl>
+      </section>
 
-      </div>
-
-      {/* ═══════════ CUSTOMER SHOWCASE GRID ═══════════ */}
-      {customers.length > 0 && (
-        <div className="mt-12 bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm">
-          <div className="mb-6">
-            <h3 className="text-lg font-bold text-slate-900">Featured Network Brands</h3>
-            <p className="text-sm text-slate-500 mt-1">Leading businesses powered by CodeBlend integration.</p>
+      {/* Products */}
+      {products.length > 0 && (
+        <section>
+          <div className="mb-4 flex items-end justify-between">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight text-slate-950">Your products</h2>
+              <p className="text-sm text-slate-500">Tools enabled on your account</p>
+            </div>
           </div>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {customers.map((customer) => {
-              const cardContent = (
-                <div className="border border-slate-100 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300 rounded-3xl p-4 sm:p-5 flex flex-col items-center justify-between gap-3 h-32 sm:h-38 group bg-white overflow-hidden w-full max-w-[140px] sm:max-w-[170px] mx-auto shadow-xs select-none bg-gradient-to-b from-white to-slate-50/20">
-                  <div className="h-14 sm:h-18 w-full flex items-center justify-center">
-                    {customer.logoUrl ? (
-                      <img 
-                        src={customer.logoUrl} 
-                        alt={customer.name} 
-                        className="max-h-full max-w-full object-contain filter grayscale opacity-75 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300 pointer-events-none"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center font-bold text-lg sm:text-xl shadow-sm transition-transform group-hover:scale-105 select-none">
-                        {customer.name ? customer.name.charAt(0).toUpperCase() : ""}
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-[10px] sm:text-xs font-bold text-slate-700 truncate w-full text-center group-hover:text-emerald-600 transition-colors">
-                    {customer.name}
-                  </p>
-                </div>
-              );
-              
-              return customer.websiteUrl ? (
-                <a 
-                  key={customer.id} 
-                  href={customer.websiteUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  title={customer.name}
-                  className="focus:outline-none"
-                >
-                  {cardContent}
-                </a>
-              ) : (
-                <div key={customer.id} title={customer.name}>
-                  {cardContent}
-                </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {products.map((p) => {
+              const tone = toneClasses(p.tone);
+              return (
+                <Link key={p.href} href={p.href} className={`group relative flex flex-col overflow-hidden p-6 transition hover:-translate-y-0.5 hover:shadow-lg ${DASH_CARD}`}>
+                  <span className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${tone.bar}`} />
+                  <span className={`flex h-11 w-11 items-center justify-center rounded-xl ring-1 ${tone.icon}`}>
+                    <p.icon className="h-5 w-5" />
+                  </span>
+                  <h3 className="mt-5 text-base font-semibold text-slate-950">{p.title}</h3>
+                  <p className="mt-1.5 flex-1 text-sm leading-relaxed text-slate-500">{p.desc}</p>
+                  <span className={`mt-5 inline-flex items-center gap-1.5 text-sm font-semibold ${tone.text}`}>
+                    {p.cta}
+                    <ArrowRightIcon className="h-4 w-4 transition group-hover:translate-x-1" />
+                  </span>
+                </Link>
               );
             })}
           </div>
+        </section>
+      )}
+
+      <div className="grid gap-6 xl:grid-cols-3">
+        {/* Recent requests */}
+        <Panel
+          title="Recent service requests"
+          description="Status of your latest projects"
+          action={<PanelLink href="/dashboard/user/requests">View all</PanelLink>}
+          className="xl:col-span-2"
+          bodyClassName=""
+        >
+          {requests.length === 0 ? (
+            <EmptyState
+              icon={<ClipboardDocumentListIcon className="h-6 w-6" />}
+              title="No requests yet"
+              description="Tell us what you need — a WordPress plugin, a Shopify store or an AI automation."
+              action={
+                <Link href="/dashboard/user/services" className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">
+                  <PlusIcon className="h-4 w-4" /> Request a service
+                </Link>
+              }
+            />
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {requests.slice(0, 5).map((req) => {
+                const due = Math.max(0, req.totalAmount - req.paidAmount);
+                return (
+                  <li key={req.id}>
+                    <Link href={`/dashboard/user/requests/${req.id}`} className="flex items-center gap-4 px-5 py-3.5 transition hover:bg-slate-50/70">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                        <ClipboardDocumentListIcon className="h-[18px] w-[18px]" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-slate-900">{req.serviceType}</p>
+                        <p className="truncate text-xs text-slate-500">
+                          Requested {timeAgo(req.createdAt)}
+                          {due > 0 && req.status !== "cancelled" ? ` · ${formatBdt(due)} due` : ""}
+                        </p>
+                      </div>
+                      <StatusBadge status={req.status} />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Panel>
+
+        <div className="space-y-6">
+          <Panel title="Shortcuts" bodyClassName="p-2">
+            <QuickAction href="/dashboard/user/services" icon={<PlusIcon className="h-5 w-5" />} title="Get a service" description="WordPress, Shopify or AI automation" tone="emerald" />
+            <QuickAction href="/dashboard/user/transactions" icon={<WalletIcon className="h-5 w-5" />} title="Billing & payments" description="Receipts and payment history" tone="violet" />
+            <QuickAction href="/dashboard/user/tutorials" icon={<PlayCircleIcon className="h-5 w-5" />} title="Tutorials" description="Setup guides and videos" tone="sky" />
+          </Panel>
+
+          <a
+            href="https://wa.me/8801570296656"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group relative block overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-5 text-white shadow-[0_12px_30px_-12px_rgb(16_185_129/0.7)]"
+          >
+            <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/15 blur-2xl" />
+            <ChatBubbleLeftRightIcon className="relative h-6 w-6" />
+            <p className="relative mt-3 font-semibold">Need help with anything?</p>
+            <p className="relative mt-1 text-sm text-emerald-50">Message our team on WhatsApp — we usually reply within an hour.</p>
+            <span className="relative mt-4 inline-flex items-center gap-1.5 text-sm font-semibold">
+              Chat now <ArrowRightIcon className="h-4 w-4 transition group-hover:translate-x-1" />
+            </span>
+          </a>
         </div>
+      </div>
+
+      {/* Showcase */}
+      {customers.length > 0 && (
+        <Panel title="Featured network brands" description="Businesses powered by CodeBlend">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+            {customers.map((customer) => {
+              const tile = (
+                <div className="group flex h-24 flex-col items-center justify-center gap-2 rounded-xl bg-slate-50/70 px-3 ring-1 ring-slate-200/70 transition hover:bg-white hover:shadow-md">
+                  <div className="flex h-9 w-full items-center justify-center">
+                    {customer.logoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- remote ImageKit logos of unknown size
+                      <img
+                        src={customer.logoUrl}
+                        alt={customer.name}
+                        className="max-h-9 max-w-[110px] object-contain opacity-80 brightness-[0.55] contrast-125 grayscale transition group-hover:opacity-100 group-hover:brightness-100 group-hover:contrast-100 group-hover:grayscale-0"
+                      />
+                    ) : (
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">
+                        {customer.name.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <p className="w-full truncate text-center text-[11px] font-medium text-slate-500 group-hover:text-slate-900">{customer.name}</p>
+                </div>
+              );
+              return customer.websiteUrl ? (
+                <a key={customer.id} href={customer.websiteUrl} target="_blank" rel="noopener noreferrer" title={customer.name}>
+                  {tile}
+                </a>
+              ) : (
+                <div key={customer.id} title={customer.name}>{tile}</div>
+              );
+            })}
+          </div>
+        </Panel>
       )}
     </div>
   );

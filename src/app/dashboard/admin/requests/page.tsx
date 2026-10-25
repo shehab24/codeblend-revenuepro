@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { AdminSendEmailModal } from "./AdminSendEmailModal";
 import { RequestSearch } from "./RequestSearch";
+import { ArrowPathIcon, BanknotesIcon, CheckCircleIcon, ClipboardDocumentListIcon, ClockIcon } from "@heroicons/react/24/outline";
+import { DASH_CARD, PageHeader, StatCard, formatBdt } from "@/components/dashboard/ui";
 
 export default async function AdminRequestsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const user = await currentUser();
@@ -27,6 +29,13 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
     where: whereClause,
   });
 
+  const counts = { pending: 0, in_progress: 0, completed: 0 } as Record<string, number>;
+  let outstanding = 0;
+  for (const r of requests) {
+    counts[r.status] = (counts[r.status] ?? 0) + 1;
+    if (r.status !== "cancelled") outstanding += Math.max(0, (r.totalAmount || 0) - (r.paidAmount || 0));
+  }
+
   const statusStyles: Record<string, string> = {
     pending: "bg-amber-50 text-amber-600 border-amber-200",
     in_progress: "bg-blue-50 text-blue-600 border-blue-200",
@@ -42,15 +51,30 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6">
-      <div className="mb-4 pb-4 border-b border-slate-100 flex justify-between items-center">
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Customers"
+        title="Service requests"
+        description="Review client requests, set pricing and status, and agree delivery dates."
+        icon={<ClipboardDocumentListIcon className="h-6 w-6" />}
+      />
+
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <StatCard label="Pending" value={counts.pending} icon={<ClockIcon className="h-5 w-5" />} tone="amber" />
+        <StatCard label="In progress" value={counts.in_progress} icon={<ArrowPathIcon className="h-5 w-5" />} tone="sky" />
+        <StatCard label="Completed" value={counts.completed} icon={<CheckCircleIcon className="h-5 w-5" />} tone="emerald" />
+        <StatCard label="Outstanding balance" value={formatBdt(outstanding)} icon={<BanknotesIcon className="h-5 w-5" />} tone="rose" />
+      </div>
+
+    <div className={`${DASH_CARD} p-6`}>
+      <div className="mb-4 flex flex-col justify-between gap-4 border-b border-slate-100 pb-4 sm:flex-row sm:items-center">
         <div>
-          <h3 className="text-lg font-semibold text-slate-800">Manage Service Requests</h3>
-          <p className="text-sm text-slate-400 mt-1">Review user requests, set pricing, status, and delivery expectations.</p>
+          <h2 className="text-[15px] font-semibold text-slate-950">{q ? `Results for “${q}”` : "All requests"}</h2>
+          <p className="mt-0.5 text-xs text-slate-500">{requests.length} requests</p>
         </div>
         <RequestSearch />
       </div>
-      
+
       <div className="overflow-x-auto">
         <table className="w-full text-left">
           <thead>
@@ -157,6 +181,7 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
           </tbody>
         </table>
       </div>
+    </div>
     </div>
   );
 }

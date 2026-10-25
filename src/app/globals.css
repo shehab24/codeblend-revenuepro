@@ -34,9 +34,10 @@
 /* Legacy card class for unconverted components */
 .dashboard-light-vars .card {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
+  border: 0;
   border-radius: 16px;
   padding: 1.5rem;
+  box-shadow: 0 0 0 1px rgb(226 232 240 / 0.7), 0 1px 2px rgb(15 23 42 / 0.04), 0 6px 20px -12px rgb(15 23 42 / 0.08);
 }
 
 .dashboard-light-vars .card-header {
