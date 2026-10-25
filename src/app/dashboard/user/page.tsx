@@ -88,7 +88,10 @@ export default async function UserDashboard() {
     { label: "Total paid", value: formatBdt(totalPaid), href: "/dashboard/user/transactions", icon: BanknotesIcon },
   ];
 
-  const products: { show: boolean; href: string; title: string; desc: string; cta: string; icon: typeof KeyIcon; tone: DashTone }[] = [
+  type ProductCard = { show: boolean; href: string; title: string; desc: string; cta: string; icon: typeof KeyIcon; tone: DashTone };
+
+  // Typed before .filter() so the literal `tone` values stay DashTone instead of widening to string.
+  const allProducts: ProductCard[] = [
     {
       show: revenueProAllowed,
       href: "/dashboard/user/revenuepro",
@@ -116,7 +119,8 @@ export default async function UserDashboard() {
       icon: ChartPieIcon,
       tone: "indigo",
     },
-  ].filter((p) => p.show);
+  ];
+  const products = allProducts.filter((p) => p.show);
 
   return (
     <div className="space-y-8">
